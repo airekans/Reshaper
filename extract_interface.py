@@ -35,17 +35,27 @@ if __name__ == '__main__':
 
     for m in member_method_cursors:
         print "name of the member:", m.spelling
+        print "displayname:", m.displayname
         print "kind:", m.kind.name
         print "type name:", m.type.kind.spelling
+        
+        tokens = m.get_tokens()
+        for i, t in enumerate(tokens):
+            print "token[%d]: %s" % (i, t.spelling)
 
         arg_types = m.type.argument_types()
-        result_type = m.type.get_result()
+        result_type = m.result_type
+        result_type_spelling = result_type.kind.spelling.lower()
 
         print "  result type:", result_type.kind.name
+        print "  result spelling:", result_type_spelling
 
         for arg in arg_types:
-            print " arg type:", arg.kind.name
+            print "  arg type:", arg.kind.name
+
+
         
+            
         print
     
 
