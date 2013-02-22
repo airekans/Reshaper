@@ -10,6 +10,33 @@ import sys
 from util import get_cursor
 
 
+def get_function_signature(m):
+    tokens = list(m.get_tokens())
+    if len(tokens) < 1:
+        return ""
+
+    extent = tokens[0].extent
+    line, column = extent.end.line, extent.end.column
+    signature = tokens[0].spelling
+    for t in tokens[1:]:
+        e = t.extent
+        if line != e.start.line:
+            for i in range(0, e.start.line - line):
+                signature += "\n"
+            line = e.start.line
+            if e.start.column < column:
+                column = e.start.column
+        
+        for i in range(0, e.start.column - column):
+            signature += " "
+
+        signature += t.spelling
+        line, column = extent.end.line, extent.end.column
+
+    return signature
+            
+    
+
 if __name__ == '__main__':
     if len(sys.argv) < 3:
         print "Please input .cpp file and class."
@@ -38,10 +65,12 @@ if __name__ == '__main__':
         print "displayname:", m.displayname
         print "kind:", m.kind.name
         print "type name:", m.type.kind.spelling
-        
+
+        print get_function_signature(m)
         tokens = m.get_tokens()
         for i, t in enumerate(tokens):
             print "token[%d]: %s" % (i, t.spelling)
+#            print "token loc:", t.extent
 
         arg_types = m.type.argument_types()
         result_type = m.result_type
