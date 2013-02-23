@@ -40,7 +40,16 @@ def get_function_signature(m):
         line, column = e.end.line, e.end.column
 
     return signature
-            
+
+def get_cursors_if(cursor, f):
+    """ Get cursors satisfying function f from cursor c
+    
+    Arguments:
+    - `cursor`: cursor
+    - `f`: function
+    """
+    return [c for c in cursor.get_children() if f(c)]
+
 
 if __name__ == '__main__':
     if len(sys.argv) < 3:
@@ -60,10 +69,9 @@ if __name__ == '__main__':
         print "source file %s does not contain any class" % src
         sys.exit(1)
 
-    member_cursors = list(class_cursor.get_children())
-
-    member_method_cursors = [m for m in member_cursors
-                             if m.kind == CursorKind.CXX_METHOD]
+    member_method_cursors = \
+        get_cursors_if(class_cursor,
+                       lambda c: c.kind == CursorKind.CXX_METHOD)
 
     for m in member_method_cursors:
         print "name of the member:", m.spelling
