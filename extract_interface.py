@@ -15,10 +15,16 @@ def get_function_signature(m):
     if len(tokens) < 1:
         return ""
 
-    extent = tokens[0].extent
+    valid_tokens = []
+    for t in tokens:
+        if t.spelling in ['{', ';']:
+            break
+        valid_tokens.append(t)
+
+    extent = valid_tokens[0].extent
     line, column = extent.end.line, extent.end.column
-    signature = tokens[0].spelling
-    for t in tokens[1:]:
+    signature = valid_tokens[0].spelling
+    for t in valid_tokens[1:]:
         e = t.extent
         if line != e.start.line:
             for i in range(0, e.start.line - line):
@@ -31,11 +37,10 @@ def get_function_signature(m):
             signature += " "
 
         signature += t.spelling
-        line, column = extent.end.line, extent.end.column
+        line, column = e.end.line, e.end.column
 
     return signature
             
-    
 
 if __name__ == '__main__':
     if len(sys.argv) < 3:
