@@ -83,7 +83,38 @@ def get_cursors(source, spelling):
 
     return cursors
 
+def get_cursors_if(source, f):
+    """ Get cursors satisfying function f from cursor c
     
+    Arguments:
+    - `source`: 
+    - `f`: function
+    """
+    return [c for c in source.get_children() if f(c)]
+
+def walk_ast(source, f):
+    """walk the ast with the specified function
+    
+    Arguments:
+    - `source`: 
+    - `f`: function used to visit the cursor
+    """
+
+    if source is None:
+        return
+    elif isinstance(source, Cursor):
+        cursor = source
+    else: 
+        # Assume TU
+        cursor = source.cursor
+
+    def walk_ast_with_level(cursor, level):
+        f(cursor, level)
+        child_level = level + 1
+        for c in cursor.get_children():
+            walk_ast_with_level(c, child_level)
+
+    walk_ast_with_level(cursor, 0)
     
 
 __all__ = [

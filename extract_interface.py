@@ -41,14 +41,6 @@ def get_function_signature(m):
 
     return signature
 
-def get_cursors_if(cursor, f):
-    """ Get cursors satisfying function f from cursor c
-    
-    Arguments:
-    - `cursor`: cursor
-    - `f`: function
-    """
-    return [c for c in cursor.get_children() if f(c)]
 
 class ClassPrinter(object):
     """ ClassPrinter is used to generate a class in a files
