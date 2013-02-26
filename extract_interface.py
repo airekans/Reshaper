@@ -133,4 +133,3 @@ if __name__ == '__main__':
 
     print class_printer.get_definition()
         
-

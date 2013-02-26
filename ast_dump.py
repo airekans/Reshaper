@@ -2,7 +2,7 @@
 
 from util import walk_ast
 from clang.cindex import TranslationUnit
-from optparse import OptionParser, OptionGroup
+from optparse import OptionParser
 
 
 def print_cursor(cursor, level):
@@ -24,7 +24,6 @@ if __name__ == '__main__':
         parser.error("unable to load input")
 
     walk_ast(tu, print_cursor)
-
     
 
     
