@@ -1,6 +1,9 @@
+#!/usr/bin/env python
+
 from util import walk_ast
 from clang.cindex import TranslationUnit
 from optparse import OptionParser, OptionGroup
+
 
 def print_cursor(cursor, level):
     prefix = "**" * level
@@ -16,7 +19,7 @@ if __name__ == '__main__':
     if len(args) == 0:
         parser.error('invalid number arguments')
 
-    tu = TranslationUnit.from_source(args[0])
+    tu = TranslationUnit.from_source(args[0], ['-std=c++11'])
     if not tu:
         parser.error("unable to load input")
 
