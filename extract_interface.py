@@ -7,7 +7,7 @@ from clang.cindex import Cursor
 from clang.cindex import Type
 import os
 import sys
-from util import get_cursor
+from util import get_cursor, get_cursors_if
 
 
 def get_function_signature(m):
@@ -59,6 +59,9 @@ class ClassPrinter(object):
     def __get_declaration(self):
         return "class " + self._name
 
+    def __get_default_destructor(self):
+        return "virtual ~%s {}" % self._name
+
     def set_methods(self, methods):
         self._methods = methods
 
@@ -70,7 +73,8 @@ class ClassPrinter(object):
 
     def get_definition(self):
         indent = "    "
-        methods = "\n".join([indent + get_function_signature(m) + ";"
+        methods = "\n".join([indent + self.__get_default_destructor()] +
+                            [indent + get_function_signature(m) + ";"
                              for m in self._methods])
         # TODO: add members
 
@@ -104,27 +108,6 @@ if __name__ == '__main__':
     member_method_cursors = \
         get_cursors_if(class_cursor,
                        lambda c: c.kind == CursorKind.CXX_METHOD)
-
-    for m in member_method_cursors:
-        print "name of the member:", m.spelling
-        print "displayname:", m.displayname
-        print "kind:", m.kind.name
-        print "type name:", m.type.kind.spelling
-
-        print get_function_signature(m)
-        tokens = m.get_tokens()
-
-        arg_types = m.type.argument_types()
-        result_type = m.result_type
-        result_type_spelling = result_type.kind.spelling.lower()
-
-        print "  result type:", result_type.kind.name
-        print "  result spelling:", result_type_spelling
-
-        for arg in arg_types:
-            print "  arg type:", arg.kind.name
-            
-        print
     
     # print out the interface class
     print "class name:", class_cursor.spelling
