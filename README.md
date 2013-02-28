@@ -1,3 +1,3 @@
 # Reshaper
 
-Reshaper is a C++ refactoring tool based on libclang.
+Reshaper is a C++ refactoring tool based on Clang.
