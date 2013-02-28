@@ -62,6 +62,22 @@ class ClassPrinter(object):
     def __get_default_destructor(self):
         return "virtual ~%s {}" % self._name
 
+    def __get_virtual_method(self, method):
+        if method.startswith("virtual"):
+            return method
+        else:
+            return "virtual " + method
+            
+    def __get_pure_virtual_method(self, method):
+        virtual_method = self.__get_virtual_method(method)
+        if virtual_method.endswith("0"):
+            return virtual_method
+        else:
+            return virtual_method + " = 0"
+
+    def __get_pure_virtual_signature(self, method):
+        return self.__get_pure_virtual_method(get_function_signature(method))
+            
     def set_methods(self, methods):
         self._methods = methods
 
@@ -74,7 +90,7 @@ class ClassPrinter(object):
     def get_definition(self):
         indent = "    "
         methods = "\n".join([indent + self.__get_default_destructor()] +
-                            [indent + get_function_signature(m) + ";"
+                            [indent + self.__get_pure_virtual_signature(m) + ";"
                              for m in self._methods])
         # TODO: add members
 
@@ -96,7 +112,7 @@ if __name__ == '__main__':
     src = os.path.join(source_dir, sys.argv[1])
     class_to_extract = sys.argv[2]
 
-    tu = TranslationUnit.from_source(src)
+    tu = TranslationUnit.from_source(src, ["-std=c++11"])
     class_cursor = get_cursor(tu, class_to_extract)
     
     if class_cursor is None or \

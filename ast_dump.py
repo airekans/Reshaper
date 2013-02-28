@@ -10,6 +10,7 @@ def print_cursor(cursor, level):
     print prefix + "spelling:", cursor.spelling
     print prefix + "displayname:", cursor.displayname
     print prefix + "kind:", cursor.kind.name
+    print prefix + "is_definition:", cursor.is_definition()
     print
 
 if __name__ == '__main__':
