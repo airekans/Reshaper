@@ -3,9 +3,6 @@ Created on 2013-2-19
 
 @author: liangzhao
 '''
-import sys
-print sys.path
-
 from clang.cindex import Index, CursorKind, TypeKind
 
 
