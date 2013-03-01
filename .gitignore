@@ -22,10 +22,14 @@ lib64
 # Installer logs
 pip-log.txt
 
+# emacs cache files
+.ffip-cache
+
 # Unit test / coverage reports
 .coverage
 .tox
 nosetests.xml
+htmlcov
 
 # Translations
 *.mo

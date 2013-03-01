@@ -21,5 +21,12 @@ public:
     double fun_with_default_args(const int i = 10);
     virtual void virutal_fun(const double d);
     virtual void pure_virtual_fun(const int i) = 0;
+    static void static_fun(int i);
+
+    template <typename T>
+    void template_fun(const T& t)
+    {
+	
+    }
 };
 
