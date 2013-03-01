@@ -88,9 +88,23 @@ def get_cursors_if(source, f):
     
     Arguments:
     - `source`: 
-    - `f`: function
+    - `f`: predicate function user gives
     """
-    return [c for c in source.get_children() if f(c)]
+    cursors = []
+    children = []
+    if isinstance(source, Cursor):
+        children = source.get_children()
+    else:
+        # Assume TU
+        children = source.cursor.get_children()
+
+    for child in children:
+        if f(child):
+            cursors.append(child)
+
+        cursors.extend(get_cursors_if(child, f))
+
+    return cursors
 
 def walk_ast(source, f):
     """walk the ast with the specified function
