@@ -1,17 +1,21 @@
 #! /usr/bin/env python
 
+""" This tool is used to extract interface from a source/header file.
+The result will be output to stdout.
+
+Usage: extract_interface.py class.cpp class_name
+
+"""
+
 from clang.cindex import CursorKind
 from clang.cindex import TranslationUnit
-from clang.cindex import TypeKind
 from clang.cindex import Cursor
-from clang.cindex import Type
-import os
 import sys
 from util import get_cursor, get_cursors_if
 
 
-def get_function_signature(m):
-    tokens = list(m.get_tokens())
+def get_function_signature(fun):
+    tokens = list(fun.get_tokens())
     if len(tokens) < 1:
         return ""
 
@@ -27,13 +31,13 @@ def get_function_signature(m):
     for t in valid_tokens[1:]:
         e = t.extent
         if line != e.start.line:
-            for i in range(0, e.start.line - line):
+            for _ in range(0, e.start.line - line):
                 signature += "\n"
             line = e.start.line
             if e.start.column < column:
                 column = e.start.column
         
-        for i in range(0, e.start.column - column):
+        for _ in range(0, e.start.column - column):
             signature += " "
 
         signature += t.spelling
@@ -77,7 +81,7 @@ class ClassPrinter(object):
 
     def __get_pure_virtual_signature(self, method):
         return self.__get_pure_virtual_method(get_function_signature(method))
-            
+
     def set_methods(self, methods):
         self._methods = methods
 
@@ -89,9 +93,11 @@ class ClassPrinter(object):
 
     def get_definition(self):
         indent = "    "
+        method_signatures = [get_function_signature(m) for m in self._methods]
         methods = "\n".join([indent + self.__get_default_destructor()] +
-                            [indent + self.__get_pure_virtual_signature(m) + ";"
-                             for m in self._methods])
+                            [indent + self.__get_pure_virtual_method(m) + ";"
+                             for m in method_signatures
+                             if not m.startswith(("template", "static"))])
         # TODO: add members
 
         class_def = """%s
@@ -102,23 +108,21 @@ public:
         return class_def
         
 
-
 if __name__ == '__main__':
     if len(sys.argv) < 3:
         print "Please input .cpp file and class."
         sys.exit(1)
     
-    source_dir = os.path.join(os.path.dirname(__file__), 'test_data')
-    src = os.path.join(source_dir, sys.argv[1])
+    SRC = sys.argv[1]
     class_to_extract = sys.argv[2]
 
-    tu = TranslationUnit.from_source(src, ["-std=c++11"])
+    tu = TranslationUnit.from_source(SRC, ["-std=c++11"])
     class_cursor = get_cursor(tu, class_to_extract)
     
     if class_cursor is None or \
             class_cursor.kind != CursorKind.CLASS_DECL or \
             not class_cursor.is_definition():
-        print "source file %s does not contain any class" % src
+        print "source file %s does not contain any class" % SRC
         sys.exit(1)
 
     member_method_cursors = \
