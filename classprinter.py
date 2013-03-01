@@ -42,15 +42,19 @@ class ClassPrinter(object):
         return self.__get_pure_virtual_method(get_function_signature(method))
 
     def set_methods(self, methods):
+        "set the methods in the class"
         self._methods = methods
 
     def set_members(self, members):
+        "set the data members in the class"
         self._members = members
 
     def get_forward_declaration(self):
+        "get the forward declaration of the class"
         return self.__get_declaration() + ";"
 
     def get_definition(self):
+        "get the full definition of the class"
         indent = "    "
         method_signatures = [get_function_signature(m) for m in self._methods]
         methods = "\n".join([indent + self.__get_default_destructor()] +
