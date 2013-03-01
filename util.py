@@ -115,10 +115,37 @@ def walk_ast(source, f):
             walk_ast_with_level(c, child_level)
 
     walk_ast_with_level(cursor, 0)
-    
 
-__all__ = [
-    'get_cursor',
-    'get_cursors',
-    'get_tu',
-]
+def get_function_signature(fun):
+    """get the signature of the function given as a cursor node in the AST.
+    """
+    tokens = list(fun.get_tokens())
+    if len(tokens) < 1:
+        return ""
+
+    valid_tokens = []
+    for t in tokens:
+        if t.spelling in ['{', ';']:
+            break
+        valid_tokens.append(t)
+
+    extent = valid_tokens[0].extent
+    line, column = extent.end.line, extent.end.column
+    signature = valid_tokens[0].spelling
+    for t in valid_tokens[1:]:
+        e = t.extent
+        if line != e.start.line:
+            for _ in range(0, e.start.line - line):
+                signature += "\n"
+            line = e.start.line
+            if e.start.column < column:
+                column = e.start.column
+        
+        for _ in range(0, e.start.column - column):
+            signature += " "
+
+        signature += t.spelling
+        line, column = e.end.line, e.end.column
+
+    return signature
+
