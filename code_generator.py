@@ -28,6 +28,7 @@ friend bool operator == (const {{ class_name }} & a, const {{ class_name }}  & b
 '''
 
 
+
 def get_member_vars_from_children(children):
     member_vars = {}
     for child in children:
@@ -35,7 +36,7 @@ def get_member_vars_from_children(children):
             continue
         if child.type.kind == TypeKind.POINTER:
             continue
-        member_vars[child.spelling] = child.type.kind            
+        member_vars[child.spelling] = child.type.kind  
     return sorted(member_vars)
 
 
@@ -73,17 +74,7 @@ def generate_code(header_file,class_name):
         print template.render(class_name = class_name, member_vars = member_vars)
 
 
-import unittest
-from pprint import pprint
-class Test(unittest.TestCase):
-    test_file = 'test_data/test.h'
 
-    def test_get_member_variables(self):
-        member_var = get_member_variables(Test.test_file, 'A')
-        pprint(member_var)
-        pass
-    def test_generate_code(self):
-        generate_code(Test.test_file, 'A')
 
 
 if __name__ == "__main__":
