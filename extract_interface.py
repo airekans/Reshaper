@@ -11,8 +11,8 @@ from clang.cindex import CursorKind
 from clang.cindex import TranslationUnit
 from clang.cindex import Cursor
 import sys
-from util import get_cursor, get_cursors_if
-from classprinter import ClassPrinter
+from reshaper.util import get_cursor, get_cursors_if
+from reshaper.classprinter import ClassPrinter
 
 
 if __name__ == '__main__':

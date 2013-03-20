@@ -1,5 +1,5 @@
-from classprinter import ClassPrinter
-from util import get_cursors_if
+from reshaper.classprinter import ClassPrinter
+from reshaper.util import get_cursors_if
 from clang.cindex import TranslationUnit
 from clang.cindex import CursorKind
 import os

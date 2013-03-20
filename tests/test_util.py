@@ -1,4 +1,4 @@
-from util import get_cursors_if, walk_ast, get_function_signature
+from reshaper.util import get_cursors_if, walk_ast, get_function_signature
 from clang.cindex import TranslationUnit
 from clang.cindex import CursorKind
 import os
@@ -7,8 +7,8 @@ from functools import partial
 INPUT_DIR = os.path.join(os.path.dirname(__file__), 'test_data')
 
 def test_get_cursors_if():
-    SOURCE = os.path.join(INPUT_DIR, 'class.cpp')
-    tu = TranslationUnit.from_source(SOURCE, ['-std=c++11'])
+    source = os.path.join(INPUT_DIR, 'class.cpp')
+    tu = TranslationUnit.from_source(source, ['-std=c++11'])
     assert(tu is not None)
 
     cursors = get_cursors_if(tu, lambda c: c.spelling == 'A')
@@ -27,8 +27,8 @@ def test_get_cursors_if():
     assert(cursors[0].spelling == 'A')
 
 def test_walk_ast():
-    SOURCE = os.path.join(INPUT_DIR, 'class.cpp')
-    tu = TranslationUnit.from_source(SOURCE, ['-std=c++11'])
+    source = os.path.join(INPUT_DIR, 'class.cpp')
+    tu = TranslationUnit.from_source(source, ['-std=c++11'])
 
     def ns(): pass
     ns.node_count = 0
@@ -48,8 +48,8 @@ def test_walk_ast():
     assert(ns.node_count == 15)
     
 def test_get_function_signature():
-    SOURCE = os.path.join(INPUT_DIR, 'class.cpp')
-    tu = TranslationUnit.from_source(SOURCE, ['-std=c++11'])
+    source = os.path.join(INPUT_DIR, 'class.cpp')
+    tu = TranslationUnit.from_source(source, ['-std=c++11'])
 
     expected_fun_sig = "void foo()"
     
