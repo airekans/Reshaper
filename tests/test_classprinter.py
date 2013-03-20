@@ -7,7 +7,7 @@ import os
 INPUT_DIR = os.path.join(os.path.dirname(__file__), 'test_data')
 
 
-def test_ClassPrinter():
+def test_get_definition():
     expected_class = \
 """class A
 {
