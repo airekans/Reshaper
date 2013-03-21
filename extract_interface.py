@@ -11,7 +11,7 @@ from clang.cindex import CursorKind
 from clang.cindex import TranslationUnit
 import sys
 import os
-from reshaper.util import get_cursor
+from reshaper.util import get_tu, get_cursor
 from reshaper.extract import extract_interface
 from optparse import OptionParser
 
@@ -41,7 +41,7 @@ def main():
     if methods is not None:
         methods = methods.split(',')
 
-    tu = TranslationUnit.from_source(src, ["-std=c++11"])
+    tu = get_tu(src)
     # TODO: the following line should be changed to work on class in a namespace
     class_cursor = get_cursor(tu, class_to_extract)
     

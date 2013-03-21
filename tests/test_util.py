@@ -1,5 +1,5 @@
-from reshaper.util import get_cursors_if, walk_ast, get_function_signature
-from clang.cindex import TranslationUnit
+from reshaper.util import get_tu, get_cursors_if
+from reshaper.util import walk_ast, get_function_signature
 from clang.cindex import CursorKind
 import os
 from functools import partial
@@ -12,8 +12,29 @@ tu = None
 def setup():
     global tu
     source = os.path.join(INPUT_DIR, 'class.cpp')
-    tu = TranslationUnit.from_source(source, ['-std=c++11'])
+    tu = get_tu(source)
     assert(tu is not None)
+
+
+def test_get_tu():
+    # check whether it can handle header file
+    source = os.path.join(INPUT_DIR, 'header.h')
+    tu = get_tu(source)
+    eq_(0, len(tu.diagnostics))
+    
+    source = os.path.join(INPUT_DIR, 'class.cpp')
+    tu = get_tu(source)
+    eq_(0, len(tu.diagnostics))
+
+    # To pass the following test, you should write a ".reshaper.cfg" file
+    # under current directory or home directory with the following section
+    # [Clang Options]
+    # include_paths=/path/to/c++/std,/other/default/include/path
+
+    # source = os.path.join(INPUT_DIR, 'include_sys_header.h')
+    # tu = get_tu(source)
+    # eq_(0, len(tu.diagnostics))
+
 
 @with_setup(setup)
 def test_get_cursors_if():
@@ -34,22 +55,22 @@ def test_get_cursors_if():
 
 @with_setup(setup)
 def test_walk_ast():
-    def ns(): pass
-    ns.node_count = 0
+    def namespace(): pass
+    namespace.node_count = 0
     def count_level_node(_, level, expected_level = 0):
         if level == expected_level:
-            ns.node_count += 1
+            namespace.node_count += 1
 
     walk_ast(tu, count_level_node)
-    assert(ns.node_count == 1)
+    assert(namespace.node_count == 1)
 
-    ns.node_count = 0
+    namespace.node_count = 0
     walk_ast(tu, partial(count_level_node, expected_level = 1))
-    assert(ns.node_count == 5)
+    assert(namespace.node_count == 5)
 
-    ns.node_count = 0
+    namespace.node_count = 0
     walk_ast(tu, partial(count_level_node, expected_level = 2))
-    assert(ns.node_count == 15)
+    assert(namespace.node_count == 15)
     
 @with_setup(setup)
 def test_get_function_signature_with_fun_no_params():

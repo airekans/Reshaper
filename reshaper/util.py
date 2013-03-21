@@ -2,33 +2,30 @@
 
 from clang.cindex import Cursor
 from clang.cindex import TranslationUnit
+import ConfigParser
+import os
 
-def get_tu(source, lang='c', all_warnings=False):
+def get_tu(source, all_warnings=False):
     """Obtain a translation unit from source and language.
 
     By default, the translation unit is created from source file "t.<ext>"
     where <ext> is the default file extension for the specified language. By
     default it is C, so "t.c" is the default file name.
 
-    Supported languages are {c, cpp, objc}.
-
     all_warnings is a convenience argument to enable all compiler warnings.
     """
-    name = 't.c'
-    args = []
-    if lang == 'cpp':
-        name = 't.cpp'
-        args.append('-std=c++11')
-    elif lang == 'objc':
-        name = 't.m'
-    elif lang != 'c':
-        raise Exception('Unknown language: %s' % lang)
-
+    args = ['-x', 'c++', '-std=c++11']
+ 
     if all_warnings:
         args += ['-Wall', '-Wextra']
 
-    return TranslationUnit.from_source(name, args, unsaved_files=[(name,
-                                       source)])
+    config_parser = ConfigParser.SafeConfigParser()
+    config_parser.read(['.reshaper.cfg', os.path.expanduser('~/.reshaper.cfg')])
+    if config_parser.has_option('Clang Options', 'include_paths'):
+        include_paths = config_parser.get('Clang Options', 'include_paths')
+        args += ['-I' + p for p in include_paths.split(',')]
+
+    return TranslationUnit.from_source(source, args)
 
 def get_cursor(source, spelling):
     """Obtain a cursor from a source object.
