@@ -17,7 +17,6 @@ def setup():
 
 @with_setup(setup)
 def test_get_cursors_if():
-
     cursors = get_cursors_if(tu, lambda c: c.spelling == 'A')
     assert(len(cursors) == 2) # the class itself and the constructor
     for cursor in cursors:

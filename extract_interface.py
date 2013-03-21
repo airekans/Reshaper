@@ -9,37 +9,12 @@ Usage: extract_interface.py class.cpp class_name
 
 from clang.cindex import CursorKind
 from clang.cindex import TranslationUnit
-from clang.cindex import Cursor
 import sys
 import os
-from reshaper.util import get_cursor, get_cursors_if
-from reshaper.classprinter import ClassPrinter
+from reshaper.util import get_cursor
+from reshaper.extract import extract_interface
 from optparse import OptionParser
 
-
-def extract_interface(class_cursor, methods, prefix = "I"):
-    """ extract interface from an given class.
-    Returns a ClassPrinter representing the interface.
-    The default interface name is "I" followed by the class name.
-    e.g. class name is "Base", then the interface name is IBase.
-    
-    Arguments:
-    - `class_cursor`: cursor of the class to be extracted
-    - `methods`: methods user wants to extract to the interface
-    - `prefix`: the interface name prefix used to prepend to the class name
-    """
-
-    member_method_cursors = \
-        get_cursors_if(class_cursor,
-                       lambda c: (c.kind == CursorKind.CXX_METHOD and
-                                  (c.spelling in methods
-                                   if methods is not None else True)))
-    
-    # print out the interface class
-    class_printer = ClassPrinter(prefix + class_cursor.spelling)
-    class_printer.set_methods(member_method_cursors)
-    return class_printer
-    
 
 def parse_options():
     """ parse the command line options and arguments and returns them
