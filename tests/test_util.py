@@ -62,15 +62,15 @@ def test_walk_ast():
             namespace.node_count += 1
 
     walk_ast(tu, count_level_node)
-    assert(namespace.node_count == 1)
+    eq_(1, namespace.node_count)
 
     namespace.node_count = 0
     walk_ast(tu, partial(count_level_node, expected_level = 1))
-    assert(namespace.node_count == 5)
+    eq_(6, namespace.node_count)
 
     namespace.node_count = 0
     walk_ast(tu, partial(count_level_node, expected_level = 2))
-    assert(namespace.node_count == 15)
+    eq_(19, namespace.node_count)
     
 @with_setup(setup)
 def test_get_function_signature_with_fun_no_params():
@@ -100,7 +100,7 @@ def test_get_function_signature_with_fun_params():
     methods = get_cursors_if(tu,
                              (lambda c: c.kind == CursorKind.CXX_METHOD and
                               c.spelling == 'result_test_fun'))
-    eq_(1, len(methods))
+    eq_(2, len(methods))
     eq_(expected_fun_sig, get_function_signature(methods[0]))
 
 @with_setup(setup)
