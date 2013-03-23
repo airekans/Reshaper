@@ -26,6 +26,10 @@ def test_get_tu():
     tu = get_tu(source)
     eq_(0, len(tu.diagnostics))
 
+    source = os.path.join(INPUT_DIR, 'B.cpp')
+    tu = get_tu(source)
+    eq_(0, len(tu.diagnostics))
+    
     # To pass the following test, you should write a ".reshaper.cfg" file
     # under current directory or home directory with the following section
     # [Clang Options]

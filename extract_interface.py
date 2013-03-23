@@ -21,11 +21,32 @@ def parse_options():
     """
 
     option_parser = OptionParser(usage = "%prog [options] FILE CLASSNAME")
-    option_parser.add_option("-m", "--methods", dest = "methods", type = "string",
+    option_parser.add_option("-m", "--methods", dest = "methods",
+                             type = "string",
                              help = "Names of methods you want to extract")
+    option_parser.add_option("--from-usage", dest = "from_usage",
+                             type = "string",
+                             help = "Name of the function that using CLASSNAME")
 
     return option_parser.parse_args()
 
+def get_class_usage(fun_cursor, used_class):
+    """ get the usage of the class from the function given as fun_cursor.
+    """
+
+    if not fun_cursor.is_definition():
+        return []
+
+    def is_member_ref(c):
+        if c.kind == CursorKind.MEMBER_REF_EXPR:
+            return used_class == "fake"
+        return False
+        
+    get_cursors_if(fun_cursor,
+                   lambda c: (c.kind == CursorKind.MEMBER_REF_EXPR and
+                              True))
+    
+    
 def main():
     options, args = parse_options()
     if len(args) != 2:
@@ -51,6 +72,12 @@ def main():
         print "source file %s does not contain any class named %s" % \
             (src, class_to_extract)
         sys.exit(1)
+
+    # If user specifies to extract a class from other function's usage,
+    # analyze the function
+    fun_using_class = options.from_usage
+    if fun_using_class is not None:
+        pass
 
     # print out the interface class
     class_printer = extract_interface(class_cursor, methods)
