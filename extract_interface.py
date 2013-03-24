@@ -30,6 +30,22 @@ def parse_options():
 
     return option_parser.parse_args()
 
+def get_member_owner(member_cursor):
+    """ Get the owner of the member given as cursor
+    
+    Arguments:
+    - `member_cursor`:
+    """
+
+    if member_cursor.kind != CursorKind.MEMBER_REF_EXPR:
+        return None
+
+    for c in member_cursor.get_children():
+        return c
+
+    return None
+
+
 def get_class_usage(fun_cursor, used_class):
     """ get the usage of the class from the function given as fun_cursor.
     """
@@ -37,14 +53,21 @@ def get_class_usage(fun_cursor, used_class):
     if not fun_cursor.is_definition():
         return []
 
-    def is_member_ref(c):
-        if c.kind == CursorKind.MEMBER_REF_EXPR:
-            return used_class == "fake"
+    # get all member function calls
+    def is_member_fun_call(c):
+        if c.kind != CursorKind.CALL_EXPR:
+            return False
+
+        for child in c.get_children():
+            return child.kind == CursorKind.MEMBER_REF_EXPR
+
         return False
         
-    get_cursors_if(fun_cursor,
-                   lambda c: (c.kind == CursorKind.MEMBER_REF_EXPR and
-                              True))
+    # get all member function calls in the function
+    get_cursors_if(fun_cursor, is_member_fun_call)
+
+    
+
     
     
 def main():
