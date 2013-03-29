@@ -2,19 +2,19 @@
 
 'find_reference.py -- find reference of specific word'
 
-import os
-import sys
-import getopt
-from clang.cindex import *
-import find_reference_util as frutil
+import os, sys, getopt
+from clang.cindex import TranslationUnit
+from clang.cindex import Cursor
+from clang.cindex import CursorKind
+from reshaper.util import get_tu
+import reshaper.find_reference_util as frutil
+from functools import partial
 
-conf = Config()
 refer_curs = []
 
 def usage():
     print "Usage:%s"
     print "-h, --help: print help message"
-    print "-v, --version: print version message"
     print "-n : target reference name(spelling)"
     print "-f : target reference file name"
     print "-l : target reference line"
@@ -22,78 +22,94 @@ def usage():
     print "-d : directory to find reference"
     print "-o : output result to a file"
 
-def version():
-    print "find reference : 1.0 beta"
+def printToCmd(tarCursor, curs):
+    assert(isinstance(tarCursor, Cursor))
 
-def printToCmd(curs):
+    print 
+    print "Reference of \"%s\": file : %s, location %s %s"%\
+            (tarCursor.displayname, tarCursor.location.file.name, \
+            tarCursor.location.line, tarCursor.location.column)
     for c in curs:
-        if isinstance(c, Cursor):
-            print "-------------------------------------"
-            print "file : %s" % os.path.abspath(c.location.file.name)
+        if not isinstance(c, Cursor):
+            continue
+
+        print "-------------------------------------"
+        print "file : %s" % os.path.abspath(c.location.file.name)
+        if c.kind == CursorKind.CXX_METHOD:
+            print "class : %s" % c.semantic_parent.spelling \
+                    if c.semantic_parent is not None else None
+        elif c.kind == CursorKind.FUNCTION_DECL:
+            if c.semantic_parent is not None and c.semantic_parent.kind == CursorKind.NAMESPACE:
+                print "namespace : %s" % c.semantic_parent.spelling \
+                        if not c.semantic_parent.spelling == ''\
+                        else "anonymouse namespace"
+            else:
+                print "global func"
+
+        else:
             cur_parent = frutil.getCallFunc(c)
             if cur_parent:
                 print "Call function:",
                 out_str = cur_parent.displayname
                 if out_str == None:
                     out_str = cur_parent.spelling
+                print out_str
 
-                if cur_parent.lexical_parent and not cur_parent.lexical_parent.kind == CursorKind.TRANSLATION_UNIT:
-                    print "%s::%s"%(cur_parent.lexical_parent.displayname, out_str)
-                else:
-                    print out_str
-            elif c.lexical_parent and not c.lexical_parent.kind == CursorKind.TRANSLATION_UNIT:
-                print "lexical parent : class %s"%c.lexical_parent.displayname
+        print c.location.line, c.location.column
 
-            print c.location.line, c.location.column
-
-def writeToFile(curs, file_path):
+def writeToFile(tarCursor, curs, file_path):
     assert(file_path)
+    assert(isinstance(tarCursor, Cursor))
     file = open(file_path, "w")
 
+    file.write("\n")
+    file.write("Reference of \"%s\": file %s, location %s %s\n"%(\
+            tarCursor.displayname, tarCursor.location.file.name, \
+            tarCursor.location.line, tarCursor.location.column))
     for c in curs:
-        if isinstance(c, Cursor):
-            file.write("-----------------------------------------------\n")
-            file.write("file : %s\n" % os.path.abspath(c.location.file.name))
+        if not isinstance(c, Cursor):
+            continue
+        file.write("-----------------------------------------------\n")
+        file.write("file : %s\n" % os.path.abspath(c.location.file.name))
+        if c.kind == CursorKind.CXX_METHOD:
+            if c.semantic_parent is not None:
+                file.write("class : %s\n" %c.semantic_parent.spelling)
+        elif c.kind == CursorKind.FUNCTION_DECL:
+            if c.semantic_parent is not None and\
+                    c.semantic_parent.kind == CursorKind.NAMESPACE:
+                if c.semantic_parent.spelling is None:
+                    file.write("Anonymouse namespace")
+                else:
+                    file.write("namespace : %s\n"%c.semantic_parent.spelling)
+        else:
             cur_parent = frutil.getCallFunc(c)
             if cur_parent:
-                file.write("Call function : \t")
+                file.write("Call function : ")
                 out_str = cur_parent.displayname
                 if out_str == None:
                     out_str = cur_parent.spelling
+                file.write("%s\n"%out_str)
 
-                if cur_parent.lexical_parent and not cur_parent.lexical_parent.kind == CursorKind.TRANSLATION_UNIT:
-                    file.write("%s::%s\n"%(cur_parent.lexical_parent.displayname, out_str))
-                else:
-                    file.write(out_str+"\n")
-            elif c.lexical_parent:
-                 file.write("lexical parent : class %s\n"%c.lexical_parent.displayname)
+        file.write("line : %s, column :%s \n"%(c.location.line, c.location.column))
 
-            file.write("line : %s, column :%s \n"%(c.location.line, c.location.column))
-
+def getDeclarationCursorUSR(cursor):
+    decCur = frutil.getDeclarationCursor(cursor)
+    if isinstance(decCur, Cursor):
+        return decCur.get_usr()
+    return None
 
 def parseFileCB(file, ref):
     if not os.path.exists(file):
         print "file %s don't exists\n"%file
         return
-    tu = TranslationUnit.from_source(file, ["-std=c++11"])
-    hasDiagnostics = False
-    for dia in tu.diagnostics:
-        hasDiagnostics = True
-        print dia
-    if hasDiagnostics == True:
-        print "skip file %s"%file
+    tu = get_tu(file)
+    if frutil.checkDiagnostics(tu.diagnostics):
+        print "Warning : diagnostics occurs, skip file %s"%file
         return
 
     cur_cursors = frutil.getCursorsWithParent(tu, ref)
     #don't forget to define global refer_curs'
     refer_curs.extend(cur_cursors)
-
-def getDeclarationCursorUSR(cursor):
-    assert(isinstance(cursor, Cursor))
-    decCursor = conf.lib.clang_getCursorReferenced(cursor)
-    if isinstance(decCursor, Cursor):
-        return decCursor.get_usr()
-    return None
 
 '''Convert list of Cursors to dict'''
 def removeFakeByUSR(cursors, tarUSR):
@@ -107,7 +123,10 @@ def removeFakeByUSR(cursors, tarUSR):
         
         #FIXME:template class and template function; its declaration USR is different from USR after template instantiations, such as call, template speciallization 
         if curUSR == tarUSR:
-            curs_dic["%s, %s, %s"%(os.path.abspath(cur.location.file.name), cur.location.line, cur.location.column)] = cur
+            curs_dic["%s%s%s"%(\
+                    os.path.abspath(cur.location.file.name), \
+                    cur.location.line, cur.location.column)] = cur
+    sorted(curs_dic.items())
 
     return curs_dic.values()
 
@@ -131,9 +150,6 @@ def main():
     for opt, value in opts:
         if opt in ("-h", "--help"):
             usage()
-            sys.exit(0)
-        if opt in ("-v", "--version"):
-            version()
             sys.exit(0)
         if opt in ("-f"):
             sourceFileName = value
@@ -189,33 +205,27 @@ def main():
             outputFileName = tmpOutFile
      
 #get target reference info
-    tuSource = TranslationUnit.from_source(os.path.abspath(sourceFileName), ["-std=c++11"])
+    tuSource = get_tu(os.path.abspath(sourceFileName))
     assert(isinstance(tuSource, TranslationUnit))
 
-    hasDiagnostics = False
-    for diag in tuSource.diagnostics:
-        hasDiagnostics = True
-        print diag
-
-    if hasDiagnostics == True:
-        os.sys.exit(-1)
+    if frutil.checkDiagnostics(tuSource.diagnostics):
+        print "Warning : file %s, diagnostics occurs, parse result may be incorrect!"%sourceFileName
 
     tarCursor = frutil.getCursorForLocation(tuSource, refName, line, column)
     if not tarCursor:
         print "Error : Can't get source cursor, please check file:%s, name:%s, line:%s, column:%s info"%(sourceFileName, refName, line, column)
         sys.exit(-1)
-    assert(isinstance(tarCursor, Cursor))
-
     refUSR = getDeclarationCursorUSR(tarCursor)
     
-    frutil.scanDirParseFiles(tarDir, parseFileCB, refName)
-
+#parse input directory
+    frutil.scanDirParseFiles(tarDir, partial(parseFileCB, ref = refName))
     final_output = removeFakeByUSR(refer_curs, refUSR)
 
+#output result
     if outputFileName:
-        writeToFile(final_output, outputFileName)
+        writeToFile(tarCursor, final_output, outputFileName)
     else:
-        printToCmd(final_output)
+        printToCmd(tarCursor, final_output)
 
 if __name__ == "__main__":
     main()
