@@ -31,6 +31,7 @@ if __name__ == '__main__':
         parser.error('invalid number arguments')
 
     tu = TranslationUnit.from_source(args[0], ['-std=c++11'])
+
     if not tu:
         parser.error("unable to load input")
 
