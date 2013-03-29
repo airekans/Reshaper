@@ -1,3 +1,6 @@
+#ifndef _HEADER_H_
+#define _HEADER_H_
+
 class ClassInHeader
 {
 public:
@@ -9,3 +12,7 @@ public:
 private:
     int m_data;
 };
+
+
+#endif /* _HEADER_H_ */
+

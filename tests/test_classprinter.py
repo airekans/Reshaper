@@ -1,5 +1,5 @@
-from classprinter import ClassPrinter
-from util import get_cursors_if
+from reshaper.classprinter import ClassPrinter
+from reshaper.util import get_cursors_if
 from clang.cindex import TranslationUnit
 from clang.cindex import CursorKind
 import os
@@ -7,7 +7,7 @@ import os
 INPUT_DIR = os.path.join(os.path.dirname(__file__), 'test_data')
 
 
-def test_ClassPrinter():
+def test_get_definition():
     expected_class = \
 """class A
 {

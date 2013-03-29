@@ -39,3 +39,4 @@ htmlcov
 .project
 .pydevproject
 .ropeproject
+.emacs-project
