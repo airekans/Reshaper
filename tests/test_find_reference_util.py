@@ -1,9 +1,14 @@
-from clang.cindex import *
+'''test_find_reference.py -- unittest for find_reference_util.py
+'''
+
+from clang.cindex import TranslationUnit
+from clang.cindex import Cursor
+from clang.cindex import CursorKind
+from nose.tools import eq_
 import reshaper.find_reference_util as fr_util
 
-'test_find_reference.py -- unittest for find_reference_util.py'
 
-kInput = """\
+parent_calling_func_test_input = """\
 void TargetFunc()
 {
 }
@@ -21,7 +26,7 @@ void Call_CallMe()
 }
 """
 
-decSemParInput = """\
+declaration_test_input = """\
 class TestClass
 {
 public:
@@ -58,8 +63,9 @@ void CallFunc()
 }
 """
 
-#copy it from util.py, just for test
-def get_tu_from_text(source, lang='cpp'):
+def get_tu_from_text(source):
+    '''copy it from util.py, just for test
+    '''
     name = 't.cpp'
     args = []
     args.append('-std=c++11')
@@ -67,58 +73,70 @@ def get_tu_from_text(source, lang='cpp'):
     return TranslationUnit.from_source(name, args, unsaved_files=[(name,
                                        source)])
 
+def has_child_test(cursor, is_translation_unit):
+    '''called by test_get_cursors_add_parent to 
+    test if having got the corrent parent
+    '''
+    assert(isinstance(cursor, Cursor))
 
-def test_getCursorsWithParent():
-    tu = get_tu_from_text(kInput, 'cpp')
+    has_child = False
+    children = None
+
+    if is_translation_unit:
+        assert(isinstance(cursor.parent, TranslationUnit))
+        children = cursor.parent.cursor.get_children()
+    else:
+        assert(isinstance(cursor.parent, Cursor))
+        children = cursor.parent.get_children()
+
+    for child in children:
+        if child == cursor:
+            has_child = True
+    assert(has_child)
+
+
+
+def test_get_cursors_add_parent():
+    '''test get_cursors_add_parent
+    '''
+    tu = get_tu_from_text(parent_calling_func_test_input)
     assert(isinstance(tu, TranslationUnit))
     spelling = "TargetFunc"
-    cursors = fr_util.getCursorsWithParent(tu, spelling)
+    cursors = fr_util.get_cursors_add_parent(tu, spelling)
     for cursor in cursors:
         assert(isinstance(cursor, Cursor))
-        if cursor.location.line == 1:
-            assert(isinstance(cursor.parent, TranslationUnit))
-            hasChild = False
-            children = cursor.parent.cursor.get_children()
-            for ch in children:
-                if ch == cursor:
-                    hasChild = True
-            assert(hasChild)
+        has_child_test(cursor, cursor.location.line == 1)
 
-        else:
-            assert(isinstance(cursor.parent, Cursor))
-            hasChild = False
-            children = cursor.parent.get_children()
-            for ch in children:
-                if ch == cursor:
-                    hasChild = True
-            assert(hasChild)
-
-def test_getCursorForLocation():
-    tu = get_tu_from_text(kInput, 'cpp')
+def test_get_cursor_with_location():
+    '''test get_cursor_with_location
+    '''
+    tu = get_tu_from_text(parent_calling_func_test_input)
     assert(isinstance(tu, TranslationUnit))
     spelling = "testVariable"
-    cursor1 = fr_util.getCursorForLocation(tu, spelling, 1, None)
+    cursor1 = fr_util.get_cursor_with_location(tu, spelling, 1, None)
     assert(not cursor1)
-    cursor2 = fr_util.getCursorForLocation(tu, spelling, 4, 10)
+    cursor2 = fr_util.get_cursor_with_location(tu, spelling, 4, 10)
     assert(not cursor2)
-    cursor3 = fr_util.getCursorForLocation(tu, spelling, 12, None)
+    cursor3 = fr_util.get_cursor_with_location(tu, spelling, 12, None)
     assert(isinstance(cursor3, Cursor))
-    assert(cursor3.location.line == 12)
-    assert(cursor3.location.column == 25)
-    cursor4 = fr_util.getCursorForLocation(tu, spelling, 12, 41)
+    eq_(cursor3.location.line, 12)
+    eq_(cursor3.location.column, 25)
+    cursor4 = fr_util.get_cursor_with_location(tu, spelling, 12, 41)
     assert(isinstance(cursor4, Cursor))
-    assert(cursor4.location.line == 12)
-    assert(cursor4.location.column == 41)
+    eq_(cursor4.location.line, 12)
+    eq_(cursor4.location.column, 41)
 
-#should make sure that cursor already have parent attr
-def test_getCallFunc():
-    tu = get_tu_from_text(kInput, 'cpp')
+def test_get_calling_function():
+    '''test get_cursor_with_location
+    Attention: should make sure cursors have parent attr 
+    '''
+    tu = get_tu_from_text(parent_calling_func_test_input)
     assert(isinstance(tu, TranslationUnit))
     spelling = "TargetFunc"
-    cursors = fr_util.getCursorsWithParent(tu, spelling)
+    cursors = fr_util.get_cursors_add_parent(tu, spelling)
     for cur in cursors:
         assert(isinstance(cur, Cursor))
-        parent = fr_util.getCallFunc(cur)
+        parent = fr_util.get_calling_function(cur)
         if cur.location.line == 1:
             assert(not parent)
         elif cur.location.line == 7:
@@ -129,65 +147,70 @@ def test_getCallFunc():
             assert(str("Call_CallMe") in parent.displayname)
 
 def get_decla_tu():
-    tu = get_tu_from_text(decSemParInput , 'cpp')
+    '''get tu for declaration tests
+    '''
+    tu = get_tu_from_text(declaration_test_input)
     assert(isinstance(tu, TranslationUnit))
     return tu
 
-def test_getDeclareationCursor_getDeclSemanticParent_class():
+def test_get_declaration_cursor_class():
+    '''use to test get_declaration_cursor and 
+    get_semantic_parent_of_decla_cursor of class member function
+    '''
+
     tu = get_decla_tu()
     spelling = "classFunc"
-    curClass = fr_util.getCursorForLocation(tu, spelling, 30, None)
+    curClass = fr_util.get_cursor_with_location(tu, spelling, 30, None)
     assert(isinstance(curClass, Cursor))
-    decCur = fr_util.getDeclarationCursor(curClass)
-    assert(decCur.location.line == 4)
-    assert(decCur.kind == CursorKind.CXX_METHOD)
-    semaParent = fr_util.getDeclSemanticParent(curClass)
-    assert(semaParent == decCur.semantic_parent)
-    assert(semaParent.kind == CursorKind.CLASS_DECL)
+    decla_cursor = fr_util.get_declaration_cursor(curClass)
+    eq_(decla_cursor.location.line, 4)
+    eq_(decla_cursor.kind, CursorKind.CXX_METHOD)
+    seman_parent = fr_util.get_semantic_parent_of_decla_cursor(curClass)
+    eq_(seman_parent, decla_cursor.semantic_parent)
+    eq_(seman_parent.kind, CursorKind.CLASS_DECL)
 
-def test_getDeclareationCursor_getDeclSemanticParent_namespace():
+def test_get_declaration_cursor_namespace():
+    '''use to test get_declaration_cursor and 
+    get_semantic_parent_of_decla_cursor of namespace function
+    '''
     tu = get_decla_tu()
     spelling = "nameFunc"
-    cur = fr_util.getCursorForLocation(tu, spelling, 31, None)
+    cur = fr_util.get_cursor_with_location(tu, spelling, 31, None)
     assert(isinstance(cur, Cursor))
-    decCur = fr_util.getDeclarationCursor(cur)
-    assert(decCur.location.line == 11)
-    assert(decCur.kind == CursorKind.FUNCTION_DECL)
-    semaParent = fr_util.getDeclSemanticParent(cur)
-    assert(semaParent == decCur.semantic_parent)
-    assert(semaParent.kind == CursorKind.NAMESPACE)
+    decla_cursor = fr_util.get_declaration_cursor(cur)
+    eq_(decla_cursor.location.line, 11)
+    eq_(decla_cursor.kind, CursorKind.FUNCTION_DECL)
+    seman_parent = fr_util.get_semantic_parent_of_decla_cursor(cur)
+    eq_(seman_parent, decla_cursor.semantic_parent)
+    eq_(seman_parent.kind, CursorKind.NAMESPACE)
 
-def test_getDeclareationCursor_getDeclSemanticParent_anamespace():
+def test_get_declaration_cursor_annoy_namespace():
+    '''use to test get_declaration_cursor and 
+    get_semantic_parent_of_decla_cursor of annoymouse namespace function
+    '''
     tu = get_decla_tu()
     spelling = "annoyNameFunc"
-    cur = fr_util.getCursorForLocation(tu, spelling, 32, None)
+    cur = fr_util.get_cursor_with_location(tu, spelling, 32, None)
     assert(isinstance(cur, Cursor))
-    decCur = fr_util.getDeclarationCursor(cur)
-    assert(decCur.location.line == 18)
-    assert(decCur.kind == CursorKind.FUNCTION_DECL)
-    semaParent = fr_util.getDeclSemanticParent(cur)
-    assert(semaParent == decCur.semantic_parent)
-    assert(semaParent.kind == CursorKind.NAMESPACE)
+    decla_cursor = fr_util.get_declaration_cursor(cur)
+    eq_(decla_cursor.location.line, 18)
+    eq_(decla_cursor.kind, CursorKind.FUNCTION_DECL)
+    seman_parent = fr_util.get_semantic_parent_of_decla_cursor(cur)
+    eq_(seman_parent, decla_cursor.semantic_parent)
+    eq_(seman_parent.kind, CursorKind.NAMESPACE)
 
-def test_getDeclareationCursor_getDeclSemanticParent_global():
+def test_get_declaration_cursor_global_func():
+    '''use to test get_declaration_cursor and 
+    get_semantic_parent_of_decla_cursor of global function
+    '''
     tu = get_decla_tu()
     spelling = "GlobalFunc"
-    cur = fr_util.getCursorForLocation(tu, spelling, 33, None)
+    cur = fr_util.get_cursor_with_location(tu, spelling, 33, None)
     assert(isinstance(cur, Cursor))
-    decCur = fr_util.getDeclarationCursor(cur)
-    assert(decCur.location.line == 23)
-    assert(decCur.kind == CursorKind.FUNCTION_DECL)
-    semaParent = fr_util.getDeclSemanticParent(cur)
-    assert(semaParent == decCur.semantic_parent)
-    assert(semaParent.kind == CursorKind.TRANSLATION_UNIT)
+    decla_cursor = fr_util.get_declaration_cursor(cur)
+    eq_(decla_cursor.location.line, 23)
+    eq_(decla_cursor.kind, CursorKind.FUNCTION_DECL)
+    seman_parent = fr_util.get_semantic_parent_of_decla_cursor(cur)
+    eq_(seman_parent, decla_cursor.semantic_parent)
+    eq_(seman_parent.kind, CursorKind.TRANSLATION_UNIT)
 
-
-
-if __name__ == "__main__":
-    test_getCursorsWithParent()
-    test_getCursorForLocation()
-    test_getCallFunc()
-    test_getDeclareationCursor_getDeclSemanticParent_class()
-    test_getDeclareationCursor_getDeclSemanticParent_namespace()
-    test_getDeclareationCursor_getDeclSemanticParent_anamespace()
-    test_getDeclareationCursor_getDeclSemanticParent_global()
