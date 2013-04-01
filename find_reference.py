@@ -175,12 +175,12 @@ def main():
         sys.exit(-1)
 
     if refName is None:
-        print "please input referce name"
+        print "please input reference name"
         usage()
         sys.exit(-1)
 
     if line is None:
-        print "please input referce line No."
+        print "please input reference line No."
         usage()
         sys.exit(-1)
     line = int(line)
