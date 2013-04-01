@@ -73,7 +73,7 @@ def get_tu_from_text(source):
     return TranslationUnit.from_source(name, args, unsaved_files=[(name,
                                        source)])
 
-def has_child_test(cursor, is_translation_unit):
+def has_child(cursor, is_translation_unit):
     '''called by test_get_cursors_add_parent to 
     test if having got the corrent parent
     '''
@@ -105,7 +105,7 @@ def test_get_cursors_add_parent():
     cursors = fr_util.get_cursors_add_parent(tu, spelling)
     for cursor in cursors:
         assert(isinstance(cursor, Cursor))
-        has_child_test(cursor, cursor.location.line == 1)
+        has_child(cursor, cursor.location.line == 1)
 
 def test_get_cursor_with_location():
     '''test get_cursor_with_location
