@@ -152,7 +152,7 @@ def main():
     options, args = parse_options()
 
     #check input args
-    if not os.path.isfile(options.filename):
+    if options.filename is None or not os.path.isfile(options.filename):
         print "file %s is not exists, please check it!" % options.filename
         sys.exit(-1)
 
@@ -170,7 +170,7 @@ def main():
                 % (options.filename, options.line)
 
     if options.output_file_name is not None\
-            and not os.path.isfile(options.outputFile):
+            and not os.path.isfile(options.output_file_name):
         tmp_output_file = os.path.join(os.path.dirname(__file__), \
                 "referenceResult.txt")
         print "Warning : output_file_name %s don't exists" \
