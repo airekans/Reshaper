@@ -1,9 +1,11 @@
 # This file provides common utility functions for the test suite.
 
 from clang.cindex import Cursor
+from clang.cindex import CursorKind
 from clang.cindex import TranslationUnit
 import ConfigParser
 import os
+from functools import partial
 
 def get_tu(source, all_warnings=False):
     """Obtain a translation unit from source and language.
@@ -102,6 +104,30 @@ def get_cursors_if(source, f):
         cursors.extend(get_cursors_if(child, f))
 
     return cursors
+
+def get_cursor_with_location(tu, spelling, line, column = None):
+    '''Get specific cursor by line and column
+    '''
+    def check_cursor_spelling_displayname(cursor, spelling):
+        if cursor.is_definition() and cursor.spelling == spelling:
+                return True
+        elif spelling in cursor.displayname:
+                return True
+        return False
+
+    alternate_cursors = get_cursors_if(tu, partial(check_cursor_spelling_displayname, spelling = spelling))
+    for cursor in alternate_cursors:
+        if cursor.kind == CursorKind.CALL_EXPR and \
+                len(list(cursor.get_children())) > 0:
+            continue
+        if column is not None:
+            if cursor.location.line == line and \
+                    cursor.location.column == column:
+                return cursor
+        else:
+            if cursor.location.line == line:
+                return cursor
+    return None
 
 def walk_ast(source, f):
     """walk the ast with the specified function
