@@ -116,10 +116,12 @@ def test_get_cursor_with_location():
     assert(not cursor2)
     cursor3 = get_cursor_with_location(tu, spelling, 12, None)
     assert(isinstance(cursor3, Cursor))
+    assert(spelling in cursor3.displayname)
     eq_(cursor3.location.line, 12)
     eq_(cursor3.location.column, 25)
     cursor4 = get_cursor_with_location(tu, spelling, 12, 41)
     assert(isinstance(cursor4, Cursor))
+    assert(spelling in cursor4.displayname)
     eq_(cursor4.location.line, 12)
     eq_(cursor4.location.column, 41)
 
