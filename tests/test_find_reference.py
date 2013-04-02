@@ -2,8 +2,8 @@
 
 from clang.cindex import  TranslationUnit
 from clang.cindex import  Cursor
-from reshaper.find_reference_util import get_cursor_with_location
-from reshaper.find_reference_util import get_cursors_add_parent
+from reshaper.util import get_cursor_with_location
+from reshaper.semantic import get_cursors_add_parent
 from nose.tools import eq_
 import find_reference as fr
 
