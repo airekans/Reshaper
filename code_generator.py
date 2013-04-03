@@ -50,9 +50,9 @@ def get_member_vars_from_cursor(cursor,class_name):
         return get_member_vars_from_children(cursor.get_children())
     else:
         for child in cursor.get_children():
-            member_vars = get_member_vars_from_cursor(child,class_name)
-            if(member_vars is not None):
-                return member_vars
+            [member_vars_non_pt, member_vars_pt] = get_member_vars_from_cursor(child,class_name)
+            if(member_vars_non_pt or member_vars_pt):
+                return [member_vars_non_pt, member_vars_pt]
     return None
 
 
@@ -61,7 +61,7 @@ def get_member_variables(header_file,class_name):
     tu = index.parse(header_file,args=['-x', 'c++'])
     if not tu:
         raise('Cannot open header file %' % header_file)
-    return get_member_vars_from_cursor(tu.cursor,class_name)
+    return [get_member_vars_from_cursor(tu.cursor,class_name), [] ]
 
 
 def generate_code(header_file,class_name):
@@ -77,6 +77,3 @@ def generate_code(header_file,class_name):
 
 
 
-if __name__ == "__main__":
-    #import sys;sys.argv = ['', 'Test.testName']
-    unittest.main()
