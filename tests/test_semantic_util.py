@@ -7,8 +7,6 @@ from clang.cindex import CursorKind
 from nose.tools import eq_
 import reshaper.semantic as semantic_util
 from reshaper.util import get_cursor_with_location
-from reshaper.find_reference_util import filter_cursors_by_usr
-
 
 parent_calling_func_test_input = """\
 void TargetFunc()
@@ -62,31 +60,6 @@ void CallFunc()
    TestName::nameFunc();
    ::annoyNameFunc();
    GlobalFunc();
-}
-"""
-
-filter_usr_test_input = """\
-class TestClass
-{
-public:
-    void TargetFunc()
-    {
-    }
-}
-
-namespace TestNS
-{
-    void TargetFunc()
-    {
-    }
-}
-
-void CallFunc()
-{
-    TestClass *pTC = new TestClass();
-    pTC->TargetFunc();
-
-    TestNS::TargetFunc();
 }
 """
 
@@ -239,21 +212,4 @@ def test_get_declaration_cursor_global_func():
     eq_(seman_parent, decla_cursor.semantic_parent)
     eq_(seman_parent.kind, CursorKind.TRANSLATION_UNIT)
 
-def test_filter_cursurs_by_usr():
-    '''test function filter_cursors_by_usr
-    '''
-    tu = get_tu_from_text(filter_usr_test_input)
-    assert(isinstance(tu, TranslationUnit))
-    spelling = "TargetFunc"
-    target_cursor = get_cursor_with_location(tu, spelling, 4, None)
-    assert(isinstance(target_cursor, Cursor))
-    target_usr = target_cursor.get_usr()
-
-    candidate_curs = semantic_util.get_cursors_add_parent(tu, spelling)
-
-    assert(len(candidate_curs) > 2)
-    final_curs = filter_cursors_by_usr(candidate_curs, target_usr)
-    eq_(len(final_curs), 2)
-    eq_(final_curs[0].location.line, 19)
-    eq_(final_curs[1].location.line, 4)
 
