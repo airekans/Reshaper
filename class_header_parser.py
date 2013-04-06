@@ -5,7 +5,7 @@ def enum(**enums):
 AccesssAttr = enum(PUBLIC=1, PROTECTED=2, PRIVATE=3)
 
 class MemberVar(object):
-    def __int__(self):
+    def __init__(self):
         self.type = ''
         self.is_pointer = False
         self.is_static = False
@@ -18,4 +18,3 @@ class ClassInfo(object):
         self.member_vars = []
         self.member_functions = []
         
-    def Get

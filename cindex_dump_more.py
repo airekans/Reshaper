@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 #===- cindex-dump.py - cindex/Python Source Dump -------------*- python -*--===#
 #
 #                     The LLVM Compiler Infrastructure
@@ -14,6 +12,8 @@ A simple command line tool for dumping a source file using the Clang Index
 Library.
 """
 
+import os
+
 def get_diag_info(diag):
     return { 'severity' : diag.severity,
              'location' : diag.location,
@@ -21,27 +21,12 @@ def get_diag_info(diag):
              'ranges' : diag.ranges,
              'fixits' : diag.fixits }
 
-def get_cursor_id(cursor, cursor_list = []):
-    if not opts.showIDs:
-        return None
-
-    if cursor is None:
-        return None
-
-    # FIXME: This is really slow. It would be nice if the index API exposed
-    # something that let us hash cursors.
-    for i,c in enumerate(cursor_list):
-        if cursor == c:
-            return i
-    cursor_list.append(cursor)
-    return len(cursor_list) - 1
 
 
 
-def get_info(node, recurssive = True):
-    if recurssive and node.kind.is_reference():
-        return get_info(node.referenced, False)
-    
+
+def get_info(node, recurssive=True):
+       
     if not recurssive:
         children = None
     else:
@@ -49,8 +34,8 @@ def get_info(node, recurssive = True):
                     for c in node.get_children()]
     return { 
              'kind' : node.kind,
-             'type' : node.type.kind, 
-             'spelling' : node.spelling,
+             'type' : node.type.kind,
+             'name' : node.displayname,
              'location' : node.location,
              'children' : children
             }
@@ -59,31 +44,31 @@ def main():
     from clang.cindex import Index
     from pprint import pprint
 
-    from optparse import OptionParser, OptionGroup
-
+    from optparse import OptionParser
     global opts
 
-    parser = OptionParser("usage: %prog [options] {filename} [clang-args*]")
-    parser.add_option("", "--show-ids", dest="showIDs",
-                      help="Don't compute cursor IDs (very slow)",
-                      default=False)
-    parser.add_option("", "--max-depth", dest="maxDepth",
-                      help="Limit cursor expansion to depth N",
-                      metavar="N", type=int, default=None)
+    parser = OptionParser("usage: %prog {filename} ]")
+    
     parser.disable_interspersed_args()
     (opts, args) = parser.parse_args()
 
     if len(args) == 0:
-        parser.error('invalid number arguments')
-
+        filepath =  os.path.join(os.path.dirname(__file__), \
+                                 './test/test_data/test.h')
+    else:
+        filepath = args[0]
+   
     index = Index.create()
-    tu = index.parse(None, args)
+    
+    
+    print filepath
+    
+    tu = index.parse(filepath, args=['-x', 'c++'])
     if not tu:
         parser.error("unable to load input")
 
-    pprint(('diags', map(get_diag_info, tu.diagnostics)))
+    #pprint(('diags', map(get_diag_info, tu.diagnostics)))
     pprint(('nodes', get_info(tu.cursor)))
 
 if __name__ == '__main__':
     main()
-
