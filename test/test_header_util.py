@@ -30,8 +30,8 @@ class Test(unittest.TestCase):
         non_pt_members = hu.non_static_nonpt_var_names(cursor)
         self.assertEqual(['m_d', 'm_i1', 'm_i2', 'm_i3', 'm_i4', 'm_s1', 'm_x'],
                          non_pt_members)
-#         pointer_vars = hu.pt_mbvar_names(cursor)
-#         self.assertEqual(['fff'], pointer_vars)
+        pointer_vars = hu.non_static_pt_var_names(cursor)
+        self.assertEqual(['m_p1','m_p2'], pointer_vars)
 
 if __name__ == "__main__":
     unittest.main()

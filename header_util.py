@@ -62,11 +62,12 @@ def non_static_nonpt_var_names(cursor):
     return get_children_attrs(cursor, keep_func)
    
 
-# def pt_mbvar_names(cursor):
-#     '''
-#     get names of all pointers type member variables from a class cursor
-#     '''
-#     return get_mb_var_names(cursor, is_pt_type)
+def non_static_pt_var_names(cursor):
+    '''get names of all pointers type member variables\
+    from a class cursor
+    '''
+    keep_func = lambda c: is_non_static_var(c) and is_pt_type(c)
+    return get_children_attrs(cursor, keep_func)
 
 
 
