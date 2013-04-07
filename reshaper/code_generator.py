@@ -3,10 +3,8 @@ Created on 2013-2-19
 
 @author: liangzhao
 '''
-from clang.cindex import Index, CursorKind, TypeKind
 
-
-serialize_template = '''\
+SERIALIZE_TEMPLATE = '''\
 template<class Archive>
 void serialize(Archive & ar, const unsigned int version)
 {
@@ -22,7 +20,7 @@ void serialize(Archive & ar, const unsigned int version)
 }\
 '''
 
-eq_template = '''\
+EQ_TEMPLATE = '''\
 friend bool operator == (const {{ class_name }} & a, const {{ class_name }}  & b)
 { 
           return ( 
@@ -36,12 +34,16 @@ friend bool operator == (const {{ class_name }} & a, const {{ class_name }}  & b
 }\
 '''
 
+import reshaper.header_util as hu
 
-import header_util as hu
-
-def do_generate_code(header_path, class_name, code_template):
-    tu = hu.parse(header_path)
-    cursor = hu.get_class_decl_cursor(tu.cursor, class_name)
+def do_generate_code_with_member_var(header_path,
+                                      class_name, 
+                                      code_template):
+    '''
+    generate code for a class with member variables
+    '''
+    tu_ = hu.parse(header_path)
+    cursor = hu.get_class_decl_cursor(tu_.cursor, class_name)
     nonpt_member_vars = hu.non_static_nonpt_var_names(cursor)
     pt_member_vars = hu.non_static_pt_var_names(cursor)
     from jinja2 import Template
@@ -52,8 +54,12 @@ def do_generate_code(header_path, class_name, code_template):
                            pt_member_vars = pt_member_vars)
 
 def generate_serialize_code(header_path, class_name):
-    return do_generate_code(header_path, class_name, serialize_template)
+    return do_generate_code_with_member_var(header_path,
+                                             class_name, 
+                                             SERIALIZE_TEMPLATE)
 
 def generate_eq_op_code(header_path, class_name):
-    return do_generate_code(header_path, class_name, eq_template)
+    return do_generate_code_with_member_var(header_path, 
+                                            class_name, 
+                                            EQ_TEMPLATE)
 

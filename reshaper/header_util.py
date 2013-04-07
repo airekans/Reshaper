@@ -55,6 +55,7 @@ def get_children_attrs(cursor, keep_func,
 def non_static_var_names(cursor):
     return get_children_attrs(cursor, is_non_static_var) 
 
+
 def non_static_nonpt_var_names(cursor):  
     '''get names of all member variables \
     of non-pointer type from a class cursor'''

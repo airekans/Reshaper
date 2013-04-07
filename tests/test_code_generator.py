@@ -3,9 +3,8 @@ Created on 2013-3-5
 
 @author: liangzhao
 '''
-import code_generator as cg 
+import reshaper.code_generator as cg 
 import os
-from pprint import pprint
 
 TEST_HEADER_FILE = os.path.join(os.path.dirname(__file__), './test_data/test.h')
 
@@ -51,11 +50,10 @@ friend bool operator == (const A & a, const A  & b)
                   true);
 }\
 '''        
-        code = cg.generate_eq_op_code(TEST_HEADER_FILE, 'A')                         
+        code = cg.generate_eq_op_code(TEST_HEADER_FILE, \
+                                      'A')                         
         self.assertEqual( expected_code, code)
         
         
-import unittest
 if __name__ == "__main__":
-    #import sys;sys.argv = ['', 'Test.testName']
     unittest.main()

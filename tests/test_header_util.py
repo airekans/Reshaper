@@ -5,7 +5,7 @@ Created on Apr 4, 2013
 '''
 import unittest
 import os
-import header_util as hu
+import reshaper.header_util as hu
 from clang.cindex import CursorKind
 
 class Test(unittest.TestCase):
@@ -30,7 +30,7 @@ class Test(unittest.TestCase):
         self.assertEqual(['m_d', 'm_i1', 'm_i2', 'm_i3', 'm_i4', 'm_s1', 'm_x'],
                          non_pt_members)
         pointer_vars = hu.non_static_pt_var_names(cursor)
-        self.assertEqual(['m_p1','m_p2','m_p3'], pointer_vars)
+        self.assertEqual(['m_p1', 'm_p2', 'm_p3'], pointer_vars)
 
 if __name__ == "__main__":
     unittest.main()
