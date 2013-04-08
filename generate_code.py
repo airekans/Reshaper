@@ -7,7 +7,6 @@ Created on Apr 7, 2013
 from reshaper import code_generator as cg
 from optparse import OptionParser 
 
-
 def set_all_true_if_no_option(opts):
     '''
     if no option set, take all options as true
