@@ -1,4 +1,4 @@
-from reshaper.util import get_tu, get_cursors_if
+from reshaper.util import get_tu, get_cursors_if, get_cursor
 from reshaper.util import walk_ast, get_function_signature
 from clang.cindex import CursorKind
 import os
@@ -62,6 +62,7 @@ def test_walk_ast():
     def namespace():
         pass
     namespace.node_count = 0
+
     def count_level_node(_, level, expected_level = 0):
         if level == expected_level:
             namespace.node_count += 1
@@ -69,12 +70,13 @@ def test_walk_ast():
     walk_ast(tu, count_level_node)
     eq_(1, namespace.node_count)
 
+    cursor_A = get_cursor(tu, 'A')
     namespace.node_count = 0
-    walk_ast(tu, partial(count_level_node, expected_level = 1))
-    eq_(6, namespace.node_count)
+    walk_ast(cursor_A, partial(count_level_node, expected_level = 1))
+    eq_(14, namespace.node_count)
 
     namespace.node_count = 0
-    walk_ast(tu, partial(count_level_node, expected_level = 2))
+    walk_ast(cursor_A, partial(count_level_node, expected_level = 2))
     eq_(20, namespace.node_count)
     
 @with_setup(setup)
