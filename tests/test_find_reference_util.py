@@ -44,19 +44,20 @@ def get_tu_from_text(source):
 
     return TranslationUnit.from_source(name, args, unsaved_files=[(name,
                                        source)])
+
 def test_filter_cursurs_by_usr():
     '''test function filter_cursors_by_usr
     '''
     tu = get_tu_from_text(filter_usr_test_input)
     assert(isinstance(tu, TranslationUnit))
     spelling = "TargetFunc"
-    target_cursor = get_cursor_with_location(tu, spelling, 4, None)
+    target_cursor = get_cursor_with_location(tu, spelling, 4)
     assert(isinstance(target_cursor, Cursor))
     target_usr = target_cursor.get_usr()
 
     candidate_curs = get_cursors_add_parent(tu, spelling)
 
-    assert(len(candidate_curs) > 2)
+    eq_(len(candidate_curs), 7)
     final_curs = filter_cursors_by_usr(candidate_curs, target_usr)
     eq_(len(final_curs), 2)
     eq_(final_curs[0].location.line, 19)
