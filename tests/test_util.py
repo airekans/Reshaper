@@ -1,4 +1,4 @@
-from reshaper.util import get_tu, get_cursors_if
+from reshaper.util import get_tu, get_cursors_if, get_cursor
 from reshaper.util import walk_ast, get_function_signature
 from clang.cindex import CursorKind
 import os
@@ -59,8 +59,10 @@ def test_get_cursors_if():
 
 @with_setup(setup)
 def test_walk_ast():
-    def namespace(): pass
+    def namespace():
+        pass
     namespace.node_count = 0
+
     def count_level_node(_, level, expected_level = 0):
         if level == expected_level:
             namespace.node_count += 1
@@ -68,13 +70,14 @@ def test_walk_ast():
     walk_ast(tu, count_level_node)
     eq_(1, namespace.node_count)
 
+    cursor_A = get_cursor(tu, 'A')
     namespace.node_count = 0
-    walk_ast(tu, partial(count_level_node, expected_level = 1))
-    eq_(6, namespace.node_count)
+    walk_ast(cursor_A, partial(count_level_node, expected_level = 1))
+    eq_(14, namespace.node_count)
 
     namespace.node_count = 0
-    walk_ast(tu, partial(count_level_node, expected_level = 2))
-    eq_(19, namespace.node_count)
+    walk_ast(cursor_A, partial(count_level_node, expected_level = 2))
+    eq_(20, namespace.node_count)
     
 @with_setup(setup)
 def test_get_function_signature_with_fun_no_params():
@@ -117,5 +120,30 @@ def test_get_function_signature_with_complex_return_type_fun():
                               c.spelling == 'return_fun_fun'))
     eq_(1, len(methods))
     eq_(expected_fun_sig, get_function_signature(methods[0]))
+
+@with_setup(setup)
+def test_get_function_signature_with_multiline_function():
+    expected_fun_sig = \
+"""static bool static_multiline_fun(
+     const int i,
+     const double d)"""
     
+    methods = get_cursors_if(tu,
+                             (lambda c: c.kind == CursorKind.CXX_METHOD and
+                              c.spelling == 'static_multiline_fun'))
+    eq_(1, len(methods))
+    eq_(expected_fun_sig, get_function_signature(methods[0]))
+
+
+@with_setup(setup)
+def test_get_function_signature_with_error_cursor():
+    # create a cursor return 0 token
+    methods = get_cursors_if(tu,
+                             (lambda c: c.kind == CursorKind.CXX_METHOD and
+                              c.spelling == 'foo'))
+    eq_(1, len(methods))
+    
+    method_cursor = methods[0]
+    method_cursor.get_tokens = lambda : []
+    eq_("", get_function_signature(method_cursor))
     

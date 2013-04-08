@@ -25,6 +25,9 @@ public:
     virtual void virutal_fun(const double d);
     virtual void pure_virtual_fun(const int i) = 0;
     static void static_fun(int i);
+    static bool static_multiline_fun(
+         const int i,
+         const double d);
 
     template <typename T>
     void template_fun(const T& t)
