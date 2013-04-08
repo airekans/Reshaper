@@ -77,7 +77,7 @@ def test_walk_ast():
 
     namespace.node_count = 0
     walk_ast(cursor_A, partial(count_level_node, expected_level = 2))
-    eq_(20, namespace.node_count)
+    eq_(19, namespace.node_count)
     
 @with_setup(setup)
 def test_get_function_signature_with_fun_no_params():
