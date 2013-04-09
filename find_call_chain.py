@@ -1,16 +1,16 @@
 #!/usr/bin/env python
 
-"""find_call_chain.py -- find call chains of specific word \
+"""find_call_chain.py -- find call chains of specific word
 example: input  :C
          output  : A -> B -> C ; means A call B , B call C
 """
 
 import sys
 from clang.cindex import Cursor
-from clang.cindex import CursorKind
 from clang.cindex import TranslationUnit
 from reshaper.util import get_tu
 from reshaper.util import get_cursor_with_location
+from reshaper.util import get_full_qualified_name
 import reshaper.semantic as semantic_util
 from functools import partial
 from reshaper.find_reference_util import get_usr_of_declaration_cursor
@@ -21,24 +21,6 @@ from reshaper.find_reference_util import parse_find_reference_args
 _global_usr = []
 _output_file_contents = "digraph G{\n"
 _search_directory = None
-
-def get_cursor_info(cursor):
-    '''use to get semantic_parent.spelling :: cursor.spelling or displayname 
-    infomation of the input cursors;
-    for example: TestUSR::test_decla(int), MyNameSpace::test_defin(double)
-    or test_function(TestUSR&)
-    '''
-    seman_parent = semantic_util.get_semantic_parent_of_decla_cursor(cursor)
-    out_str = cursor.displayname
-    if out_str == None:
-        out_str = cursor.spelling
-
-    if seman_parent is not None and \
-            (seman_parent.kind == CursorKind.NAMESPACE or\
-            seman_parent.kind == CursorKind.CLASS_DECL):
-        return "%s::%s" % (seman_parent.spelling, out_str)
-    else:
-        return out_str
 
 def find_reference_update_output_contents(target_cursor):
     '''this function is used to find reference of the target_cursor,
@@ -62,12 +44,12 @@ def find_reference_update_output_contents(target_cursor):
             ref_curs = refer_curs))
     final_output = filter_cursors_by_usr(refer_curs, reference_usr)
 
-    target_info = get_cursor_info(target_cursor)
+    target_info = get_full_qualified_name(target_cursor)
 
     for cursor in final_output:
         calling_cursor = semantic_util.get_calling_function(cursor)
         if calling_cursor is not None:
-            calling_info = get_cursor_info(calling_cursor)
+            calling_info = get_full_qualified_name(calling_cursor)
             global _output_file_contents 
             _output_file_contents += "\"%s\" -> \"%s\";\n" % \
                     (calling_info, target_info)
