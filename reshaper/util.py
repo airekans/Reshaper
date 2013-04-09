@@ -112,7 +112,7 @@ def get_cursor_with_location(tu, spelling, line, column = None):
     return None
 
 def walk_ast(source, visitor, is_continue_fun = lambda _x, _y: True):
-    """walk the ast with the specified functions by DFS
+    """walk the ast with the specified functions by BFS
     
     Arguments:
     - `source`: 
@@ -129,20 +129,21 @@ def walk_ast(source, visitor, is_continue_fun = lambda _x, _y: True):
         # Assume TU
         cursor = source.cursor
 
-    def walk_ast_with_level(cursor, level):
-        if is_continue_fun(cursor, level):
+    cursor_queue = []
+        
+    def walk_ast_bfs():
+        while len(cursor_queue) > 0:
+            cursor, level = cursor_queue.pop(0)
+            if not is_continue_fun(cursor, level):
+                return 
+
             visitor(cursor, level)
-        else:
-            return False
-            
-        child_level = level + 1
-        for c in cursor.get_children():
-            if not walk_ast_with_level(c, child_level):
-                return False
 
-        return True
+            child_level = level + 1
+            cursor_queue.extend([(c, child_level) for c in cursor.get_children()])
 
-    walk_ast_with_level(cursor, 0)
+    cursor_queue.append((cursor, 0))
+    walk_ast_bfs()
 
 def get_function_signature(fun):
     """get the signature of the function given as a cursor node in the AST.
