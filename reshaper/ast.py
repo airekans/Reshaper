@@ -1,7 +1,7 @@
 ''' This module contains functions process the AST from cursor.
 '''
 
-from clang.cindex import TranslationUnit, Cursor
+from clang.cindex import Cursor
 
 
 def get_static_ast(source):
