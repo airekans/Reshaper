@@ -20,9 +20,8 @@ from reshaper.find_reference_util import parse_find_reference_args
 
 _global_usr = []
 _output_file_contents = "digraph G{\n"
-_search_directory = None
 
-def find_reference_update_output_contents(target_cursor):
+def find_reference_update_output_contents(target_cursor, search_directory):
     '''this function is used to find reference of the target_cursor,
     , format its infomation together with calling function info, which
     will be write to _output_file_contents
@@ -37,8 +36,7 @@ def find_reference_update_output_contents(target_cursor):
         spelling_value = (target_cursor.displayname.split('('))[0]
 
     refer_curs = []
-    global _search_directory
-    semantic_util.scan_dir_parse_files(_search_directory, \
+    semantic_util.scan_dir_parse_files(search_directory, \
             partial(get_cursors_with_name, \
             name = spelling_value, \
             ref_curs = refer_curs))
@@ -56,7 +54,7 @@ def find_reference_update_output_contents(target_cursor):
 
     return final_output
 
-def handle_output_result(iutput_cursors):
+def handle_output_result(iutput_cursors, search_directory):
     '''this function will recursively handle the calling function 
     cursors of the input_cursors list, which is not handled
     before (use _global_usr to judge if a cursor is handled already)
@@ -68,9 +66,9 @@ def handle_output_result(iutput_cursors):
             continue
         cur_usr = get_usr_of_declaration_cursor(calling_cursor)
         global _global_usr
-        if cur_usr not in set(_global_usr):
-            output_curs = find_reference_update_output_contents(calling_cursor)
-            handle_output_result(output_curs)
+        if cur_usr not in _global_usr:
+            output_curs = find_reference_update_output_contents(calling_cursor, search_directory)
+            handle_output_result(output_curs, search_directory)
 
 def output_to_file(file_name):
     '''write _output_file_contents to file
@@ -86,8 +84,6 @@ def main():
     '''
     output_file = "findCallChainResult.txt"
     options = parse_find_reference_args(output_file)
-    global _search_directory
-    _search_directory = options.directory
     tu_source = get_tu(options.filename)
     assert(isinstance(tu_source, TranslationUnit))
 
@@ -99,8 +95,8 @@ def main():
             options.spelling, \
             options.line, \
             options.column)
-    output_curs = find_reference_update_output_contents(target_cursor)
-    handle_output_result(output_curs)
+    output_curs = find_reference_update_output_contents(target_cursor, options.directory)
+    handle_output_result(output_curs, options.directory)
     global _output_file_contents
     _output_file_contents += "}\n"
 
