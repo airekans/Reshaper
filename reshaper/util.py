@@ -47,11 +47,23 @@ def get_cursor(source, spelling):
         else:
             return False
 
-    cursors = get_cursors_if(source, lambda c: c.spelling == spelling,
+    cursors = get_cursors_if(source, visit,
                              lambda _c, _l: not is_get_result[0])
 
     return cursors[0] if len(cursors) > 0 else None
- 
+
+def get_cursor_if(source, f):
+    """Obtain a cursor from a source object by a predicate function f.
+    If f(cursor) returns True, then the cursor is return.
+    If no cursor is found, returns None.
+    
+    Arguments:
+    - `source`: Cursor of 
+    - `f`:
+    """
+    pass
+    
+    
 def get_cursors(source, spelling):
     """Obtain all cursors from a source object with a specific spelling.
 
@@ -64,23 +76,26 @@ def get_cursors(source, spelling):
 
     return get_cursors_if(source, lambda c: c.spelling == spelling)
     
-def get_cursors_if(source, f, is_continue_fun = lambda _x, _y: True,
+def get_cursors_if(source, is_satisfied_fun,
+                   is_visit_subtree_fun = lambda _x, _y: True,
                    transform_fun = lambda c: c):
     """ Get cursors satisfying function f from cursor c.
     If no cursors are found, an empty list is returned.
     
     Arguments:
     - `source`: 
-    - `f`: predicate function user gives
+    - `is_satisfied_fun`: predicate function user gives
+    - `is_visit_subtree_fun`:
+    - `transform_fun`:
     """
 
     cursors = []
 
     def visit(cursor, _):
-        if f(cursor):
+        if is_satisfied_fun(cursor):
             cursors.append(transform_fun(cursor))
 
-    walk_ast(source, visit, is_continue_fun)
+    walk_ast(source, visit, is_visit_subtree_fun)
 
     return cursors
 
