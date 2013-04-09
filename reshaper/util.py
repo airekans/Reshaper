@@ -129,12 +129,14 @@ def get_cursor_with_location(tu, spelling, line, column = None):
                 return cursor
     return None
 
-def walk_ast(source, f):
+def walk_ast(source, visitor, is_continue_fun = lambda _: True):
     """walk the ast with the specified function
     
     Arguments:
     - `source`: 
-    - `f`: function used to visit the cursor
+    - `visitor`: function used to visit the cursor
+    - `is_continue_fun`: function used to determind whether
+         we should stop walking the AST
     """
 
     if source is None:
@@ -146,10 +148,17 @@ def walk_ast(source, f):
         cursor = source.cursor
 
     def walk_ast_with_level(cursor, level):
-        f(cursor, level)
+        if is_continue_fun(cursor, level):
+            f(cursor, level)
+        else:
+            return False
+            
         child_level = level + 1
         for c in cursor.get_children():
-            walk_ast_with_level(c, child_level)
+            if not walk_ast_with_level(c, child_level):
+                return False
+
+        return True
 
     walk_ast_with_level(cursor, 0)
 
