@@ -23,8 +23,12 @@ struct A {
             eq_(ast.ast_parent.displayname, parent.displayname)
         eq_(ast.displayname, cursor.displayname)
 
+        children_count = 0
         for child1, child2 in zip(ast.ast_children, cursor.get_children()):
             check_ast(child1, child2, cursor)
+            children_count += 1
+
+        eq_(children_count, len(ast.ast_children))
 
     check_ast(static_ast, tu.cursor, None)
     
