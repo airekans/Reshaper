@@ -1,4 +1,5 @@
-from reshaper.util import get_tu, get_cursors_if, get_cursor
+from reshaper.util import get_tu, get_cursors_if
+from reshaper.util import get_cursor, get_cursor_if, get_cursors
 from reshaper.util import walk_ast, get_function_signature
 from clang.cindex import CursorKind
 import os
@@ -39,6 +40,45 @@ def test_get_tu():
     # tu = get_tu(source)
     # eq_(0, len(tu.diagnostics))
 
+
+@with_setup(setup)
+def test_get_cursor():
+    # test get existing cursor
+    cursor = get_cursor(tu, 'A')
+    assert(cursor is not None)
+    eq_(cursor.spelling, 'A')
+
+    cursor = get_cursor(tu, 'bar')
+    assert(cursor is not None)
+    eq_(cursor.spelling, 'bar')
+    
+    # test get non-existing cursor
+    assert(get_cursor(tu, 'non_exist_node') is None)
+
+@with_setup(setup)
+def test_get_cursor_if():
+    # test get existing cursor
+    cursor = get_cursor_if(tu, lambda c: c.spelling == 'A')
+    assert(cursor is not None)
+    eq_(cursor.spelling, 'A')
+
+    cursor = get_cursor_if(tu, lambda c: c.kind == CursorKind.CXX_METHOD)
+    assert(cursor is not None)
+    eq_(cursor.spelling, 'foo')
+    
+    # test get non-existing cursor
+    assert(get_cursor(tu, lambda c: c.spelling == 'non_exist') is None)
+    
+@with_setup(setup)
+def test_get_cursors():
+    # test get existing cursor
+    cursors = get_cursors(tu, 'result_test_fun')
+    eq_(2, len(cursors))
+    for cursor in cursors:
+        eq_('result_test_fun', cursor.spelling)
+
+    # test get non-existing cursor
+    eq_(0, len(get_cursors(tu, 'non_exist')))
 
 @with_setup(setup)
 def test_get_cursors_if():
