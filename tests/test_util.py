@@ -67,7 +67,7 @@ def test_get_cursor_if():
     eq_(cursor.spelling, 'foo')
     
     # test get non-existing cursor
-    assert(get_cursor(tu, lambda c: c.spelling == 'non_exist') is None)
+    assert(get_cursor_if(tu, lambda c: c.spelling == 'non_exist') is None)
     
 @with_setup(setup)
 def test_get_cursors():
