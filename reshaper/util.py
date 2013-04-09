@@ -38,24 +38,35 @@ def get_cursor(source, spelling):
 
     If the cursor is not found, None is returned.
     """
-    children = []
-    if isinstance(source, Cursor):
-        children = source.get_children()
-    else:
-        # Assume TU
-        children = source.cursor.get_children()
 
-    for cursor in children:
-        if cursor.spelling == spelling:
-            return cursor
+    return get_cursor_if(source, lambda c: c.spelling == spelling)
 
-        # Recurse into children.
-        result = get_cursor(cursor, spelling)
-        if result is not None:
-            return result
+def get_cursor_if(source, is_satisfied_fun):
+    """Obtain a cursor from a source object by a predicate function f.
+    If f(cursor) returns True, then the cursor is return.
+    If no cursor is found, returns None.
+    
+    Arguments:
+    - `source`: Cursor or TranslationUnit
+    - `is_satisfied_fun`: predicate function used to check whether the
+        cursor is the one we want.
+        function signature is bool is_satisfied_fun(cursor)
+    """
 
-    return None
- 
+    is_get_result = [False]
+    def visit(cursor):
+        if is_satisfied_fun(cursor):
+            is_get_result[0] = True
+            return True
+        else:
+            return False
+
+    cursors = get_cursors_if(source, visit,
+                             lambda _c, _l: not is_get_result[0])
+
+    return cursors[0] if len(cursors) > 0 else None
+    
+    
 def get_cursors(source, spelling):
     """Obtain all cursors from a source object with a specific spelling.
 
@@ -65,43 +76,29 @@ def get_cursors(source, spelling):
 
     If no cursors are found, an empty list is returned.
     """
-    cursors = []
-    children = []
-    if isinstance(source, Cursor):
-        children = source.get_children()
-    else:
-        # Assume TU
-        children = source.cursor.get_children()
 
-    for cursor in children:
-        if cursor.spelling == spelling:
-            cursors.append(cursor)
-
-        # Recurse into children.
-        cursors.extend(get_cursors(cursor, spelling))
-
-    return cursors
-
-def get_cursors_if(source, f):
-    """ Get cursors satisfying function f from cursor c
+    return get_cursors_if(source, lambda c: c.spelling == spelling)
+    
+def get_cursors_if(source, is_satisfied_fun,
+                   is_visit_subtree_fun = lambda _x, _y: True,
+                   transform_fun = lambda c: c):
+    """ Get cursors satisfying function f from cursor c.
+    If no cursors are found, an empty list is returned.
     
     Arguments:
     - `source`: 
-    - `f`: predicate function user gives
+    - `is_satisfied_fun`: predicate function user gives
+    - `is_visit_subtree_fun`:
+    - `transform_fun`:
     """
+
     cursors = []
-    children = []
-    if isinstance(source, Cursor):
-        children = source.get_children()
-    else:
-        # Assume TU
-        children = source.cursor.get_children()
 
-    for child in children:
-        if f(child):
-            cursors.append(child)
+    def visit(cursor, _):
+        if is_satisfied_fun(cursor):
+            cursors.append(transform_fun(cursor))
 
-        cursors.extend(get_cursors_if(child, f))
+    walk_ast(source, visit, is_visit_subtree_fun)
 
     return cursors
 
@@ -129,12 +126,16 @@ def get_cursor_with_location(tu, spelling, line, column = None):
                 return cursor
     return None
 
-def walk_ast(source, f):
-    """walk the ast with the specified function
+def walk_ast(source, visitor, is_visit_subtree_fun = lambda _c, _l: True):
+    """walk the ast with the specified functions by DFS
     
     Arguments:
     - `source`: 
-    - `f`: function used to visit the cursor
+    - `visitor`: function used to visit the cursor
+         the function signature: visitor(cursor, level)
+    - `is_visit_subtree_fun`: function used to determind whether
+         we want to visit the subtree rooted at cursor.
+         the function signature: bool is_visit_subtree_fun(cursor, level)
     """
 
     if source is None:
@@ -146,7 +147,11 @@ def walk_ast(source, f):
         cursor = source.cursor
 
     def walk_ast_with_level(cursor, level):
-        f(cursor, level)
+        if not is_visit_subtree_fun(cursor, level):
+            return
+            
+        visitor(cursor, level)
+
         child_level = level + 1
         for c in cursor.get_children():
             walk_ast_with_level(c, child_level)

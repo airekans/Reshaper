@@ -1,4 +1,5 @@
-from reshaper.util import get_tu, get_cursors_if, get_cursor
+from reshaper.util import get_tu, get_cursors_if
+from reshaper.util import get_cursor, get_cursor_if, get_cursors
 from reshaper.util import walk_ast, get_function_signature
 from clang.cindex import CursorKind
 import os
@@ -41,21 +42,69 @@ def test_get_tu():
 
 
 @with_setup(setup)
+def test_get_cursor():
+    # test get existing cursor
+    cursor = get_cursor(tu, 'A')
+    assert(cursor is not None)
+    eq_(cursor.spelling, 'A')
+
+    cursor = get_cursor(tu, 'bar')
+    assert(cursor is not None)
+    eq_(cursor.spelling, 'bar')
+    
+    # test get non-existing cursor
+    assert(get_cursor(tu, 'non_exist_node') is None)
+
+@with_setup(setup)
+def test_get_cursor_if():
+    # test get existing cursor
+    cursor = get_cursor_if(tu, lambda c: c.spelling == 'A')
+    assert(cursor is not None)
+    eq_(cursor.spelling, 'A')
+
+    cursor = get_cursor_if(tu, lambda c: c.kind == CursorKind.CXX_METHOD)
+    assert(cursor is not None)
+    eq_(cursor.spelling, 'foo')
+    
+    # test get non-existing cursor
+    assert(get_cursor_if(tu, lambda c: c.spelling == 'non_exist') is None)
+    
+@with_setup(setup)
+def test_get_cursors():
+    # test get existing cursor
+    cursors = get_cursors(tu, 'result_test_fun')
+    eq_(2, len(cursors))
+    for cursor in cursors:
+        eq_('result_test_fun', cursor.spelling)
+
+    # test get non-existing cursor
+    eq_(0, len(get_cursors(tu, 'non_exist')))
+
+@with_setup(setup)
 def test_get_cursors_if():
     cursors = get_cursors_if(tu, lambda c: c.spelling == 'A')
-    assert(len(cursors) == 2) # the class itself and the constructor
+    eq_(len(cursors), 2) # the class itself and the constructor
     for cursor in cursors:
-        assert(cursor.spelling == 'A')
+        eq_(cursor.spelling, 'A')
 
-    assert([cursor.kind for cursor in cursors] ==
-           [CursorKind.CLASS_DECL, CursorKind.CONSTRUCTOR])
+    eq_([cursor.kind for cursor in cursors],
+        [CursorKind.CLASS_DECL, CursorKind.CONSTRUCTOR])
 
     # with other conditions
     cursors = get_cursors_if(tu,
                              lambda c: c.kind == CursorKind.CLASS_DECL)
-    assert(len(cursors) == 1) # the class itself
-    assert(cursors[0].kind == CursorKind.CLASS_DECL)
-    assert(cursors[0].spelling == 'A')
+    eq_(len(cursors), 1) # the class itself
+    eq_(cursors[0].kind, CursorKind.CLASS_DECL)
+    eq_(cursors[0].spelling, 'A')
+
+    # test with transform_fun
+    cursors = get_cursors_if(tu,
+                             lambda c: c.kind == CursorKind.CXX_METHOD and
+                                       c.spelling == 'result_test_fun',
+                             transform_fun = lambda c: c.spelling)
+
+    eq_(['result_test_fun', 'result_test_fun'], cursors)
+    
 
 @with_setup(setup)
 def test_walk_ast():
@@ -78,6 +127,17 @@ def test_walk_ast():
     namespace.node_count = 0
     walk_ast(cursor_A, partial(count_level_node, expected_level = 2))
     eq_(19, namespace.node_count)
+
+    # test with is_visit_subtree_fun
+    namespace.node_count = 0
+    walk_ast(cursor_A, partial(count_level_node, expected_level = 2),
+             lambda _, level: level <= 2)
+    eq_(19, namespace.node_count)
+    
+    namespace.node_count = 0
+    walk_ast(cursor_A, partial(count_level_node, expected_level = 2),
+             lambda _, level: level < 2)
+    eq_(0, namespace.node_count)
     
 @with_setup(setup)
 def test_get_function_signature_with_fun_no_params():
