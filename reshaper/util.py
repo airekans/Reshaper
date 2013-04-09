@@ -65,43 +65,25 @@ def get_cursors(source, spelling):
 
     If no cursors are found, an empty list is returned.
     """
-    cursors = []
-    children = []
-    if isinstance(source, Cursor):
-        children = source.get_children()
-    else:
-        # Assume TU
-        children = source.cursor.get_children()
 
-    for cursor in children:
-        if cursor.spelling == spelling:
-            cursors.append(cursor)
-
-        # Recurse into children.
-        cursors.extend(get_cursors(cursor, spelling))
-
-    return cursors
-
-def get_cursors_if(source, f):
+    return get_cursors_if(source, lambda c: c.spelling == spelling)
+    
+def get_cursors_if(source, f, is_continue_fun = lambda _x, _y: True,
+                   transform_fun = lambda c: c):
     """ Get cursors satisfying function f from cursor c
     
     Arguments:
     - `source`: 
     - `f`: predicate function user gives
     """
+
     cursors = []
-    children = []
-    if isinstance(source, Cursor):
-        children = source.get_children()
-    else:
-        # Assume TU
-        children = source.cursor.get_children()
 
-    for child in children:
-        if f(child):
-            cursors.append(child)
+    def visit(cursor, _):
+        if f(cursor):
+            cursors.append(transform_fun(cursor))
 
-        cursors.extend(get_cursors_if(child, f))
+    walk_ast(source, visit, is_continue_fun)
 
     return cursors
 
@@ -130,7 +112,7 @@ def get_cursor_with_location(tu, spelling, line, column = None):
     return None
 
 def walk_ast(source, visitor, is_continue_fun = lambda _x, _y: True):
-    """walk the ast with the specified function
+    """walk the ast with the specified functions by DFS
     
     Arguments:
     - `source`: 
