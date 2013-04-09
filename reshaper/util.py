@@ -39,9 +39,23 @@ def get_cursor(source, spelling):
     If the cursor is not found, None is returned.
     """
 
+    return get_cursor_if(source, lambda c: c.spelling == spelling)
+
+def get_cursor_if(source, is_satisfied_fun):
+    """Obtain a cursor from a source object by a predicate function f.
+    If f(cursor) returns True, then the cursor is return.
+    If no cursor is found, returns None.
+    
+    Arguments:
+    - `source`: Cursor or TranslationUnit
+    - `is_satisfied_fun`: predicate function used to check whether the
+        cursor is the one we want.
+        function signature is bool is_satisfied_fun(cursor)
+    """
+
     is_get_result = [False]
     def visit(cursor):
-        if cursor.spelling == spelling:
+        if is_satisfied_fun(cursor):
             is_get_result[0] = True
             return True
         else:
@@ -51,17 +65,6 @@ def get_cursor(source, spelling):
                              lambda _c, _l: not is_get_result[0])
 
     return cursors[0] if len(cursors) > 0 else None
-
-def get_cursor_if(source, f):
-    """Obtain a cursor from a source object by a predicate function f.
-    If f(cursor) returns True, then the cursor is return.
-    If no cursor is found, returns None.
-    
-    Arguments:
-    - `source`: Cursor of 
-    - `f`:
-    """
-    pass
     
     
 def get_cursors(source, spelling):
