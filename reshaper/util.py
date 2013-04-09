@@ -129,7 +129,7 @@ def get_cursor_with_location(tu, spelling, line, column = None):
                 return cursor
     return None
 
-def walk_ast(source, visitor, is_continue_fun = lambda _: True):
+def walk_ast(source, visitor, is_continue_fun = lambda _x, _y: True):
     """walk the ast with the specified function
     
     Arguments:
@@ -149,7 +149,7 @@ def walk_ast(source, visitor, is_continue_fun = lambda _: True):
 
     def walk_ast_with_level(cursor, level):
         if is_continue_fun(cursor, level):
-            f(cursor, level)
+            visitor(cursor, level)
         else:
             return False
             
