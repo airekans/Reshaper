@@ -38,23 +38,19 @@ def get_cursor(source, spelling):
 
     If the cursor is not found, None is returned.
     """
-    children = []
-    if isinstance(source, Cursor):
-        children = source.get_children()
-    else:
-        # Assume TU
-        children = source.cursor.get_children()
 
-    for cursor in children:
+    is_get_result = [False]
+    def visit(cursor):
         if cursor.spelling == spelling:
-            return cursor
+            is_get_result[0] = True
+            return True
+        else:
+            return False
 
-        # Recurse into children.
-        result = get_cursor(cursor, spelling)
-        if result is not None:
-            return result
+    cursors = get_cursors_if(source, lambda c: c.spelling == spelling,
+                             lambda _c, _l: not is_get_result[0])
 
-    return None
+    return cursors[0] if len(cursors) > 0 else None
  
 def get_cursors(source, spelling):
     """Obtain all cursors from a source object with a specific spelling.
@@ -70,7 +66,8 @@ def get_cursors(source, spelling):
     
 def get_cursors_if(source, f, is_continue_fun = lambda _x, _y: True,
                    transform_fun = lambda c: c):
-    """ Get cursors satisfying function f from cursor c
+    """ Get cursors satisfying function f from cursor c.
+    If no cursors are found, an empty list is returned.
     
     Arguments:
     - `source`: 
@@ -111,14 +108,16 @@ def get_cursor_with_location(tu, spelling, line, column = None):
                 return cursor
     return None
 
-def walk_ast(source, visitor, is_continue_fun = lambda _x, _y: True):
-    """walk the ast with the specified functions by BFS
+def walk_ast(source, visitor, is_visit_subtree_fun = lambda _c, _l: True):
+    """walk the ast with the specified functions by DFS
     
     Arguments:
     - `source`: 
     - `visitor`: function used to visit the cursor
-    - `is_continue_fun`: function used to determind whether
-         we should stop walking the AST
+         the function signature: visitor(cursor, level)
+    - `is_visit_subtree_fun`: function used to determind whether
+         we want to visit the subtree rooted at cursor.
+         the function signature: bool is_visit_subtree_fun(cursor, level)
     """
 
     if source is None:
@@ -129,21 +128,17 @@ def walk_ast(source, visitor, is_continue_fun = lambda _x, _y: True):
         # Assume TU
         cursor = source.cursor
 
-    cursor_queue = []
-        
-    def walk_ast_bfs():
-        while len(cursor_queue) > 0:
-            cursor, level = cursor_queue.pop(0)
-            if not is_continue_fun(cursor, level):
-                return 
+    def walk_ast_with_level(cursor, level):
+        if not is_visit_subtree_fun(cursor, level):
+            return
+            
+        visitor(cursor, level)
 
-            visitor(cursor, level)
+        child_level = level + 1
+        for c in cursor.get_children():
+            walk_ast_with_level(c, child_level)
 
-            child_level = level + 1
-            cursor_queue.extend([(c, child_level) for c in cursor.get_children()])
-
-    cursor_queue.append((cursor, 0))
-    walk_ast_bfs()
+    walk_ast_with_level(cursor, 0)
 
 def get_function_signature(fun):
     """get the signature of the function given as a cursor node in the AST.
