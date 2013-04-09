@@ -18,17 +18,15 @@ from reshaper.find_reference_util import filter_cursors_by_usr
 from reshaper.find_reference_util import get_cursors_with_name
 from reshaper.find_reference_util import parse_find_reference_args
 
-_global_usr = []
-_output_file_contents = "digraph G{\n"
 
-def find_reference_update_output_contents(target_cursor, search_directory):
+def find_reference_update_output_contents(target_cursor, \
+        search_directory, global_usr_list, output_contents):
     '''this function is used to find reference of the target_cursor,
     , format its infomation together with calling function info, which
-    will be write to _output_file_contents
+    will be write to output_contents
     '''
     reference_usr = get_usr_of_declaration_cursor(target_cursor)
-    global _global_usr
-    _global_usr.append(reference_usr)
+    global_usr_list.append(reference_usr)
     spelling_value = ""
     if target_cursor.is_definition():
         spelling_value = (target_cursor.spelling.split('('))[0]
@@ -48,16 +46,16 @@ def find_reference_update_output_contents(target_cursor, search_directory):
         calling_cursor = semantic_util.get_calling_function(cursor)
         if calling_cursor is not None:
             calling_info = get_full_qualified_name(calling_cursor)
-            global _output_file_contents 
-            _output_file_contents += "\"%s\" -> \"%s\";\n" % \
-                    (calling_info, target_info)
+            output_contents.append("\"%s\" -> \"%s\";\n" % \
+                    (calling_info, target_info))
 
     return final_output
 
-def handle_output_result(iutput_cursors, search_directory):
+def handle_output_result(iutput_cursors, search_directory, \
+        global_usr_list, output_contents):
     '''this function will recursively handle the calling function 
     cursors of the input_cursors list, which is not handled
-    before (use _global_usr to judge if a cursor is handled already)
+    before (use global_usr_list to judge if a cursor is handled already)
     '''
     for cur in iutput_cursors:
         assert(isinstance(cur, Cursor))
@@ -65,17 +63,25 @@ def handle_output_result(iutput_cursors, search_directory):
         if calling_cursor is None:
             continue
         cur_usr = get_usr_of_declaration_cursor(calling_cursor)
-        global _global_usr
-        if cur_usr not in _global_usr:
-            output_curs = find_reference_update_output_contents(calling_cursor, search_directory)
-            handle_output_result(output_curs, search_directory)
+        if cur_usr not in global_usr_list:
+            output_curs = find_reference_update_output_contents(calling_cursor, \
+                    search_directory, global_usr_list, output_contents)
+            handle_output_result(output_curs, search_directory, \
+                    global_usr_list, output_contents)
 
-def output_to_file(file_name):
-    '''write _output_file_contents to file
+def output_to_file(file_name, contents):
+    '''write contents to file
     '''
     file_handle = open(file_name, "w")
-    file_handle.write(_output_file_contents)
+    file_handle.write(contents)
     file_handle.close()
+
+def conver_list_to_output_string(output_contents):
+    output_string = "digraph G{\n"
+    for element in output_contents:
+        output_string += element
+    output_string += "}\n"
+    return output_string
 
 def main():
     '''main function : get the user args;
@@ -95,15 +101,21 @@ def main():
             options.spelling, \
             options.line, \
             options.column)
-    output_curs = find_reference_update_output_contents(target_cursor, options.directory)
-    handle_output_result(output_curs, options.directory)
-    global _output_file_contents
-    _output_file_contents += "}\n"
+
+    global_usr_list  = []
+
+    output_file_contents_list = []
+
+    output_curs = find_reference_update_output_contents(target_cursor, \
+            options.directory, global_usr_list, output_file_contents_list)
+    handle_output_result(output_curs, options.directory, global_usr_list, output_file_contents_list)
+
+    output_file_contents = conver_list_to_output_string(output_file_contents_list)
 
     if options.output_file_name:
-        output_to_file(options.output_file_name)
+        output_to_file(options.output_file_name, output_file_contents)
     else:
-        print _output_file_contents
+        print output_file_contents
 
 if __name__ == "__main__":
     main()
