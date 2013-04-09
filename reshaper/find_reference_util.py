@@ -34,9 +34,7 @@ def filter_cursors_by_usr(cursors, target_usr):
         #FIXME:template class and template function;
         #its declaration USR is different from USR 
         if cursor_usr == target_usr:
-            curs_dic["%s%s%s" % (\
-                    os.path.abspath(cur.location.file.name), \
-                    cur.location.line, cur.location.column)] = cur
+            curs_dic[os.path.abspath(cur.location.file.name), cur.location.line, cur.location.column]= cur
 
     keys = curs_dic.keys()
     keys.sort()
