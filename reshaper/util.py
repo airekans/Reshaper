@@ -167,19 +167,20 @@ def get_function_signature(fun):
         valid_tokens.append(t)
 
     extent = valid_tokens[0].extent
-    start_column = extent.start.column
     line, column = extent.end.line, extent.end.column
     signature = valid_tokens[0].spelling
     for t in valid_tokens[1:]:
         e = t.extent
         if line != e.start.line:
-            signature += "\n" * (e.start.line - line)
-            if e.start.column < start_column:
+            for _ in range(0, e.start.line - line):
+                signature += "\n"
+            line = e.start.line
+            if e.start.column < column:
                 column = e.start.column
-            else:
-                column = start_column
         
-        signature += " " * (e.start.column - column)
+        for _ in range(0, e.start.column - column):
+            signature += " "
+
         signature += t.spelling
         line, column = e.end.line, e.end.column
 

@@ -21,7 +21,7 @@ void serialize(Archive & ar, const unsigned int version)
 '''
 
 EQ_TEMPLATE = '''\
-friend bool operator == (const {{ class_name }} & a, const {{ class_name }}  & b)
+friend bool operator == (const {{ class_name }}& a, const {{ class_name }}& b)
 { 
           return ( 
 {%- for var in nonpt_member_vars %}    
@@ -35,6 +35,7 @@ friend bool operator == (const {{ class_name }} & a, const {{ class_name }}  & b
 '''
 
 import reshaper.header_util as hu
+from reshaper import util
 
 def do_generate_code_with_member_var(header_path,
                                       class_name, 
@@ -42,10 +43,10 @@ def do_generate_code_with_member_var(header_path,
     '''
     generate code for a class with member variables
     '''
-    tu_ = hu.parse(header_path)
+    tu_ = util.get_tu(header_path)
     cursor = hu.get_class_decl_cursor(tu_.cursor, class_name)
-    nonpt_member_vars = hu.non_static_nonpt_var_names(cursor)
-    pt_member_vars = hu.non_static_pt_var_names(cursor)
+    nonpt_member_vars = hu.get_non_static_nonpt_var_names(cursor)
+    pt_member_vars = hu.get_non_static_pt_var_names(cursor)
     from jinja2 import Template
        
     template = Template(code_template)

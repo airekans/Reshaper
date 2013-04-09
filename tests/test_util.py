@@ -63,9 +63,11 @@ def test_walk_ast():
         pass
     namespace.node_count = 0
 
-    def count_level_node(_, level, expected_level = 0):
+    def count_level_node(node, level, expected_level = 0):
         if level == expected_level:
             namespace.node_count += 1
+            if level == 2:
+                print node.displayname
 
     walk_ast(tu, count_level_node)
     eq_(1, namespace.node_count)

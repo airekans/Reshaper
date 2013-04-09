@@ -1,29 +1,19 @@
 '''
 utility module to get various info from a header file
 '''
-from clang.cindex import Index, CursorKind, TypeKind
+from clang.cindex import  CursorKind, TypeKind
+from reshaper import util
+from functools import partial
 
-def parse(header_path):
-    index = Index.create()
-    tu = index.parse(header_path, args=['-x', 'c++', '-std=c++11'])
-    if not tu:
-        raise Exception('Cannot open header file %s' % header_path)
-    return tu
-
-
-
+SMART_PTRS= set(["shared_ptr", "auto_ptr","weak_ptr",\
+             "scoped_ptr","shard_array","scoped_array"])
 
 def is_smart_ptr(cursor):
-    smart_ptrs = set("shared_ptr auto_ptr \
-                      weak_ptr scoped_ptr shard_array scoped_array".split())
+    f = lambda c: c.displayname in SMART_PTRS
+    smart_ptr_cursors = util.get_cursors_if(cursor, f)  
+    return len(smart_ptr_cursors) > 0
     
-    for child in cursor.get_children():    
-        if child.displayname in smart_ptrs:
-            return True
-        
-    return False
-
-def is_pt_type(cursor):
+def is_pointer(cursor):
     if cursor.type.kind == TypeKind.POINTER:
         return True
     
@@ -52,42 +42,36 @@ def get_children_attrs(cursor, keep_func,
 
 
     
-def non_static_var_names(cursor):
+def get_non_static_var_names(cursor):
     return get_children_attrs(cursor, is_non_static_var) 
 
 
-def non_static_nonpt_var_names(cursor):  
+def get_non_static_nonpt_var_names(cursor):  
     '''get names of all member variables \
     of non-pointer type from a class cursor'''
-    keep_func = lambda c: is_non_static_var(c) and not is_pt_type(c)
+    keep_func = lambda c: is_non_static_var(c) and not is_pointer(c)
     return get_children_attrs(cursor, keep_func)
    
 
-def non_static_pt_var_names(cursor):
+def get_non_static_pt_var_names(cursor):
     '''get names of all pointers type member variables\
     from a class cursor
     '''
-    keep_func = lambda c: is_non_static_var(c) and is_pt_type(c)
+    keep_func = lambda c: is_non_static_var(c) and is_pointer(c)
     return get_children_attrs(cursor, keep_func)
 
 
 
-def match_class_name(cursor, class_name):
+def is_class_name_matched(cursor, class_name):
     return cursor.spelling == class_name and \
             (cursor.kind == CursorKind.CLASS_DECL or \
              cursor.kind == CursorKind.STRUCT_DECL)
 
 
     
-def get_class_decl_cursor(cursor, class_name):
-    if(match_class_name(cursor, class_name)):
-        return cursor
-    else:
-        for child in cursor.get_children():
-            cursor = get_class_decl_cursor(child, class_name)
-            if cursor:
-                return cursor
-        return None
+def get_class_decl_cursor(source, class_name):
+    return util.get_cursors_if(source, \
+                               partial(is_class_name_matched, class_name = class_name))[0]
  		
  	
  

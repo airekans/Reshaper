@@ -4,7 +4,7 @@ Created on Apr 7, 2013
 @author: liangzhao
 '''
 
-from reshaper import code_generator as cg
+from reshaper import class_serializer as cs
 from optparse import OptionParser 
 
 def set_all_true_if_no_option(opts):
@@ -44,10 +44,10 @@ if __name__ == '__main__':
     set_all_true_if_no_option(options)
     
     if options.equal:
-        print cg.generate_eq_op_code(header_path, class_name)
+        print cs.generate_eq_op_code(header_path, class_name)
     
     if options.serialize:
-        print cg.generate_serialize_code(header_path, class_name)    
+        print cs.generate_serialize_code(header_path, class_name)    
     
     
     
