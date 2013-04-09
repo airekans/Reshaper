@@ -1,9 +1,45 @@
 from reshaper.util import get_tu, get_cursors_if
 from reshaper.util import walk_ast, get_function_signature
+from reshaper.util import get_cursor_with_location
+from reshaper.util import get_full_qualified_name 
+from clang.cindex import Cursor
 from clang.cindex import CursorKind
+from clang.cindex import TranslationUnit
 import os
 from functools import partial
 from nose.tools import eq_, with_setup
+
+get_info_test_input = """\
+class TestClass
+{
+public:
+    void memFunc(int)
+    {
+    }
+};
+namespace TestNamespace
+{
+    void namespaceFunc(TestClass&)
+    {
+    }
+}
+void globalFunc()
+{
+}
+"""
+
+def get_tu_from_text(source):
+    '''copy it from util.py, 
+    just for test
+    '''
+    name = 't.cpp'
+    args = []
+    args.append('-std=c++11')
+
+    return TranslationUnit.from_source(name, args, unsaved_files=[(name,
+                                       source)])
+
+
 
 INPUT_DIR = os.path.join(os.path.dirname(__file__), 'test_data')
 tu = None
@@ -118,4 +154,23 @@ def test_get_function_signature_with_complex_return_type_fun():
     eq_(1, len(methods))
     eq_(expected_fun_sig, get_function_signature(methods[0]))
     
-    
+def test_get_full_qualified_name():
+    '''test get_full_qualified_name
+    '''
+    tu_source = get_tu_from_text(get_info_test_input)
+    mem_cursor = get_cursor_with_location(tu_source, "memFunc", 4, None)
+    assert(isinstance(mem_cursor, Cursor))
+    mem_info = get_full_qualified_name(mem_cursor)
+    eq_(mem_info, "TestClass::memFunc(int)")
+
+    namespace_cursor = get_cursor_with_location(tu_source, "namespaceFunc", 10, None)
+    assert(isinstance(namespace_cursor, Cursor))
+    name_info = get_full_qualified_name(namespace_cursor)
+    eq_(name_info, "TestNamespace::namespaceFunc(TestClass &)")
+
+    global_cursor = get_cursor_with_location(tu_source, "globalFunc", 14, None)
+    assert(isinstance(global_cursor, Cursor))
+    global_info = get_full_qualified_name(global_cursor)
+    eq_(global_info, "globalFunc()")
+
+
