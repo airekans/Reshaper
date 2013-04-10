@@ -7,6 +7,7 @@ import ConfigParser
 import os
 from functools import partial
 from semantic import get_semantic_parent_of_decla_cursor
+from semantic import get_declaration_cursor
 
 def get_tu(source, all_warnings=False):
     """Obtain a translation unit from source and language.
@@ -208,4 +209,32 @@ def get_function_signature(fun_cursor):
         line, column = e.end.line, e.end.column
 
     return signature
+
+def get_class_usage(fun_cursor, used_class):
+    """ get the usage of the class from the function given as fun_cursor.
+    """
+
+    if not fun_cursor.is_definition():
+        return []
+
+    # get all member function calls
+    def is_member_fun_call(c):
+        if c.kind != CursorKind.CALL_EXPR:
+            return False
+
+        for child in c.get_children():
+            return child.kind == CursorKind.MEMBER_REF_EXPR
+
+        return False
+        
+    # get all member function calls in the function
+    member_fun_calls = get_cursors_if(fun_cursor, is_member_fun_call)
+    
+    target_member_fun_calls = \
+        [c for c in member_fun_calls
+         if get_semantic_parent_of_decla_cursor(c).spelling == used_class]
+    target_member_funs = \
+        [get_declaration_cursor(c) for c in target_member_fun_calls]
+    method_names = [c.spelling for c in target_member_funs]
+    return set(method_names)
 
