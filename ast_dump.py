@@ -34,6 +34,14 @@ if __name__ == '__main__':
         print "unable to load input"
         sys.exit(1)
 
+    error_num = len(tu.diagnostics)
+    if error_num > 0:
+        print "Source file has the following errors(%d):" % error_num
+        for diag in tu.diagnostics:
+            print diag.spelling
+
+        sys.exit(1)
+
     walk_ast(tu, print_cursor)
     
 

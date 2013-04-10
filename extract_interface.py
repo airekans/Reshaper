@@ -11,7 +11,8 @@ from clang.cindex import CursorKind
 from clang.cindex import TranslationUnit
 import sys
 import os
-from reshaper.util import get_tu, get_cursor, get_cursors_if
+from reshaper.util import get_tu, get_cursor, get_cursors_if, get_cursor_if
+from reshaper.semantic import get_semantic_parent_of_decla_cursor, get_declaration_cursor
 from reshaper.extract import extract_interface
 from optparse import OptionParser
 
@@ -64,8 +65,15 @@ def get_class_usage(fun_cursor, used_class):
         return False
         
     # get all member function calls in the function
-    get_cursors_if(fun_cursor, is_member_fun_call)
-
+    member_fun_calls = get_cursors_if(fun_cursor, is_member_fun_call)
+    target_member_fun_calls = \
+        [c for c in member_fun_calls
+         if get_semantic_parent_of_decla_cursor(c).spelling == used_class]
+    target_member_funs = \
+        [get_declaration_cursor(c) for c in target_member_fun_calls]
+    print target_member_funs
+    return target_member_funs
+    
     
     
 def main():
@@ -85,7 +93,9 @@ def main():
 
     tu = get_tu(src)
     # TODO: the following line should be changed to work on class in a namespace
-    class_cursor = get_cursor(tu, class_to_extract)
+    class_cursor = get_cursor_if(tu,
+                                 lambda c: c.spelling == class_to_extract
+                                     and c.is_definition())
     
     if class_cursor is None or \
             class_cursor.kind != CursorKind.CLASS_DECL or \
@@ -98,8 +108,10 @@ def main():
     # analyze the function
     fun_using_class = options.from_usage
     if fun_using_class is not None:
-        pass
-
+        fun_cursor = get_cursor_if(tu, lambda c: c.spelling == fun_using_class and c.is_definition())
+        get_class_usage(fun_cursor, class_to_extract)
+        print
+        
     # print out the interface class
     class_printer = extract_interface(class_cursor, methods)
     print class_printer.get_definition()

@@ -21,6 +21,11 @@ void B::fun_use_A()
 {
     static_fun(2);
     int data = m_a->bar(2.0);
+    A* a;
+    int obj_result = a->bar(1.0);
+    obj_result = (*a).bar(1.5);
+    A& ref_a = *a;
+    obj_result = ref_a.bar(1.5);
     int result = data + 1;
 }
 
