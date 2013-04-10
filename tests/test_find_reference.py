@@ -6,6 +6,7 @@ from reshaper.util import get_cursor_with_location
 from reshaper.semantic import get_cursors_add_parent
 from nose.tools import eq_
 import find_reference as fr
+from .util import get_tu_from_text
 
 member_test = """\
 class TestClass
@@ -31,18 +32,6 @@ void CallFunc()
     TestNS::TargetFunc();
 }
 """
-
-def get_tu_from_text(source):
-    '''copy it from util.py, 
-    just for test
-    '''
-    name = 't.cpp'
-    args = []
-    args.append('-std=c++11')
-
-    return TranslationUnit.from_source(name, args, unsaved_files=[(name,
-                                       source)])
-
 
 def test_remove_fake_by_usr():
     '''test function remove_fake_by_usr
