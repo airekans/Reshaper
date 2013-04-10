@@ -6,6 +6,7 @@ from clang.cindex import TranslationUnit
 import ConfigParser
 import os
 from functools import partial
+from semantic import get_semantic_parent_of_decla_cursor
 
 def get_tu(source, all_warnings=False):
     """Obtain a translation unit from source and language.
@@ -157,6 +158,24 @@ def walk_ast(source, visitor, is_visit_subtree_fun = lambda _c, _l: True):
             walk_ast_with_level(c, child_level)
 
     walk_ast_with_level(cursor, 0)
+
+def get_full_qualified_name(cursor):
+    '''use to get semantic_parent.spelling :: cursor.spelling or displayname 
+    infomation of the input cursors;
+    for example: TestUSR::test_decla(int), MyNameSpace::test_defin(double)
+    or test_function(TestUSR&)
+    '''
+    seman_parent = get_semantic_parent_of_decla_cursor(cursor)
+    out_str = cursor.displayname
+    if out_str == None:
+        out_str = cursor.spelling
+
+    if seman_parent is not None and \
+            (seman_parent.kind == CursorKind.NAMESPACE or\
+            seman_parent.kind == CursorKind.CLASS_DECL):
+        return "%s::%s" % (seman_parent.spelling, out_str)
+    else:
+        return out_str
 
 def get_function_signature(fun_cursor):
     """get the signature of the function given as a cursor node in the AST.

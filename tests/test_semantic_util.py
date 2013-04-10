@@ -8,7 +8,6 @@ from nose.tools import eq_
 import reshaper.semantic as semantic_util
 from reshaper.util import get_cursor_with_location
 
-
 parent_calling_func_test_input = """\
 void TargetFunc()
 {
@@ -212,4 +211,5 @@ def test_get_declaration_cursor_global_func():
     seman_parent = semantic_util.get_semantic_parent_of_decla_cursor(cur)
     eq_(seman_parent, decla_cursor.semantic_parent)
     eq_(seman_parent.kind, CursorKind.TRANSLATION_UNIT)
+
 
