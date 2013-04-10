@@ -1,4 +1,4 @@
-"""util functions for find Reference 
+"""util functions for semantic parsing
 """
 
 import os
