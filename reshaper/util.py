@@ -158,10 +158,10 @@ def walk_ast(source, visitor, is_visit_subtree_fun = lambda _c, _l: True):
 
     walk_ast_with_level(cursor, 0)
 
-def get_function_signature(fun):
+def get_function_signature(fun_cursor):
     """get the signature of the function given as a cursor node in the AST.
     """
-    tokens = list(fun.get_tokens())
+    tokens = list(fun_cursor.get_tokens())
     if len(tokens) < 1:
         return ""
 
