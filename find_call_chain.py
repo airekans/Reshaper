@@ -51,13 +51,13 @@ def find_reference_update_output_contents(target_cursor, \
 
     return final_output
 
-def handle_output_result(iutput_cursors, search_directory, \
+def handle_output_result(iuput_cursors, search_directory, \
         global_usr_list, output_contents):
     '''this function will recursively handle the calling function 
     cursors of the input_cursors list, which is not handled
     before (use global_usr_list to judge if a cursor is handled already)
     '''
-    for cur in iutput_cursors:
+    for cur in iuput_cursors:
         assert(isinstance(cur, Cursor))
         calling_cursor = semantic_util.get_calling_function(cur)
         if calling_cursor is None:
