@@ -10,8 +10,8 @@ SMART_PTRS= set(["shared_ptr", "auto_ptr","weak_ptr",\
 
 def is_smart_ptr(cursor):
     f = lambda c: c.displayname in SMART_PTRS
-    smart_ptr_cursors = util.get_cursors_if(cursor, f)  
-    return len(smart_ptr_cursors) > 0
+    smart_ptr_cursor = util.get_cursor_if(cursor, f)  
+    return (smart_ptr_cursor is not None)
     
 def is_pointer(cursor):
     if cursor.type.kind == TypeKind.POINTER:
@@ -70,8 +70,8 @@ def is_class_name_matched(cursor, class_name):
 
     
 def get_class_decl_cursor(source, class_name):
-    return util.get_cursors_if(source, \
-                               partial(is_class_name_matched, class_name = class_name))[0]
+    return util.get_cursor_if(source,
+                               partial(is_class_name_matched, class_name = class_name))
  		
  	
  
