@@ -1,9 +1,9 @@
 #!/usr/bin/env python
 
-from reshaper.util import walk_ast
+from reshaper.util import get_tu, walk_ast
 from clang.cindex import TranslationUnit
 from optparse import OptionParser
-
+import sys
 
 def print_cursor(cursor, level):
     prefix = "**" * level
@@ -25,15 +25,14 @@ def print_cursor(cursor, level):
     print 
 
 if __name__ == '__main__':
-    parser = OptionParser("usage: %prog [options] {filename} [clang-args*]")
-    (opts, args) = parser.parse_args()
+    if len(sys.argv) == 0:
+        print 'invalid number arguments'
+        sys.exit(1)
 
-    if len(args) == 0:
-        parser.error('invalid number arguments')
-
-    tu = TranslationUnit.from_source(args[0], ['-std=c++11'])
+    tu = get_tu(sys.argv[0])
     if not tu:
-        parser.error("unable to load input")
+        print "unable to load input"
+        sys.exit(1)
 
     walk_ast(tu, print_cursor)
     
