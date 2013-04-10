@@ -25,7 +25,7 @@ void B::fun_use_A()
     int obj_result = a->bar(1.0);
     obj_result = (*a).bar(1.5);
     A& ref_a = *a;
-    obj_result = ref_a.bar(1.5);
+    ref_a.foo();
     int result = data + 1;
 }
 

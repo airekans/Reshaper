@@ -31,22 +31,6 @@ def parse_options():
 
     return option_parser.parse_args()
 
-def get_member_owner(member_cursor):
-    """ Get the owner of the member given as cursor
-    
-    Arguments:
-    - `member_cursor`:
-    """
-
-    if member_cursor.kind != CursorKind.MEMBER_REF_EXPR:
-        return None
-
-    for c in member_cursor.get_children():
-        return c
-
-    return None
-
-
 def get_class_usage(fun_cursor, used_class):
     """ get the usage of the class from the function given as fun_cursor.
     """
@@ -71,9 +55,8 @@ def get_class_usage(fun_cursor, used_class):
          if get_semantic_parent_of_decla_cursor(c).spelling == used_class]
     target_member_funs = \
         [get_declaration_cursor(c) for c in target_member_fun_calls]
-    print target_member_funs
-    return target_member_funs
-    
+    method_names = [c.spelling for c in target_member_funs]
+    return set(method_names)
     
     
 def main():
@@ -109,8 +92,7 @@ def main():
     fun_using_class = options.from_usage
     if fun_using_class is not None:
         fun_cursor = get_cursor_if(tu, lambda c: c.spelling == fun_using_class and c.is_definition())
-        get_class_usage(fun_cursor, class_to_extract)
-        print
+        methods = get_class_usage(fun_cursor, class_to_extract)
         
     # print out the interface class
     class_printer = extract_interface(class_cursor, methods)
