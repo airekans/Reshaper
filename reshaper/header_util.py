@@ -5,8 +5,8 @@ from clang.cindex import  CursorKind, TypeKind
 from reshaper import util
 from functools import partial
 
-SMART_PTRS= set(["shared_ptr", "auto_ptr","weak_ptr",\
-             "scoped_ptr","shard_array","scoped_array"])
+SMART_PTRS = set(["shared_ptr", "auto_ptr","weak_ptr",\
+                  "scoped_ptr","shard_array","scoped_array"])
 
 def is_smart_ptr(cursor):
     f = lambda c: c.displayname in SMART_PTRS
