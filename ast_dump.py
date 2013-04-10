@@ -25,11 +25,11 @@ def print_cursor(cursor, level):
     print 
 
 if __name__ == '__main__':
-    if len(sys.argv) == 0:
+    if len(sys.argv) < 2:
         print 'invalid number arguments'
         sys.exit(1)
 
-    tu = get_tu(sys.argv[0])
+    tu = get_tu(sys.argv[1])
     if not tu:
         print "unable to load input"
         sys.exit(1)
