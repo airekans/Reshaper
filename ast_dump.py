@@ -1,8 +1,9 @@
 #!/usr/bin/env python
 
-from reshaper.util import get_tu, walk_ast
+from reshaper.util import get_tu, walk_ast, is_curor_in_file
 from optparse import OptionParser
 import sys, os
+from functools import partial
 
 def print_cursor(cursor, level):
     prefix = "**" * level
@@ -41,17 +42,13 @@ if __name__ == '__main__':
         sys.exit(1)
           
     
-    FILE_PATHS = set([os.path.abspath(path) for path in args])
-
-    def can_visit_cursor_func(cursor, level):
+    
+    def can_visit_cursor_func(cursor, level, path):
         can_visit =  True
         if options.level is not None:
             can_visit = (level <= options.level)
         if not options.all :
-            cursor_file = cursor.location.file
-            if cursor_file:
-                can_visit = can_visit and \
-                                os.path.abspath(cursor_file.name) in FILE_PATHS
+            can_visit = can_visit and is_curor_in_file(cursor, path)
         return can_visit
         
     for file_path in args:     
@@ -60,7 +57,8 @@ if __name__ == '__main__':
             print "unable to load %s" % file_path
             sys.exit(1)
     
-        walk_ast(tu, print_cursor, can_visit_cursor_func)
+        walk_ast(tu, print_cursor, partial(can_visit_cursor_func, \
+                                            path = file_path))
     
 
     

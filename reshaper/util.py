@@ -42,7 +42,7 @@ def get_cursor(source, spelling):
 
     return get_cursor_if(source, lambda c: c.spelling == spelling)
 
-def get_cursor_if(source, is_satisfied_fun):
+def get_cursor_if(source, is_satisfied_fun, is_visit_subtree_fun = lambda _x, _y: True):
     """Obtain a cursor from a source object by a predicate function f.
     If f(cursor) returns True, then the cursor is return.
     If no cursor is found, returns None.
@@ -63,7 +63,8 @@ def get_cursor_if(source, is_satisfied_fun):
             return False
 
     cursors = get_cursors_if(source, visit,
-                             lambda _c, _l: not is_get_result[0])
+                             lambda _c, _l: not is_get_result[0] and 
+                                            is_visit_subtree_fun(_c,_l))
 
     return cursors[0] if len(cursors) > 0 else None
     
@@ -126,6 +127,18 @@ def get_cursor_with_location(tu, spelling, line, column = None):
             if cursor.location.line == line:
                 return cursor
     return None
+
+
+def is_same_file(path1, path2):
+    return os.path.abspath(path1) == \
+           os.path.abspath(path2) 
+
+def is_curor_in_file(cursor, file_path):
+    cursor_file = cursor.location.file
+    if not cursor_file:
+        return True
+    else:
+        return is_same_file(cursor_file.name, file_path)
 
 def walk_ast(source, visitor, is_visit_subtree_fun = lambda _c, _l: True):
     """walk the ast with the specified functions by DFS

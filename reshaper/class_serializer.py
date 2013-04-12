@@ -36,6 +36,7 @@ friend bool operator == (const {{ class_name }}& a, const {{ class_name }}& b)
 
 import reshaper.header_util as hu
 from reshaper import util
+import sys
 
 def do_generate_code_with_member_var(header_path,
                                       class_name, 
@@ -44,9 +45,15 @@ def do_generate_code_with_member_var(header_path,
     generate code for a class with member variables
     '''
     tu_ = util.get_tu(header_path)
-    cursor = hu.get_class_decl_cursor(tu_.cursor, class_name)
+    cursor = hu.get_class_cursor(tu_.cursor, class_name, header_path)
+    
+    if not cursor:
+        print "Can not find class definition for %s in %s" %(class_name, header_path)
+        sys.exit(1)
+    
     nonpt_member_vars = hu.get_non_static_nonpt_var_names(cursor)
     pt_member_vars = hu.get_non_static_pt_var_names(cursor)
+    
     from jinja2 import Template
        
     template = Template(code_template)
