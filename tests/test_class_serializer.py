@@ -40,11 +40,11 @@ void serialize(Archive & ar, const unsigned int version)
 friend bool operator == (const A& a, const A& b)
 { 
           return (    
-                  a.m_d == b.m_d &&    
                   a.m_i1 == b.m_i1 &&    
                   a.m_i2 == b.m_i2 &&    
                   a.m_i3 == b.m_i3 &&    
                   a.m_i4 == b.m_i4 &&    
+                  a.m_d == b.m_d &&    
                   a.m_s1 == b.m_s1 &&    
                   a.m_x == b.m_x &&    
                   *(a.m_p1) == *(b.m_p1) &&    
