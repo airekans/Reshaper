@@ -6,7 +6,7 @@ from clang.cindex import TranslationUnit
 import ConfigParser
 import os
 from functools import partial
-from semantic import get_semantic_parent_of_decla_cursor
+from reshaper.semantic import get_semantic_parent_of_decla_cursor
 
 def get_tu(source, all_warnings=False):
     """Obtain a translation unit from source and language.

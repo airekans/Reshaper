@@ -26,12 +26,12 @@ class Test(unittest.TestCase):
         cursor = hu.get_class_decl_cursor(self.__tu_cursor, 'A')
        
         member_vars = hu.get_non_static_var_names(cursor)
-        self.assertEqual([ 'm_d', 'm_i1', 'm_i2', 'm_i3', 'm_i4', \
-                           'm_p1', 'm_p2', 'm_p3', 'm_s1', 'm_x'],
+        self.assertEqual(['m_i1', 'm_i2', 'm_i3', 'm_i4', 'm_d',\
+                          'm_p1', 'm_s1', 'm_p2', 'm_p3', 'm_x'],
                          member_vars)
         
         non_pt_members = hu.get_non_static_nonpt_var_names(cursor)
-        self.assertEqual(['m_d', 'm_i1', 'm_i2', 'm_i3', 'm_i4', 'm_s1', 'm_x'],
+        self.assertEqual(['m_i1', 'm_i2', 'm_i3', 'm_i4', 'm_d', 'm_s1', 'm_x'],
                          non_pt_members)
         
         pointer_vars = hu.get_non_static_pt_var_names(cursor)

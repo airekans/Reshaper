@@ -8,7 +8,6 @@ Usage: extract_interface.py class.cpp class_name
 """
 
 from clang.cindex import CursorKind
-from clang.cindex import TranslationUnit
 import sys
 import os
 from reshaper.util import get_tu, get_cursor, get_cursors_if

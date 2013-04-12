@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 
 from reshaper.util import get_tu, walk_ast
-from clang.cindex import TranslationUnit
 from optparse import OptionParser
 import sys, os
 

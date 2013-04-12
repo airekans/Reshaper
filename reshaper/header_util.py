@@ -26,17 +26,17 @@ def get_name(cursor):
     return cursor.spelling
     
 def get_children_attrs(cursor, keep_func, 
-                       attr_getter= get_name, is_sorted = True):
-    mb_var_names = []
+                       attr_getter= get_name, is_sorted = False):
+    mb_var_attrs = []
     for child in cursor.get_children():
         if keep_func is None or keep_func(child):
-            mb_var_names.append(attr_getter(child))
+            mb_var_attrs.append(attr_getter(child))
         else:
             continue  # for debug purpose
     if is_sorted:
-        return sorted(mb_var_names)
+        return sorted(mb_var_attrs)
     else: 
-        return mb_var_names
+        return mb_var_attrs
     
 
 
