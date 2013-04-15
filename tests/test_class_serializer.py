@@ -17,20 +17,21 @@ class Test(unittest.TestCase):
     
     def test_generate_code(self):
         expected_code = u'''\
+serialization function for class A:
+
 template<class Archive>
 void serialize(Archive & ar, const unsigned int version)
 {
-    ar & m_i1;
-    ar & m_i2;
-    ar & m_i3;
-    ar & m_i4;
-    ar & m_d;
-    ar & m_s1;
-    ar & m_x;
-    //todo: the following pointer type members are not serialized
-    // m_p1;
-    // m_p2;
-    // m_p3; 
+    ar & BOOST_SERIALIZATION_NVP(m_i1);
+    ar & BOOST_SERIALIZATION_NVP(m_i2);
+    ar & BOOST_SERIALIZATION_NVP(m_i3);
+    ar & BOOST_SERIALIZATION_NVP(m_i4);
+    ar & BOOST_SERIALIZATION_NVP(m_d);
+    ar & BOOST_SERIALIZATION_NVP(m_p1);
+    ar & BOOST_SERIALIZATION_NVP(m_s1);
+    ar & BOOST_SERIALIZATION_NVP(m_p2);
+    ar & BOOST_SERIALIZATION_NVP(m_p3);
+    ar & BOOST_SERIALIZATION_NVP(m_x);       
 }\
 '''
         code = cs.generate_serialize_code(TEST_HEADER_FILE, 'A')

@@ -4,7 +4,7 @@ utility module to get various info from a header file
 from clang.cindex import  CursorKind, TypeKind
 from reshaper import util
 from functools import partial
-from reshaper.util import is_curor_in_file
+from reshaper.util import is_curor_in_file_func
 
 SMART_PTRS = set(["shared_ptr", "auto_ptr", "weak_ptr", \
              "scoped_ptr", "shard_array", "scoped_array"])
@@ -45,10 +45,6 @@ def get_children_attrs(cursor, keep_func,
     else: 
         return mb_var_attrs
     
-
-
-
-    
 def get_non_static_var_names(cursor):
     ''' get names of non-static members''' 
     return get_children_attrs(cursor, is_non_static_var) 
@@ -69,32 +65,32 @@ def get_non_static_pt_var_names(cursor):
     return get_children_attrs(cursor, keep_func)
 
 
-
-
-
-
 def is_class(cursor):
     ''' is class or struct definition cursor'''
     return cursor.kind == CursorKind.CLASS_DECL or \
             cursor.kind == CursorKind.STRUCT_DECL
 
-def is_class_name_matched(cursor, class_name):
-    return cursor.spelling == class_name and \
+def is_class_name_matched(cursor, _class_name):
+    return cursor.spelling == _class_name and \
            is_class(cursor)
 
 
     
-def get_class_cursor(source, class_name, header_path):
-    ''' get class/struct cursor with class_name and header_path'''
+def get_class_cursor(source, _class_name, header_path):
+    ''' get class/struct cursor with _class_name and header_path'''
     return util.get_cursor_if(source,
                                partial(is_class_name_matched, \
-                                       class_name = class_name),
-                               lambda c, _l: is_curor_in_file(c, header_path) )
+                                       _class_name = _class_name),
+                               is_curor_in_file_func(header_path))
  		
  	
 def get_all_class_cursors(source):
     ''' get all cursors of class or struct type'''
     return util.get_cursors_if(source, is_class)
  
-
+def get_all_class_names(source, header_path):
+    ''' get names of all class or struct type'''
+    return util.get_cursors_if(source, is_class, \
+                                is_curor_in_file_func(header_path), \
+                                transform_fun = get_name)
 

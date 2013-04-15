@@ -133,12 +133,15 @@ def is_same_file(path1, path2):
     return os.path.abspath(path1) == \
            os.path.abspath(path2) 
 
-def is_curor_in_file(cursor, file_path):
-    cursor_file = cursor.location.file
-    if not cursor_file:
-        return True
-    else:
-        return is_same_file(cursor_file.name, file_path)
+def is_curor_in_file_func(file_path):
+    def is_curor_in_file(cursor):
+        cursor_file = cursor.location.file
+        if not cursor_file:
+            return  True
+        else:
+            return is_same_file(cursor_file.name, file_path)
+    
+    return lambda c, _l: is_curor_in_file(c)
 
 def walk_ast(source, visitor, is_visit_subtree_fun = lambda _c, _l: True):
     """walk the ast with the specified functions by DFS
