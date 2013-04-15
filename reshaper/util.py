@@ -26,7 +26,17 @@ def get_tu(source, all_warnings=False):
     config_parser.read(['.reshaper.cfg', os.path.expanduser('~/.reshaper.cfg')])
     if config_parser.has_option('Clang Options', 'include_paths'):
         include_paths = config_parser.get('Clang Options', 'include_paths')
+        # pylint: disable-msg=E1103
         args += ['-I' + p for p in include_paths.split(',')]
+        
+        
+        
+    if config_parser.has_option('Clang Options', 'include_files'):
+        include_files = config_parser.get('Clang Options', 'include_files')
+        # pylint: disable-msg=E1103
+        args += ['-include ' + p for p in include_files.split(',')]
+        
+    print ' '.join(args)
 
     return TranslationUnit.from_source(source, args)
 
@@ -109,9 +119,9 @@ def get_cursor_with_location(tu, spelling, line, column = None):
     '''
     def check_cursor_spelling_displayname(cursor, spelling):
         if cursor.is_definition() and cursor.spelling == spelling:
-                return True
+            return True
         elif spelling in cursor.displayname:
-                return True
+            return True
         return False
 
     alternate_cursors = get_cursors_if(tu, partial(check_cursor_spelling_displayname, spelling = spelling))

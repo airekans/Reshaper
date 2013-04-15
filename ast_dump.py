@@ -52,8 +52,6 @@ if __name__ == '__main__':
     if len(args) < 1:
         print 'Please input files to parse'
         sys.exit(1)
-          
-    
     
     def can_visit_cursor_func(cursor, level, path):
         can_visit =  True
