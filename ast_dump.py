@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-from reshaper.util import get_tu, walk_ast, is_curor_in_file
+from reshaper.util import get_tu, walk_ast, is_curor_in_file_func
 from optparse import OptionParser
 import sys
 from functools import partial
@@ -60,7 +60,7 @@ if __name__ == '__main__':
         if options.level is not None:
             can_visit = (level <= options.level)
         if not options.all :
-            can_visit = can_visit and is_curor_in_file(cursor, path)
+            can_visit = can_visit and is_curor_in_file_func(path)(cursor, level)
         return can_visit
         
     for file_path in args:     
