@@ -19,7 +19,7 @@ tu = None
 def setup():
     global tu
     source = os.path.join(INPUT_DIR, 'class.cpp')
-    tu = get_tu(source)
+    tu = get_tu(source, config_path = None)
     assert(tu is not None)
 
 

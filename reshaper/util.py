@@ -8,7 +8,7 @@ import os
 from functools import partial
 from reshaper.semantic import get_semantic_parent_of_decla_cursor
 
-def get_tu(source, all_warnings=False):
+def get_tu(source,all_warnings=False, config_path = '~/.reshaper.cfg'):
     """Obtain a translation unit from source and language.
 
     By default, the translation unit is created from source file "t.<ext>"
@@ -22,18 +22,19 @@ def get_tu(source, all_warnings=False):
     if all_warnings:
         args += ['-Wall', '-Wextra']
 
-    config_parser = ConfigParser.SafeConfigParser()
-    config_parser.read(['.reshaper.cfg', os.path.expanduser('~/.reshaper.cfg')])
-    if config_parser.has_option('Clang Options', 'include_paths'):
-        include_paths = config_parser.get('Clang Options', 'include_paths')
-        # pylint: disable-msg=E1103
-        args += ['-I' + p for p in include_paths.split(',')]
-        
-    if config_parser.has_option('Clang Options', 'include_files'):
-        include_files = config_parser.get('Clang Options', 'include_files')
-        # pylint: disable-msg=E1103
-        for ifile in include_files.split(','):
-            args += ['-include', ifile]
+    if config_path:
+        config_parser = ConfigParser.SafeConfigParser()
+        config_parser.read(['.reshaper.cfg', os.path.expanduser(config_path)])
+        if config_parser.has_option('Clang Options', 'include_paths'):
+            include_paths = config_parser.get('Clang Options', 'include_paths')
+            # pylint: disable-msg=E1103
+            args += ['-I' + p for p in include_paths.split(',')]
+            
+        if config_parser.has_option('Clang Options', 'include_files'):
+            include_files = config_parser.get('Clang Options', 'include_files')
+            # pylint: disable-msg=E1103
+            for ifile in include_files.split(','):
+                args += ['-include', ifile]
         
     #print ' '.join(args)
 
