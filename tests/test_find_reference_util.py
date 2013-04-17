@@ -38,14 +38,14 @@ void CallFunc()
 def test_filter_cursurs_by_usr():
     '''test function filter_cursors_by_usr
     '''
-    tu = get_tu_from_text(filter_usr_test_input)
-    assert(isinstance(tu, TranslationUnit))
+    _tu = get_tu_from_text(filter_usr_test_input)
+    assert(isinstance(_tu, TranslationUnit))
     spelling = "TargetFunc"
-    target_cursor = get_cursor_with_location(tu, spelling, 4)
+    target_cursor = get_cursor_with_location(_tu, spelling, 4)
     assert(isinstance(target_cursor, Cursor))
     target_usr = target_cursor.get_usr()
 
-    candidate_curs = get_cursors_add_parent(tu, spelling)
+    candidate_curs = get_cursors_add_parent(_tu, spelling)
 
     eq_(len(candidate_curs), 7)
     final_curs = filter_cursors_by_usr(candidate_curs, target_usr)

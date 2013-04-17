@@ -28,7 +28,7 @@ def set_all_true_if_no_option(opts):
 
 def _main():
     ''' main function '''
-    option_parser = OptionParser(usage="%prog [options] FILE CLASSNAMES")
+    option_parser = OptionParser(usage="%prog [options] FILE [CLASSNAMES]")
     option_parser.add_option("-e", "--equal", dest="equal", \
                              action="store_true", help="generate operator==")
     option_parser.add_option("-s", "--serialize", dest="serialize", \
@@ -56,7 +56,7 @@ def _main():
         if options.serialize:
             print cs.generate_serialize_code(header_path, class_name)
             
-        print '........................................................'
+        print 
             
 if __name__ == '__main__':
     _main()    

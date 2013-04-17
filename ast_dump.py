@@ -62,12 +62,12 @@ if __name__ == '__main__':
         return can_visit
         
     for file_path in args:     
-        tu = get_tu(file_path)
-        if not tu:
+        _tu = get_tu(file_path)
+        if not _tu:
             print "unable to load %s" % file_path
             sys.exit(1)
     
-        walk_ast(tu, partial(print_cursor, is_print_ref =  options.reference), \
+        walk_ast(_tu, partial(print_cursor, is_print_ref =  options.reference), \
                      partial(can_visit_cursor_func, path = file_path))
     
 

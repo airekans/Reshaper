@@ -14,7 +14,7 @@ class Test(unittest.TestCase):
                                      'test_data','test.h')
     
     def setUp(self):
-        self.__tu_cursor = util.get_tu(Test.TEST_HEADER_FILE).cursor
+        self.__tu_cursor = util.get_tu(Test.TEST_HEADER_FILE, config_path = None).cursor
         assert(self.__tu_cursor)
     
 
