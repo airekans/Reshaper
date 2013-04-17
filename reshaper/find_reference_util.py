@@ -50,7 +50,7 @@ def get_cursors_with_name(file_name, name, ref_curs):
     current_tu = get_tu(file_name)
     if check_diagnostics(current_tu.diagnostics):
         print "Warning : diagnostics occurs, skip file %s" % file_name
-        return
+       # return
 
     cursors = get_cursors_add_parent(current_tu, name)
     #don't forget to define global _refer_curs'
@@ -108,15 +108,16 @@ def parse_find_reference_args(default_output_filename):
         print ", the first one in %s line %s will be chosen" \
                 % (options.filename, options.line)
 
-    if options.output_file_name is not None\
-            and not os.path.isfile(options.output_file_name):
-        tmp_output_file = os.path.join(".", \
+    if options.output_file_name is not None:
+       try:
+           file_handle = open(options.output_file_name, 'w')
+       except IOError, e:
+           print e
+           tmp_output_file = os.path.join(".", \
                 default_output_filename)
-        print "Warning : output_file_name %s don't exists" \
-                % options.output_file_name,
-        print "will create one under current directory :%s"\
+           print "Error occurs, default output file %s will be used"\
                 % tmp_output_file
-        options.output_file_name = tmp_output_file 
+           options.output_file_name = tmp_output_file 
 
     return options
  
