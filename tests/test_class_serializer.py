@@ -17,8 +17,7 @@ class Test(unittest.TestCase):
     
     def test_generate_code(self):
         expected_code = u'''\
-serialization function for class A:
-
+///serialization function for class A:
 template<class Archive>
 void serialize(Archive & ar, const unsigned int version)
 {

@@ -29,14 +29,13 @@ def get_tu(source, all_warnings=False):
         # pylint: disable-msg=E1103
         args += ['-I' + p for p in include_paths.split(',')]
         
-        
-        
     if config_parser.has_option('Clang Options', 'include_files'):
         include_files = config_parser.get('Clang Options', 'include_files')
         # pylint: disable-msg=E1103
-        args += ['-include ' + p for p in include_files.split(',')]
+        for ifile in include_files.split(','):
+            args += ['-include', ifile]
         
-    print ' '.join(args)
+    #print ' '.join(args)
 
     return TranslationUnit.from_source(source, args)
 
@@ -144,14 +143,14 @@ def is_same_file(path1, path2):
            os.path.abspath(path2) 
 
 def is_curor_in_file_func(file_path):
-    def is_curor_in_file(cursor):
+    def is_curor_in_file(cursor, _l):
         cursor_file = cursor.location.file
         if not cursor_file:
             return  True
         else:
             return is_same_file(cursor_file.name, file_path)
     
-    return lambda c, _l: is_curor_in_file(c)
+    return is_curor_in_file
 
 def walk_ast(source, visitor, is_visit_subtree_fun = lambda _c, _l: True):
     """walk the ast with the specified functions by DFS

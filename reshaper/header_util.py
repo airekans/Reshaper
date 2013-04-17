@@ -6,12 +6,12 @@ from reshaper import util
 from functools import partial
 from reshaper.util import is_curor_in_file_func
 
-SMART_PTRS = set(["shared_ptr", "auto_ptr", "weak_ptr", \
+_SMART_PTRS = set(["shared_ptr", "auto_ptr", "weak_ptr", \
              "scoped_ptr", "shard_array", "scoped_array"])
 
 def is_smart_ptr(cursor):
     ''' is smart pointer type '''
-    f = lambda c: c.displayname in SMART_PTRS
+    f = lambda c: c.displayname in _SMART_PTRS
     smart_ptr_cursor = util.get_cursor_if(cursor, f)  
     return (smart_ptr_cursor is not None)
     
