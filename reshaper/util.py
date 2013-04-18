@@ -142,7 +142,7 @@ def walk_ast(source, visitor, is_visit_subtree_fun = lambda _c, _l: True):
 
     if source is None:
         return
-    elif isinstance(source, Cursor):
+    elif hasattr(source, "get_children"):
         cursor = source
     else: 
         # Assume TU
