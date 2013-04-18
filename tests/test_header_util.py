@@ -42,7 +42,7 @@ class Test(unittest.TestCase):
     def test_get_all_class_decl_cursors(self):
         cursors = hu.get_all_class_cursors(self.__tu_cursor)
         cursor_names = [c.spelling for c in cursors]
-        self.assertEqual(['X', 'A', 'B', 'B1'], cursor_names)
+        self.assertEqual(['X', 'A', 'B', 'B1', 'C'], cursor_names)
     
 if __name__ == "__main__":
     unittest.main()
