@@ -1,4 +1,5 @@
-
+//#include <memory>
+//#include <boost/smart_ptr.hpp>
 struct X{
 
 };
