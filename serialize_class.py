@@ -53,9 +53,10 @@ def _main():
     for class_name in class_names:
         if options.equal:
             print cs.generate_eq_op_code(header_path, class_name)
+            print
         if options.serialize:
             print cs.generate_serialize_code(header_path, class_name)
-            
+            print
         print 
             
 if __name__ == '__main__':

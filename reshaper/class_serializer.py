@@ -32,8 +32,32 @@ friend bool operator == (const {{ class_name }}& a, const {{ class_name }}& b)
 import reshaper.header_util as hu
 from jinja2 import Template
 from reshaper import util
-import sys
 
+
+class ClassSerializer(object):
+    def __init__(self, header_path, class_name):
+        _tu = util.get_tu(header_path)
+        self.cursor = hu.get_class_cursor(_tu.cursor, class_name, header_path)
+        
+        if not self.cursor:
+            raise Exception("Can not find class definition for %s in %s" % \
+                            (class_name, header_path))
+        self._class_name = class_name
+    
+    def render(self, code_template, **kwargs):
+        all_val_empty = True
+        for var in kwargs.values():
+            if var:
+                all_val_empty = False
+                break
+        if all_val_empty:
+            print 'no member found for %s' % self._class_name
+            return "" 
+        
+        kwargs['class_name'] = self._class_name
+        template = Template(code_template)
+        return template.render(kwargs)
+    
 
 def gen_code_with_member_var_separated(header_path, 
                                         class_name, 
@@ -42,27 +66,14 @@ def gen_code_with_member_var_separated(header_path,
     generate code for a class with member variables, 
     separate pointer and non pointer types 
     '''
-    tu_ = util.get_tu(header_path)
-    cursor = hu.get_class_cursor(tu_.cursor, class_name, header_path)
-    
-    if not cursor:
-        print "Can not find class definition for %s in %s" \
-                % (class_name, header_path)
-        sys.exit(1)
+    cs = ClassSerializer(header_path, class_name) 
       
-    nonpt_member_vars = hu.get_non_static_nonpt_var_names(cursor)
-    pt_member_vars = hu.get_non_static_pt_var_names(cursor)
-    
-    if not nonpt_member_vars and not pt_member_vars:
-        print 'no member found for %s' % class_name
-        return
-    
-    from jinja2 import Template
-       
-    template = Template(code_template)
-    return template.render(class_name=class_name,
-                           nonpt_member_vars = nonpt_member_vars,
-                           pt_member_vars = pt_member_vars)
+    nonpt_member_vars = hu.get_non_static_nonpt_var_names(cs.cursor)
+    pt_member_vars = hu.get_non_static_pt_var_names(cs.cursor)
+        
+    return cs.render(code_template,
+                     nonpt_member_vars = nonpt_member_vars,
+                     pt_member_vars = pt_member_vars)
     
 def gen_code_with_member_var(header_path,
                              class_name, 
@@ -70,23 +81,14 @@ def gen_code_with_member_var(header_path,
     '''
     generate code for a class with member variables
     '''
-    _tu = util.get_tu(header_path)
-    cursor = hu.get_class_cursor(_tu.cursor, class_name, header_path)
-    
-    if not cursor:
-        raise Exception("Can not find class definition for %s in %s" % \
-                        (class_name, header_path))
+   
+    cs = ClassSerializer(header_path, class_name) 
+      
+    member_vars = hu.get_non_static_var_names(cs.cursor)
         
+    return cs.render(code_template, member_vars = member_vars)    
     
-    member_vars = hu.get_non_static_var_names(cursor)
-    if not member_vars:
-        print 'no member found for %s' % class_name
-        return ""
-       
-       
-    template = Template(code_template)
-    return template.render(class_name=class_name,
-                           member_vars = member_vars)
+   
     
     
 
