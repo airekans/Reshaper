@@ -7,6 +7,7 @@ from clang.cindex import CursorKind
 from nose.tools import eq_
 import reshaper.semantic as semantic_util
 from reshaper.util import get_cursor_with_location
+from reshaper.semantic import get_full_qualified_name 
 
 parent_calling_func_test_input = """\
 void TargetFunc()
@@ -79,7 +80,7 @@ def has_child(cursor, is_translation_unit):
     '''
     assert(isinstance(cursor, Cursor))
 
-    has_child = False
+    _has_child = False
 
     if is_translation_unit:
         assert(not cursor.parent)
@@ -87,8 +88,8 @@ def has_child(cursor, is_translation_unit):
         assert(isinstance(cursor.parent, Cursor))
         for child in cursor.parent.get_children():
             if child == cursor:
-                has_child = True
-        assert(has_child)
+                _has_child = True
+        assert(_has_child)
 
 
 
@@ -213,3 +214,42 @@ def test_get_declaration_cursor_global_func():
     eq_(seman_parent.kind, CursorKind.TRANSLATION_UNIT)
 
 
+
+get_info_test_input = """\
+class TestClass
+{
+public:
+    void memFunc(int)
+    {
+    }
+};
+namespace TestNamespace
+{
+    void namespaceFunc(TestClass&)
+    {
+    }
+}
+void globalFunc()
+{
+}
+"""
+
+def test_get_full_qualified_name():
+    '''test get_full_qualified_name
+    '''
+    tu_source = get_tu_from_text(get_info_test_input)
+    mem_cursor = get_cursor_with_location(tu_source, "memFunc", 4, None)
+    assert(isinstance(mem_cursor, Cursor))
+    mem_info = get_full_qualified_name(mem_cursor)
+    eq_(mem_info, "TestClass::memFunc(int)")
+
+    namespace_cursor = get_cursor_with_location(tu_source, "namespaceFunc", 10, None)
+    assert(isinstance(namespace_cursor, Cursor))
+    name_info = get_full_qualified_name(namespace_cursor)
+    eq_(name_info, "TestNamespace::namespaceFunc(TestClass &)")
+
+    global_cursor = get_cursor_with_location(tu_source, "globalFunc", 14, None)
+    assert(isinstance(global_cursor, Cursor))
+    global_info = get_full_qualified_name(global_cursor)
+    eq_(global_info, "globalFunc()")
+    

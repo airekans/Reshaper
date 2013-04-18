@@ -23,7 +23,7 @@ def get_tu(source,all_warnings=False, config_path = '~/.reshaper.cfg'):
 
     if config_path:
         config_parser = ConfigParser.SafeConfigParser()
-        config_parser.read(['.reshaper.cfg', os.path.expanduser(config_path)])
+        config_parser.read(os.path.expanduser(config_path))
         if config_parser.has_option('Clang Options', 'include_paths'):
             include_paths = config_parser.get('Clang Options', 'include_paths')
             # pylint: disable-msg=E1103

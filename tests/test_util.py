@@ -1,14 +1,10 @@
 from reshaper.util import get_tu, get_cursors_if
 from reshaper.util import get_cursor, get_cursor_if, get_cursors
 from reshaper.util import walk_ast, get_function_signature
-from reshaper.util import get_cursor_with_location
-from reshaper.semantic import get_full_qualified_name 
-from clang.cindex import Cursor
 from clang.cindex import CursorKind
 import os
 from functools import partial
 from nose.tools import eq_, with_setup
-from .util import get_tu_from_text
 
 
 INPUT_DIR = os.path.join(os.path.dirname(__file__), 'test_data')
@@ -217,43 +213,9 @@ def test_get_function_signature_with_error_cursor():
     eq_("", get_function_signature(method_cursor))
     
 
-get_info_test_input = """\
-class TestClass
-{
-public:
-    void memFunc(int)
-    {
-    }
-};
-namespace TestNamespace
-{
-    void namespaceFunc(TestClass&)
-    {
-    }
-}
-void globalFunc()
-{
-}
-"""
 
 
-def test_get_full_qualified_name():
-    '''test get_full_qualified_name
-    '''
-    tu_source = get_tu_from_text(get_info_test_input)
-    mem_cursor = get_cursor_with_location(tu_source, "memFunc", 4, None)
-    assert(isinstance(mem_cursor, Cursor))
-    mem_info = get_full_qualified_name(mem_cursor)
-    eq_(mem_info, "TestClass::memFunc(int)")
 
-    namespace_cursor = get_cursor_with_location(tu_source, "namespaceFunc", 10, None)
-    assert(isinstance(namespace_cursor, Cursor))
-    name_info = get_full_qualified_name(namespace_cursor)
-    eq_(name_info, "TestNamespace::namespaceFunc(TestClass &)")
 
-    global_cursor = get_cursor_with_location(tu_source, "globalFunc", 14, None)
-    assert(isinstance(global_cursor, Cursor))
-    global_info = get_full_qualified_name(global_cursor)
-    eq_(global_info, "globalFunc()")
 
 
