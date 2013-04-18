@@ -2,7 +2,7 @@ from reshaper.util import get_tu, get_cursors_if
 from reshaper.util import get_cursor, get_cursor_if, get_cursors
 from reshaper.util import walk_ast, get_function_signature
 from reshaper.util import get_cursor_with_location
-from reshaper.util import get_full_qualified_name 
+from reshaper.util import get_full_qualified_name, get_class_usage
 from clang.cindex import Cursor
 from clang.cindex import CursorKind
 from clang.cindex import TranslationUnit
@@ -212,6 +212,58 @@ def test_get_function_signature_with_error_cursor():
     method_cursor = methods[0]
     method_cursor.get_tokens = lambda : []
     eq_("", get_function_signature(method_cursor))
+
+_GET_CLASS_USAGE_TEST_INPUT = """
+struct A
+{
+    void foo();
+    int bar(double d);
+
+    int m_data;
+};
+
+void fun1()
+{
+    A a;
+    a.foo();
+}
+
+void fun2(A* a)
+{
+    a->foo();
+    a->bar(1.0);
+}
+
+void fun3(A& a)
+{
+    const int i = a.m_data;
+}
+
+void fun4();
+"""
+    
+def test_get_class_usage():
+    _tu = get_tu_from_text(_GET_CLASS_USAGE_TEST_INPUT)
+
+    def check(fun_name, class_name, expected_methods):
+        expected_methods = set(expected_methods)
+        fun_cursor = get_cursor_if(_tu,
+                                   (lambda c: c.spelling == fun_name and
+                                     c.is_definition()))
+        methods = get_class_usage(fun_cursor, class_name)
+        eq_(expected_methods, methods)
+
+    check("fun1", "A", ['foo'])
+    check("fun2", "A", ['foo', 'bar'])
+    check("fun3", "A", [])
+
+    # check error conditions
+    eq_(set(), get_class_usage(None, "A"))
+
+    fun4_cursor = get_cursor(_tu, "fun4")
+    assert(fun4_cursor is not None)
+    assert(not fun4_cursor.is_definition())
+    eq_(set(), get_class_usage(fun4_cursor, "A"))
     
 
 get_info_test_input = """\

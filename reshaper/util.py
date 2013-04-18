@@ -214,8 +214,8 @@ def get_class_usage(fun_cursor, used_class):
     """ get the usage of the class from the function given as fun_cursor.
     """
 
-    if not fun_cursor.is_definition():
-        return []
+    if fun_cursor is None or not fun_cursor.is_definition():
+        return set()
 
     # get all member function calls
     def is_member_fun_call(c):

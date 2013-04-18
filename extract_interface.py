@@ -29,21 +29,21 @@ def parse_options():
                              help = "Names of methods you want to extract")
     option_parser.add_option("--from-usage", dest = "from_usage",
                              type = "string",
-                             help = "Name of the function that using CLASSNAME")
+                             help = "Name of the function that uses CLASSNAME")
 
-    return option_parser.parse_args()
+    # handle option or argument error.
+    options, args = option_parser.parse_args()
+    return option_parser, options, args
 
     
 def main():
-    options, args = parse_options()
+    option_parser, options, args = parse_options()
     if len(args) != 2:
-        print "Please input source file and class name."
-        sys.exit(1)
+        option_parser.error("Please input source file and class name.")
 
     src, class_to_extract = args
     if not os.path.exists(src):
-        print "Source file doesn't exist: %s" % src
-        sys.exit(1)
+        option_parser.error("Source file doesn't exist: %s" % src)
     
     methods = options.methods
     if methods is not None:

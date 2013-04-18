@@ -5,9 +5,16 @@ from clang.cindex import Cursor
 
 
 class StaticCursor(object):
-    """ StaticCursor is a cursor that will not change its tree structure
-    after the file is change.
-    So you can use it to travese the AST easily with StaticCursor.
+    """ StaticCursor is a cursor that will not change the object ID
+    after getting the children again and again.
+    E.g. If you add an attribute to the child cursor, it will "disappear"
+    after you get it again by using get_children.
+    for child in cursor.get_children():
+        child.parent = cursor
+    for child in cursor.get_children():
+        assert(hasattr(child, "parent")) # this will fail
+    
+    So you travese the AST easily with StaticCursor.
 
     Note that if you get cursor by using the native API of cindex,
     the return cursor will be Cursor instead of StaticCursor,
@@ -16,7 +23,8 @@ class StaticCursor(object):
     """
     
     def __init__(self, cursor, parent = None):
-        """
+        """ Create a new StaticCursor with a cindex.Cursor
+        and a optional parent
         """
 
         self.__cursor = cursor
@@ -28,7 +36,7 @@ class StaticCursor(object):
         return self.__parent
 
     def get_children(self):
-        """
+        """ Simulate the Cursor.get_children function
         """
         return self.__children
 
