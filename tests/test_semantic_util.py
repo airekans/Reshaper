@@ -7,6 +7,7 @@ from clang.cindex import CursorKind
 from nose.tools import eq_
 import reshaper.semantic as semantic_util
 from reshaper.util import get_cursor_with_location
+from reshaper.semantic import get_full_qualified_name 
 
 parent_calling_func_test_input = """\
 void TargetFunc()
@@ -79,7 +80,7 @@ def has_child(cursor, is_translation_unit):
     '''
     assert(isinstance(cursor, Cursor))
 
-    has_child = False
+    _has_child = False
 
     if is_translation_unit:
         assert(not cursor.parent)
@@ -87,18 +88,18 @@ def has_child(cursor, is_translation_unit):
         assert(isinstance(cursor.parent, Cursor))
         for child in cursor.parent.get_children():
             if child == cursor:
-                has_child = True
-        assert(has_child)
+                _has_child = True
+        assert(_has_child)
 
 
 
 def test_get_cursors_add_parent():
     '''test get_cursors_add_parent
     '''
-    tu = get_tu_from_text(parent_calling_func_test_input)
-    assert(isinstance(tu, TranslationUnit))
+    _tu = get_tu_from_text(parent_calling_func_test_input)
+    assert(isinstance(_tu, TranslationUnit))
     spelling = "TargetFunc"
-    cursors = semantic_util.get_cursors_add_parent(tu, spelling)
+    cursors = semantic_util.get_cursors_add_parent(_tu, spelling)
     for cursor in cursors:
         assert(isinstance(cursor, Cursor))
         has_child(cursor, cursor.location.line == 1)
@@ -106,19 +107,19 @@ def test_get_cursors_add_parent():
 def test_get_cursor_with_location():
     '''test get_cursor_with_location in reshaper.util
     '''
-    tu = get_tu_from_text(parent_calling_func_test_input)
-    assert(isinstance(tu, TranslationUnit))
+    _tu = get_tu_from_text(parent_calling_func_test_input)
+    assert(isinstance(_tu, TranslationUnit))
     spelling = "testVariable"
-    cursor1 = get_cursor_with_location(tu, spelling, 1, None)
+    cursor1 = get_cursor_with_location(_tu, spelling, 1, None)
     assert(not cursor1)
-    cursor2 = get_cursor_with_location(tu, spelling, 4, 10)
+    cursor2 = get_cursor_with_location(_tu, spelling, 4, 10)
     assert(not cursor2)
-    cursor3 = get_cursor_with_location(tu, spelling, 12, None)
+    cursor3 = get_cursor_with_location(_tu, spelling, 12, None)
     assert(isinstance(cursor3, Cursor))
     assert(spelling in cursor3.displayname)
     eq_(cursor3.location.line, 12)
     eq_(cursor3.location.column, 25)
-    cursor4 = get_cursor_with_location(tu, spelling, 12, 41)
+    cursor4 = get_cursor_with_location(_tu, spelling, 12, 41)
     assert(isinstance(cursor4, Cursor))
     assert(spelling in cursor4.displayname)
     eq_(cursor4.location.line, 12)
@@ -128,10 +129,10 @@ def test_get_calling_function():
     '''test get_calling_function
     Attention: should make sure cursors have parent attr 
     '''
-    tu = get_tu_from_text(parent_calling_func_test_input)
-    assert(isinstance(tu, TranslationUnit))
+    _tu = get_tu_from_text(parent_calling_func_test_input)
+    assert(isinstance(_tu, TranslationUnit))
     spelling = "TargetFunc"
-    cursors = semantic_util.get_cursors_add_parent(tu, spelling)
+    cursors = semantic_util.get_cursors_add_parent(_tu, spelling)
     for cur in cursors:
         assert(isinstance(cur, Cursor))
         parent = semantic_util.get_calling_function(cur)
@@ -145,20 +146,20 @@ def test_get_calling_function():
             assert(str("Call_CallMe") in parent.displayname)
 
 def get_decla_tu():
-    '''get tu for declaration tests
+    '''get _tu for declaration tests
     '''
-    tu = get_tu_from_text(declaration_test_input)
-    assert(isinstance(tu, TranslationUnit))
-    return tu
+    _tu = get_tu_from_text(declaration_test_input)
+    assert(isinstance(_tu, TranslationUnit))
+    return _tu
 
 def test_get_declaration_cursor_class():
     '''use to test get_declaration_cursor and 
     get_semantic_parent_of_decla_cursor of class member function
     '''
 
-    tu = get_decla_tu()
+    _tu = get_decla_tu()
     spelling = "classFunc"
-    curClass = get_cursor_with_location(tu, spelling, 30, None)
+    curClass = get_cursor_with_location(_tu, spelling, 30, None)
     assert(isinstance(curClass, Cursor))
     decla_cursor = semantic_util.get_declaration_cursor(curClass)
     eq_(decla_cursor.location.line, 4)
@@ -171,9 +172,9 @@ def test_get_declaration_cursor_namespace():
     '''use to test get_declaration_cursor and 
     get_semantic_parent_of_decla_cursor of namespace function
     '''
-    tu = get_decla_tu()
+    _tu = get_decla_tu()
     spelling = "nameFunc"
-    cur = get_cursor_with_location(tu, spelling, 31, None)
+    cur = get_cursor_with_location(_tu, spelling, 31, None)
     assert(isinstance(cur, Cursor))
     decla_cursor = semantic_util.get_declaration_cursor(cur)
     eq_(decla_cursor.location.line, 11)
@@ -186,9 +187,9 @@ def test_get_declaration_cursor_annoy_namespace():
     '''use to test get_declaration_cursor and 
     get_semantic_parent_of_decla_cursor of annoymouse namespace function
     '''
-    tu = get_decla_tu()
+    _tu = get_decla_tu()
     spelling = "annoyNameFunc"
-    cur = get_cursor_with_location(tu, spelling, 32, None)
+    cur = get_cursor_with_location(_tu, spelling, 32, None)
     assert(isinstance(cur, Cursor))
     decla_cursor = semantic_util.get_declaration_cursor(cur)
     eq_(decla_cursor.location.line, 18)
@@ -201,9 +202,9 @@ def test_get_declaration_cursor_global_func():
     '''use to test get_declaration_cursor and 
     get_semantic_parent_of_decla_cursor of global function
     '''
-    tu = get_decla_tu()
+    _tu = get_decla_tu()
     spelling = "GlobalFunc"
-    cur = get_cursor_with_location(tu, spelling, 33, None)
+    cur = get_cursor_with_location(_tu, spelling, 33, None)
     assert(isinstance(cur, Cursor))
     decla_cursor = semantic_util.get_declaration_cursor(cur)
     eq_(decla_cursor.location.line, 23)
@@ -213,3 +214,42 @@ def test_get_declaration_cursor_global_func():
     eq_(seman_parent.kind, CursorKind.TRANSLATION_UNIT)
 
 
+
+get_info_test_input = """\
+class TestClass
+{
+public:
+    void memFunc(int)
+    {
+    }
+};
+namespace TestNamespace
+{
+    void namespaceFunc(TestClass&)
+    {
+    }
+}
+void globalFunc()
+{
+}
+"""
+
+def test_get_full_qualified_name():
+    '''test get_full_qualified_name
+    '''
+    tu_source = get_tu_from_text(get_info_test_input)
+    mem_cursor = get_cursor_with_location(tu_source, "memFunc", 4, None)
+    assert(isinstance(mem_cursor, Cursor))
+    mem_info = get_full_qualified_name(mem_cursor)
+    eq_(mem_info, "TestClass::memFunc(int)")
+
+    namespace_cursor = get_cursor_with_location(tu_source, "namespaceFunc", 10, None)
+    assert(isinstance(namespace_cursor, Cursor))
+    name_info = get_full_qualified_name(namespace_cursor)
+    eq_(name_info, "TestNamespace::namespaceFunc(TestClass &)")
+
+    global_cursor = get_cursor_with_location(tu_source, "globalFunc", 14, None)
+    assert(isinstance(global_cursor, Cursor))
+    global_info = get_full_qualified_name(global_cursor)
+    eq_(global_info, "globalFunc()")
+    

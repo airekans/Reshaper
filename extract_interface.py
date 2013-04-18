@@ -8,7 +8,6 @@ Usage: extract_interface.py class.cpp class_name
 """
 
 from clang.cindex import CursorKind
-from clang.cindex import TranslationUnit
 import sys
 import os
 from reshaper.util import get_tu, get_cursor, get_cursors_if
@@ -83,9 +82,9 @@ def main():
     if methods is not None:
         methods = methods.split(',')
 
-    tu = get_tu(src)
+    _tu = get_tu(src)
     # TODO: the following line should be changed to work on class in a namespace
-    class_cursor = get_cursor(tu, class_to_extract)
+    class_cursor = get_cursor(_tu, class_to_extract)
     
     if class_cursor is None or \
             class_cursor.kind != CursorKind.CLASS_DECL or \

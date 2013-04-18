@@ -8,9 +8,9 @@ INPUT_DIR = os.path.join(os.path.dirname(__file__), 'test_data')
 
 def test_extract_interface():
     source = os.path.join(INPUT_DIR, 'class.cpp')
-    tu = TranslationUnit.from_source(source, ['-std=c++11'])
+    _tu = TranslationUnit.from_source(source, ['-std=c++11'])
 
-    class_cursor = get_cursor(tu, 'A')
+    class_cursor = get_cursor(_tu, 'A')
     assert(class_cursor is not None)
 
     # check default behavior
