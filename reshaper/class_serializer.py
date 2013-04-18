@@ -32,6 +32,7 @@ friend bool operator == (const {{ class_name }}& a, const {{ class_name }}& b)
 import reshaper.header_util as hu
 from jinja2 import Template
 from reshaper import util
+import logging
 
 
 class ClassSerializer(object):
@@ -51,7 +52,7 @@ class ClassSerializer(object):
                 all_val_empty = False
                 break
         if all_val_empty:
-            print 'no member found for %s' % self._class_name
+            logging.info('no member found for %s' % self._class_name)
             return "" 
         
         kwargs['class_name'] = self._class_name
@@ -95,8 +96,8 @@ def gen_code_with_member_var(header_path,
 def generate_serialize_code(header_path, class_name):
     ''' generate serialization code for a c++ class '''
     return gen_code_with_member_var(header_path,
-                                             class_name,
-                                             SERIALIZE_TEMPLATE)
+                                    class_name,
+                                    SERIALIZE_TEMPLATE)
 
 def generate_eq_op_code(header_path, class_name):
     ''' generate operator== code for a c++ class '''

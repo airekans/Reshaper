@@ -37,9 +37,8 @@ def _main():
     options, args = option_parser.parse_args()
     
     if len(args) < 1:
-        print "Please input source file and class name."
-        import sys
-        sys.exit(1)
+        option_parser.error("Please input source file and class name.")
+        
     header_path = args[0]
     
     if len(args) == 1:
@@ -50,15 +49,22 @@ def _main():
     
     set_all_true_if_no_option(options)
     
+    def do_print(code, class_name, function_name):
+        if not code:
+            print '%s not generated for %s' % (function_name, class_name)
+        else:
+            print code
+        print
+    
     for class_name in class_names:
         if options.equal:
-            print cs.generate_eq_op_code(header_path, class_name)
-            print
-        if options.serialize:
-            print cs.generate_serialize_code(header_path, class_name)
-            print
-        print 
+            do_print(cs.generate_eq_op_code(header_path, class_name),
+                     class_name, 'operator==')
             
+        if options.serialize:
+            do_print(cs.generate_serialize_code(header_path, class_name),
+                     class_name, 'Serialization')
+         
 if __name__ == '__main__':
     _main()    
     
