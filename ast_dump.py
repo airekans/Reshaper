@@ -1,11 +1,12 @@
 #!/usr/bin/env python
 
-from reshaper.util import get_tu, walk_ast
-from clang.cindex import TranslationUnit
+from reshaper.util import get_tu, walk_ast, is_curor_in_file_func
 from optparse import OptionParser
-import sys, os
+import sys
+from functools import partial
+from reshaper.semantic import get_declaration_cursor
 
-def print_cursor(cursor, level):
+def print_cursor(cursor, level, is_print_ref = False):
     prefix = "**" * level
 
     lexical_parent = cursor.lexical_parent
@@ -23,6 +24,13 @@ def print_cursor(cursor, level):
     print prefix + "semantic_parent:", \
          semantic_parent.spelling if semantic_parent is not None else None
     print 
+    
+    if is_print_ref:
+        ref_cursor = get_declaration_cursor(cursor)
+        if not ref_cursor or ref_cursor == cursor:
+            return
+        print prefix + "reference:"
+        print_cursor(ref_cursor, level+1, is_print_ref)
 
 if __name__ == '__main__':
     
@@ -35,33 +43,32 @@ if __name__ == '__main__':
                              help = "walk all cursor nodes including\
                                      the ones not defined in this file")
     
-    (options, args) = option_parser.parse_args()
+    option_parser.add_option("-r", "--reference", dest = "reference",
+                             action="store_true",
+                             help = "print info of referenced cursor")
     
+    (options, args) = option_parser.parse_args()
+       
     if len(args) < 1:
         print 'Please input files to parse'
         sys.exit(1)
-          
     
-    FILE_PATHS = set([os.path.abspath(path) for path in args])
-
-    def can_visit_cursor_func(cursor, level):
+    def can_visit_cursor_func(cursor, level, path):
         can_visit =  True
         if options.level is not None:
             can_visit = (level <= options.level)
         if not options.all :
-            cursor_file = cursor.location.file
-            if cursor_file:
-                can_visit = can_visit and \
-                                os.path.abspath(cursor_file.name) in FILE_PATHS
+            can_visit = can_visit and is_curor_in_file_func(path)(cursor, level)
         return can_visit
         
     for file_path in args:     
-        tu = get_tu(file_path)
-        if not tu:
+        _tu = get_tu(file_path)
+        if not _tu:
             print "unable to load %s" % file_path
             sys.exit(1)
     
-        walk_ast(tu, print_cursor, can_visit_cursor_func)
+        walk_ast(_tu, partial(print_cursor, is_print_ref =  options.reference), \
+                     partial(can_visit_cursor_func, path = file_path))
     
 
     

@@ -14,29 +14,35 @@ class Test(unittest.TestCase):
                                      'test_data','test.h')
     
     def setUp(self):
-        self.__tu_cursor = util.get_tu(Test.TEST_HEADER_FILE).cursor
+        self.__tu_cursor = util.get_tu(Test.TEST_HEADER_FILE, config_path = None).cursor
         assert(self.__tu_cursor)
+    
 
     def test_get_class_decl_cursor(self):
-        cursor = hu.get_class_decl_cursor(self.__tu_cursor, 'A')
+        cursor = hu.get_class_cursor(self.__tu_cursor, 'A', \
+                                          Test.TEST_HEADER_FILE)
         self.assertEqual('A', cursor.spelling)  
         self.assertEqual(CursorKind.CLASS_DECL, cursor.kind)
         
     def test_get_member_vars(self):
-        cursor = hu.get_class_decl_cursor(self.__tu_cursor, 'A')
-       
+        cursor = hu.get_class_cursor(self.__tu_cursor, 'A', \
+                                          Test.TEST_HEADER_FILE)
         member_vars = hu.get_non_static_var_names(cursor)
-        self.assertEqual([ 'm_d', 'm_i1', 'm_i2', 'm_i3', 'm_i4', \
-                           'm_p1', 'm_p2', 'm_p3', 'm_s1', 'm_x'],
+        self.assertEqual(['m_i1', 'm_i2', 'm_i3', 'm_i4', 'm_d',\
+                          'm_p1', 'm_s1', 'm_p2', 'm_p3', 'm_x'],
                          member_vars)
         
         non_pt_members = hu.get_non_static_nonpt_var_names(cursor)
-        self.assertEqual(['m_d', 'm_i1', 'm_i2', 'm_i3', 'm_i4', 'm_s1', 'm_x'],
+        self.assertEqual(['m_i1', 'm_i2', 'm_i3', 'm_i4', 'm_d', 'm_s1', 'm_x'],
                          non_pt_members)
         
         pointer_vars = hu.get_non_static_pt_var_names(cursor)
         self.assertEqual(['m_p1', 'm_p2', 'm_p3'], pointer_vars)
         
-
+    def test_get_all_class_decl_cursors(self):
+        cursors = hu.get_all_class_cursors(self.__tu_cursor)
+        cursor_names = [c.spelling for c in cursors]
+        self.assertEqual(['X', 'A', 'B', 'B1'], cursor_names)
+    
 if __name__ == "__main__":
     unittest.main()
