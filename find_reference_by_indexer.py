@@ -5,7 +5,7 @@ through indexer db created before.
 The result will be output to stdout, 
 also can be output to a file specified by -o 
 
-Usage : find_reference.py -f test.cpp -l 37 -d . -o sample.txt
+Usage : find_reference_by_usr.py -f test.cpp -l 37 -d . -o sample.txt
 """
 
 import os, sys
@@ -73,7 +73,17 @@ def main():
         output_string += result
         output_string += "\n"
 
-    print output_string
+    if options.output_file_name:
+        try:
+            file_obj = open(options.output_file_name, "w")
+        except IOError, e:
+            print e
+            print output_string
+        else:
+            file_obj.write(output_string)
+            file_obj.close()
+    else:
+        print output_string
     
 if __name__ == "__main__":
     main()
