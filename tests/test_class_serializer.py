@@ -58,5 +58,10 @@ friend bool operator == (const A& a, const A& b)
         self.assertEqual( expected_code, code)
         
         
+        # class 'C' dose not have any member variable
+        code = cs.generate_eq_op_code(TEST_HEADER_FILE, 'C')
+        self.assertEqual('', code)
+        
+        
 if __name__ == "__main__":
     unittest.main()
