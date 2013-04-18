@@ -11,7 +11,7 @@ from clang.cindex import CursorKind
 from clang.cindex import TranslationUnit
 import sys
 import os
-from reshaper.util import get_tu, get_cursor
+from reshaper.util import get_tu, get_cursor, get_cursors_if
 from reshaper.extract import extract_interface
 from optparse import OptionParser
 
@@ -65,8 +65,6 @@ def get_class_usage(fun_cursor, used_class):
         
     # get all member function calls in the function
     get_cursors_if(fun_cursor, is_member_fun_call)
-
-    
 
     
     
