@@ -36,9 +36,11 @@ import logging
 
 
 class ClassSerializer(object):
-    def __init__(self, header_path, class_name):
+    def __init__(self, header_path, class_name, class_cursor = None):
         _tu = util.get_tu(header_path)
-        self.cursor = hu.get_class_cursor(_tu.cursor, class_name, header_path)
+
+        self.cursor = hu.get_class_cursor_in_file(_tu.cursor, class_name, header_path) \
+                      if class_cursor is None else class_cursor
         
         if not self.cursor:
             raise Exception("Can not find class definition for %s in %s" % \
@@ -61,13 +63,14 @@ class ClassSerializer(object):
     
 
 def gen_code_with_member_var_separated(header_path, 
-                                        class_name, 
-                                        code_template):
+                                       class_name, 
+                                       code_template,
+                                       class_cursor = None):
     '''
     generate code for a class with member variables, 
     separate pointer and non pointer types 
     '''
-    cs = ClassSerializer(header_path, class_name) 
+    cs = ClassSerializer(header_path, class_name, class_cursor) 
       
     nonpt_member_vars = hu.get_non_static_nonpt_var_names(cs.cursor)
     pt_member_vars = hu.get_non_static_pt_var_names(cs.cursor)
@@ -78,30 +81,30 @@ def gen_code_with_member_var_separated(header_path,
     
 def gen_code_with_member_var(header_path,
                              class_name, 
-                             code_template):
+                             code_template,
+                             class_cursor = None):
     '''
     generate code for a class with member variables
     '''
    
-    cs = ClassSerializer(header_path, class_name) 
+    cs = ClassSerializer(header_path, class_name, class_cursor) 
       
     member_vars = hu.get_non_static_var_names(cs.cursor)
         
     return cs.render(code_template, member_vars = member_vars)    
     
-   
-    
-    
 
-def generate_serialize_code(header_path, class_name):
+def generate_serialize_code(header_path, class_name, class_cursor = None):
     ''' generate serialization code for a c++ class '''
     return gen_code_with_member_var(header_path,
                                     class_name,
-                                    SERIALIZE_TEMPLATE)
+                                    SERIALIZE_TEMPLATE,
+                                    class_cursor)
 
-def generate_eq_op_code(header_path, class_name):
+def generate_eq_op_code(header_path, class_name, class_cursor = None):
     ''' generate operator== code for a c++ class '''
     return gen_code_with_member_var_separated(header_path,
-                                            class_name,
-                                            EQ_TEMPLATE)
+                                              class_name,
+                                              EQ_TEMPLATE,
+                                              class_cursor)
 

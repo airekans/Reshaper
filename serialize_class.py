@@ -10,6 +10,7 @@ Created on Apr 7, 2013
 from reshaper import class_serializer as cs
 from optparse import OptionParser 
 from reshaper import header_util as hu, util
+import sys
 
 def set_all_true_if_no_option(opts):
     '''
@@ -40,12 +41,14 @@ def _main():
         option_parser.error("Please input source file and class name.")
         
     header_path = args[0]
-    
+
+    tu_ = util.get_tu(header_path)
+    if util.check_diagnostics(tu_.diagnostics):
+        sys.exit(1)
     if len(args) == 1:
-        tu_ = util.get_tu(header_path)
-        class_names = hu.get_all_class_names(tu_, header_path)
+        classes = hu.get_all_class_cursors(tu_)
     else:
-        class_names = args[1:]
+        classes = hu.get_classes_with_names(tu_, args[1:])
     
     set_all_true_if_no_option(options)
     
@@ -56,14 +59,14 @@ def _main():
             print code
         print
     
-    for class_name in class_names:
+    for cls in classes:
         if options.equal:
-            do_print(cs.generate_eq_op_code(header_path, class_name),
-                     class_name, 'operator==')
+            do_print(cs.generate_eq_op_code(header_path, cls.spelling, cls),
+                     cls, 'operator==')
             
         if options.serialize:
-            do_print(cs.generate_serialize_code(header_path, class_name),
-                     class_name, 'Serialization')
+            do_print(cs.generate_serialize_code(header_path, cls.spelling, cls),
+                     cls, 'Serialization')
          
 if __name__ == '__main__':
     _main()    

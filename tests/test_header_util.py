@@ -19,13 +19,13 @@ class Test(unittest.TestCase):
     
 
     def test_get_class_decl_cursor(self):
-        cursor = hu.get_class_cursor(self.__tu_cursor, 'A', \
+        cursor = hu.get_class_cursor_in_file(self.__tu_cursor, 'A', \
                                           Test.TEST_HEADER_FILE)
         self.assertEqual('A', cursor.spelling)  
         self.assertEqual(CursorKind.CLASS_DECL, cursor.kind)
         
     def test_get_member_vars(self):
-        cursor = hu.get_class_cursor(self.__tu_cursor, 'A', \
+        cursor = hu.get_class_cursor_in_file(self.__tu_cursor, 'A', \
                                           Test.TEST_HEADER_FILE)
         member_vars = hu.get_non_static_var_names(cursor)
         self.assertEqual(['m_i1', 'm_i2', 'm_i3', 'm_i4', 'm_d',\

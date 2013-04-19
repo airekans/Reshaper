@@ -101,8 +101,8 @@ def is_class(cursor):
     return cursor.kind == CursorKind.CLASS_DECL or \
             cursor.kind == CursorKind.STRUCT_DECL
 
-def is_class_name_matched(cursor, _class_name):
-    return cursor.spelling == _class_name and \
+def is_class_name_matched(cursor, class_name):
+    return cursor.spelling == class_name and \
            is_class(cursor)
            
            
