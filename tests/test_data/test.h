@@ -53,3 +53,9 @@ class B{
 class B1: public B{
 	A* m_pa;
 };
+
+class C
+{
+	void fun();
+};
+
