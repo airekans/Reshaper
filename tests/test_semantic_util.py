@@ -6,8 +6,9 @@ from clang.cindex import Cursor
 from clang.cindex import CursorKind
 from nose.tools import eq_
 import reshaper.semantic as semantic_util
-from reshaper.util import get_cursor_with_location
-from reshaper.semantic import get_full_qualified_name 
+from reshaper.semantic import get_full_qualified_name
+from reshaper.semantic import get_class_usage
+from reshaper.util import get_cursor_with_location, get_cursor_if, get_cursor
 
 parent_calling_func_test_input = """\
 void TargetFunc()
@@ -252,4 +253,59 @@ def test_get_full_qualified_name():
     assert(isinstance(global_cursor, Cursor))
     global_info = get_full_qualified_name(global_cursor)
     eq_(global_info, "globalFunc()")
+
+
+_GET_CLASS_USAGE_TEST_INPUT = """
+struct A
+{
+    void foo();
+    int bar(double d);
+
+    int m_data;
+};
+
+void fun1()
+{
+    A a;
+    a.foo();
+}
+
+void fun2(A* a)
+{
+    a->foo();
+    a->bar(1.0);
+}
+
+void fun3(A& a)
+{
+    const int i = a.m_data;
+}
+
+void fun4();
+"""
+    
+def test_get_class_usage():
+    _tu = get_tu_from_text(_GET_CLASS_USAGE_TEST_INPUT)
+
+    def check(fun_name, class_name, expected_methods):
+        expected_methods = set(expected_methods)
+        fun_cursor = get_cursor_if(_tu,
+                                   (lambda c: c.spelling == fun_name and
+                                     c.is_definition()))
+        methods = get_class_usage(fun_cursor, class_name)
+        eq_(expected_methods, methods)
+
+    check("fun1", "A", ['foo'])
+    check("fun2", "A", ['foo', 'bar'])
+    check("fun3", "A", [])
+
+    # check error conditions
+    eq_(set(), get_class_usage(None, "A"))
+
+    fun4_cursor = get_cursor(_tu, "fun4")
+    assert(fun4_cursor is not None)
+    assert(not fun4_cursor.is_definition())
+    eq_(set(), get_class_usage(fun4_cursor, "A"))
+    
+
     

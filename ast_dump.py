@@ -32,8 +32,7 @@ def print_cursor(cursor, level, is_print_ref = False):
         print prefix + "reference:"
         print_cursor(ref_cursor, level+1, is_print_ref)
 
-if __name__ == '__main__':
-    
+def main():
     option_parser = OptionParser(usage = "%prog [options] files") 
     option_parser.add_option("-l", "--level", dest = "level",
                              type="int",\
@@ -66,9 +65,19 @@ if __name__ == '__main__':
         if not _tu:
             print "unable to load %s" % file_path
             sys.exit(1)
-    
-        walk_ast(_tu, partial(print_cursor, is_print_ref =  options.reference), \
-                     partial(can_visit_cursor_func, path = file_path))
-    
 
+        error_num = len(_tu.diagnostics)
+        if error_num > 0:
+            print "Source file has the following errors(%d):" % error_num
+            for diag in _tu.diagnostics:
+                print diag.spelling
+
+            sys.exit(1)
+    
+        walk_ast(_tu,
+                 partial(print_cursor, is_print_ref =  options.reference),
+                 partial(can_visit_cursor_func, path = file_path))
+        
+if __name__ == '__main__':
+    main()
     

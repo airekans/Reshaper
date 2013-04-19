@@ -5,6 +5,7 @@ from clang.cindex import CursorKind
 import os
 from functools import partial
 from nose.tools import eq_, with_setup
+from .util import get_tu_from_text
 
 
 INPUT_DIR = os.path.join(os.path.dirname(__file__), 'test_data')
@@ -211,9 +212,6 @@ def test_get_function_signature_with_error_cursor():
     method_cursor = methods[0]
     method_cursor.get_tokens = lambda : []
     eq_("", get_function_signature(method_cursor))
-    
-
-
 
 
 
