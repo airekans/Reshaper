@@ -49,7 +49,16 @@ def _main():
         classes = hu.get_all_class_cursors(tu_)
     else:
         classes = hu.get_classes_with_names(tu_, args[1:])
-    
+
+    tmp_classes = []
+    for cls in classes:
+        if cls.is_definition():
+            tmp_classes.append(cls)
+        else:
+            print "class %s is not defined and will not be generated" % cls.spelling
+        
+    classes = tmp_classes
+        
     set_all_true_if_no_option(options)
     
     def do_print(code, class_name, function_name):
@@ -61,12 +70,10 @@ def _main():
     
     for cls in classes:
         if options.equal:
-            do_print(cs.generate_eq_op_code(header_path, cls.spelling, cls),
-                     cls, 'operator==')
+            do_print(cs.generate_eq_op_code(cls), cls.spelling, 'operator==')
             
         if options.serialize:
-            do_print(cs.generate_serialize_code(header_path, cls.spelling, cls),
-                     cls, 'Serialization')
+            do_print(cs.generate_serialize_code(cls), cls.spelling, 'Serialization')
          
 if __name__ == '__main__':
     _main()    

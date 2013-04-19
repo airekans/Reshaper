@@ -7,9 +7,6 @@ from reshaper.util import is_cursor_in_file_func
 import reshaper.semantic as sem
 
 
-
-
-
 def get_name(cursor):
     return cursor.spelling
     
