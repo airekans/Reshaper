@@ -8,11 +8,10 @@ Usage: extract_interface.py class.cpp class_name
 """
 
 from clang.cindex import CursorKind
-from clang.cindex import TranslationUnit
 import sys
 import os
 from reshaper.util import get_tu, get_cursor, get_cursors_if, get_cursor_if
-from reshaper.util import get_class_usage
+from reshaper.semantic import get_class_usage
 from reshaper.semantic import get_semantic_parent_of_decla_cursor
 from reshaper.semantic import get_declaration_cursor
 from reshaper.extract import extract_interface
@@ -49,9 +48,9 @@ def main():
     if methods is not None:
         methods = methods.split(',')
 
-    tu = get_tu(src)
+    _tu = get_tu(src)
     # TODO: the following line should be changed to work on class in a namespace
-    class_cursor = get_cursor_if(tu,
+    class_cursor = get_cursor_if(_tu,
                                  lambda c: c.spelling == class_to_extract
                                      and c.is_definition())
     
@@ -66,7 +65,7 @@ def main():
     # analyze the function
     fun_using_class = options.from_usage
     if fun_using_class is not None:
-        fun_cursor = get_cursor_if(tu, lambda c: c.spelling == fun_using_class and c.is_definition())
+        fun_cursor = get_cursor_if(_tu, lambda c: c.spelling == fun_using_class and c.is_definition())
         methods = get_class_usage(fun_cursor, class_to_extract)
         
     # print out the interface class

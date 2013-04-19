@@ -10,7 +10,7 @@ from clang.cindex import Cursor
 from clang.cindex import TranslationUnit
 from reshaper.util import get_tu
 from reshaper.util import get_cursor_with_location
-from reshaper.util import get_full_qualified_name
+from reshaper.semantic import get_full_qualified_name
 import reshaper.semantic as semantic_util
 from functools import partial
 from reshaper.find_reference_util import get_usr_of_declaration_cursor

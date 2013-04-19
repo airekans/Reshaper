@@ -42,12 +42,20 @@ public:
     static int m_si;
 };
 
+typedef A AA;
 
 class B{
-	A m_a;
+	AA m_a;
+	X m_x;
 };
 
 
 class B1: public B{
 	A* m_pa;
 };
+
+class C
+{
+	void fun();
+};
+

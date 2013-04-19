@@ -7,6 +7,7 @@ from clang.cindex import CursorKind
 from clang.cindex import TranslationUnit
 from clang.cindex import TypeKind
 from clang.cindex import Config
+from reshaper import util 
 
 _file_types = ('.cpp', '.c', '.cc')
 _conf = Config()
@@ -33,7 +34,7 @@ def get_cursors_add_parent(source, spelling):
             if cursor.spelling == spelling:
                 cursors.append(cursor)
         elif spelling in cursor.displayname :
-                cursors.append(cursor)
+            cursors.append(cursor)
         # Recurse into children.
         cursors.extend( get_cursors_add_parent(cursor, spelling))
     return cursors
@@ -42,9 +43,9 @@ def scan_dir_parse_files(directory, parse_file):
     '''Scan directory recursivly to 
     get files with file_types
     '''
-    for root, dirs, files in os.walk(directory):
+    for root, _, files in os.walk(directory):
         for file_name in files:
-            name, file_type = os.path.splitext(file_name)
+            _, file_type = os.path.splitext(file_name)
             if file_type in _file_types:
                 parse_file(os.path.join(root, file_name))
 
@@ -83,4 +84,81 @@ def get_semantic_parent_of_decla_cursor(cursor):
             decla_cursor.semantic_parent is None:
         return None
     return decla_cursor.semantic_parent
+
+
+_SMART_PTRS = set(["shared_ptr", "auto_ptr", "weak_ptr", \
+             "scoped_ptr", "shard_array", "scoped_array"])
+
+def is_smart_ptr(cursor):
+    ''' is smart pointer type '''
+    f = lambda c: c.displayname in _SMART_PTRS
+    smart_ptr_cursor = util.get_cursor_if(cursor, f)  
+    return (smart_ptr_cursor is not None)
+    
+def is_pointer(cursor):
+    ''' is pointer type '''
+    if cursor.type.kind == TypeKind.POINTER:
+        return True
+    
+    return is_smart_ptr(cursor)
+    
+def is_non_static_var(cursor):
+    ''' is non-static member var'''
+    return cursor.kind == CursorKind.FIELD_DECL
+
+def is_class(cursor):
+    ''' is class or struct definition cursor'''
+    return cursor.kind == CursorKind.CLASS_DECL or \
+            cursor.kind == CursorKind.STRUCT_DECL
+
+def is_class_name_matched(cursor, _class_name):
+    return cursor.spelling == _class_name and \
+           is_class(cursor)
+           
+           
+def get_full_qualified_name(cursor):
+    '''use to get semantic_parent.spelling :: cursor.spelling or displayname 
+    infomation of the input cursors;
+    for example: TestUSR::test_decla(int), MyNameSpace::test_defin(double)
+    or test_function(TestUSR&)
+    '''
+    seman_parent = get_semantic_parent_of_decla_cursor(cursor)
+    out_str = cursor.displayname
+    if out_str == None:
+        out_str = cursor.spelling
+
+    if seman_parent is not None and \
+            (seman_parent.kind == CursorKind.NAMESPACE or\
+            seman_parent.kind == CursorKind.CLASS_DECL):
+        return "%s::%s" % (seman_parent.spelling, out_str)
+    else:
+        return out_str
+
+def get_class_usage(fun_cursor, used_class):
+    """ get the usage of the class from the function given as fun_cursor.
+    """
+
+    if fun_cursor is None or not fun_cursor.is_definition():
+        return set()
+
+    # get all member function calls
+    def is_member_fun_call(c):
+        if c.kind != CursorKind.CALL_EXPR:
+            return False
+
+        for child in c.get_children():
+            return child.kind == CursorKind.MEMBER_REF_EXPR
+
+        return False
+        
+    # get all member function calls in the function
+    member_fun_calls = util.get_cursors_if(fun_cursor, is_member_fun_call)
+    
+    target_member_fun_calls = \
+        [c for c in member_fun_calls
+         if get_semantic_parent_of_decla_cursor(c).spelling == used_class]
+    target_member_funs = \
+        [get_declaration_cursor(c) for c in target_member_fun_calls]
+    method_names = [c.spelling for c in target_member_funs]
+    return set(method_names)
 

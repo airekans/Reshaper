@@ -19,8 +19,8 @@ public:
     assert(expected_class == class_A.get_definition())
 
     SOURCE = os.path.join(INPUT_DIR, 'class.cpp')
-    tu = TranslationUnit.from_source(SOURCE, ['-std=c++11'])
-    methods = get_cursors_if(tu,
+    _tu = TranslationUnit.from_source(SOURCE, ['-std=c++11'])
+    methods = get_cursors_if(_tu,
                              (lambda c: c.kind == CursorKind.CXX_METHOD and
                               c.spelling == 'foo'))
     assert(len(methods) == 1)

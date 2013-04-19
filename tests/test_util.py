@@ -1,11 +1,7 @@
 from reshaper.util import get_tu, get_cursors_if
 from reshaper.util import get_cursor, get_cursor_if, get_cursors
 from reshaper.util import walk_ast, get_function_signature
-from reshaper.util import get_cursor_with_location
-from reshaper.util import get_full_qualified_name, get_class_usage
-from clang.cindex import Cursor
 from clang.cindex import CursorKind
-from clang.cindex import TranslationUnit
 import os
 from functools import partial
 from nose.tools import eq_, with_setup
@@ -13,28 +9,32 @@ from .util import get_tu_from_text
 
 
 INPUT_DIR = os.path.join(os.path.dirname(__file__), 'test_data')
-tu = None
+_tu = None
 
 
 def setup():
-    global tu
+    global _tu
     source = os.path.join(INPUT_DIR, 'class.cpp')
-    tu = get_tu(source)
-    assert(tu is not None)
+    _tu = get_tu(source, config_path = None)
+    assert(_tu is not None)
 
 
 def test_get_tu():
     # check whether it can handle header file
+    
+    
+    get_tu_without_config = lambda source: get_tu(source, config_path = None)
+    
     source = os.path.join(INPUT_DIR, 'header.h')
-    tu = get_tu(source)
+    tu = get_tu_without_config(source)
     eq_(0, len(tu.diagnostics))
     
     source = os.path.join(INPUT_DIR, 'class.cpp')
-    tu = get_tu(source)
+    tu = get_tu_without_config(source)
     eq_(0, len(tu.diagnostics))
 
     source = os.path.join(INPUT_DIR, 'B.cpp')
-    tu = get_tu(source)
+    _u = get_tu_without_config(source)
     eq_(0, len(tu.diagnostics))
     
     # To pass the following test, you should write a ".reshaper.cfg" file
@@ -43,52 +43,52 @@ def test_get_tu():
     # include_paths=/path/to/c++/std,/other/default/include/path
 
     # source = os.path.join(INPUT_DIR, 'include_sys_header.h')
-    # tu = get_tu(source)
-    # eq_(0, len(tu.diagnostics))
+    # _tu = get_tu(source)
+    # eq_(0, len(_tu.diagnostics))
 
 
 @with_setup(setup)
 def test_get_cursor():
     # test get existing cursor
-    cursor = get_cursor(tu, 'A')
+    cursor = get_cursor(_tu, 'A')
     assert(cursor is not None)
     eq_(cursor.spelling, 'A')
 
-    cursor = get_cursor(tu, 'bar')
+    cursor = get_cursor(_tu, 'bar')
     assert(cursor is not None)
     eq_(cursor.spelling, 'bar')
     
     # test get non-existing cursor
-    assert(get_cursor(tu, 'non_exist_node') is None)
+    assert(get_cursor(_tu, 'non_exist_node') is None)
 
 @with_setup(setup)
 def test_get_cursor_if():
     # test get existing cursor
-    cursor = get_cursor_if(tu, lambda c: c.spelling == 'A')
+    cursor = get_cursor_if(_tu, lambda c: c.spelling == 'A')
     assert(cursor is not None)
     eq_(cursor.spelling, 'A')
 
-    cursor = get_cursor_if(tu, lambda c: c.kind == CursorKind.CXX_METHOD)
+    cursor = get_cursor_if(_tu, lambda c: c.kind == CursorKind.CXX_METHOD)
     assert(cursor is not None)
     eq_(cursor.spelling, 'foo')
     
     # test get non-existing cursor
-    assert(get_cursor_if(tu, lambda c: c.spelling == 'non_exist') is None)
+    assert(get_cursor_if(_tu, lambda c: c.spelling == 'non_exist') is None)
     
 @with_setup(setup)
 def test_get_cursors():
     # test get existing cursor
-    cursors = get_cursors(tu, 'result_test_fun')
+    cursors = get_cursors(_tu, 'result_test_fun')
     eq_(2, len(cursors))
     for cursor in cursors:
         eq_('result_test_fun', cursor.spelling)
 
     # test get non-existing cursor
-    eq_(0, len(get_cursors(tu, 'non_exist')))
+    eq_(0, len(get_cursors(_tu, 'non_exist')))
 
 @with_setup(setup)
 def test_get_cursors_if():
-    cursors = get_cursors_if(tu, lambda c: c.spelling == 'A')
+    cursors = get_cursors_if(_tu, lambda c: c.spelling == 'A')
     eq_(len(cursors), 2) # the class itself and the constructor
     for cursor in cursors:
         eq_(cursor.spelling, 'A')
@@ -97,14 +97,14 @@ def test_get_cursors_if():
         [CursorKind.CLASS_DECL, CursorKind.CONSTRUCTOR])
 
     # with other conditions
-    cursors = get_cursors_if(tu,
+    cursors = get_cursors_if(_tu,
                              lambda c: c.kind == CursorKind.CLASS_DECL)
     eq_(len(cursors), 1) # the class itself
     eq_(cursors[0].kind, CursorKind.CLASS_DECL)
     eq_(cursors[0].spelling, 'A')
 
     # test with transform_fun
-    cursors = get_cursors_if(tu,
+    cursors = get_cursors_if(_tu,
                              lambda c: c.kind == CursorKind.CXX_METHOD and
                                        c.spelling == 'result_test_fun',
                              transform_fun = lambda c: c.spelling)
@@ -122,10 +122,10 @@ def test_walk_ast():
         if level == expected_level:
             namespace.node_count += 1
 
-    walk_ast(tu, count_level_node)
+    walk_ast(_tu, count_level_node)
     eq_(1, namespace.node_count)
 
-    cursor_A = get_cursor(tu, 'A')
+    cursor_A = get_cursor(_tu, 'A')
     namespace.node_count = 0
     walk_ast(cursor_A, partial(count_level_node, expected_level = 1))
     eq_(14, namespace.node_count)
@@ -150,7 +150,7 @@ def test_get_function_signature_with_fun_no_params():
     # function with no parameters
     expected_fun_sig = "void foo()"
     
-    methods = get_cursors_if(tu,
+    methods = get_cursors_if(_tu,
                              (lambda c: c.kind == CursorKind.CXX_METHOD and
                               c.spelling == 'foo'))
     eq_(1, len(methods))
@@ -161,7 +161,7 @@ def test_get_function_signature_with_fun_params():
     # function with parameters
     expected_fun_sig = "int bar(double d)"
     
-    methods = get_cursors_if(tu,
+    methods = get_cursors_if(_tu,
                              (lambda c: c.kind == CursorKind.CXX_METHOD and
                               c.spelling == 'bar'))
     eq_(1, len(methods))
@@ -170,7 +170,7 @@ def test_get_function_signature_with_fun_params():
     # parameter of User defined type
     expected_fun_sig = "TestStruct result_test_fun(TestStruct*)"
     
-    methods = get_cursors_if(tu,
+    methods = get_cursors_if(_tu,
                              (lambda c: c.kind == CursorKind.CXX_METHOD and
                               c.spelling == 'result_test_fun'))
     eq_(2, len(methods))
@@ -181,7 +181,7 @@ def test_get_function_signature_with_complex_return_type_fun():
     # function with parameters
     expected_fun_sig = "double (*return_fun_fun(int, double))(int, double)"
     
-    methods = get_cursors_if(tu,
+    methods = get_cursors_if(_tu,
                              (lambda c: c.kind == CursorKind.CXX_METHOD and
                               c.spelling == 'return_fun_fun'))
     eq_(1, len(methods))
@@ -194,7 +194,7 @@ def test_get_function_signature_with_multiline_function():
      const int i,
      const double d)"""
     
-    methods = get_cursors_if(tu,
+    methods = get_cursors_if(_tu,
                              (lambda c: c.kind == CursorKind.CXX_METHOD and
                               c.spelling == 'static_multiline_fun'))
     eq_(1, len(methods))
@@ -204,7 +204,7 @@ def test_get_function_signature_with_multiline_function():
 @with_setup(setup)
 def test_get_function_signature_with_error_cursor():
     # create a cursor return 0 token
-    methods = get_cursors_if(tu,
+    methods = get_cursors_if(_tu,
                              (lambda c: c.kind == CursorKind.CXX_METHOD and
                               c.spelling == 'foo'))
     eq_(1, len(methods))
@@ -213,96 +213,7 @@ def test_get_function_signature_with_error_cursor():
     method_cursor.get_tokens = lambda : []
     eq_("", get_function_signature(method_cursor))
 
-_GET_CLASS_USAGE_TEST_INPUT = """
-struct A
-{
-    void foo();
-    int bar(double d);
-
-    int m_data;
-};
-
-void fun1()
-{
-    A a;
-    a.foo();
-}
-
-void fun2(A* a)
-{
-    a->foo();
-    a->bar(1.0);
-}
-
-void fun3(A& a)
-{
-    const int i = a.m_data;
-}
-
-void fun4();
-"""
-    
-def test_get_class_usage():
-    _tu = get_tu_from_text(_GET_CLASS_USAGE_TEST_INPUT)
-
-    def check(fun_name, class_name, expected_methods):
-        expected_methods = set(expected_methods)
-        fun_cursor = get_cursor_if(_tu,
-                                   (lambda c: c.spelling == fun_name and
-                                     c.is_definition()))
-        methods = get_class_usage(fun_cursor, class_name)
-        eq_(expected_methods, methods)
-
-    check("fun1", "A", ['foo'])
-    check("fun2", "A", ['foo', 'bar'])
-    check("fun3", "A", [])
-
-    # check error conditions
-    eq_(set(), get_class_usage(None, "A"))
-
-    fun4_cursor = get_cursor(_tu, "fun4")
-    assert(fun4_cursor is not None)
-    assert(not fun4_cursor.is_definition())
-    eq_(set(), get_class_usage(fun4_cursor, "A"))
-    
-
-get_info_test_input = """\
-class TestClass
-{
-public:
-    void memFunc(int)
-    {
-    }
-};
-namespace TestNamespace
-{
-    void namespaceFunc(TestClass&)
-    {
-    }
-}
-void globalFunc()
-{
-}
-"""
 
 
-def test_get_full_qualified_name():
-    '''test get_full_qualified_name
-    '''
-    tu_source = get_tu_from_text(get_info_test_input)
-    mem_cursor = get_cursor_with_location(tu_source, "memFunc", 4, None)
-    assert(isinstance(mem_cursor, Cursor))
-    mem_info = get_full_qualified_name(mem_cursor)
-    eq_(mem_info, "TestClass::memFunc(int)")
-
-    namespace_cursor = get_cursor_with_location(tu_source, "namespaceFunc", 10, None)
-    assert(isinstance(namespace_cursor, Cursor))
-    name_info = get_full_qualified_name(namespace_cursor)
-    eq_(name_info, "TestNamespace::namespaceFunc(TestClass &)")
-
-    global_cursor = get_cursor_with_location(tu_source, "globalFunc", 14, None)
-    assert(isinstance(global_cursor, Cursor))
-    global_info = get_full_qualified_name(global_cursor)
-    eq_(global_info, "globalFunc()")
 
 
