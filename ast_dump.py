@@ -66,6 +66,7 @@ def main():
             print "unable to load %s" % file_path
             sys.exit(1)
 
+            
         error_num = len(_tu.diagnostics)
         if error_num > 0:
             print "Source file has the following errors(%d):" % error_num
