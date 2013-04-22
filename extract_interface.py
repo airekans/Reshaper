@@ -11,10 +11,8 @@ from clang.cindex import CursorKind
 import sys
 import os
 from reshaper.util import get_tu, get_cursor, get_cursors_if, get_cursor_if
-from reshaper.semantic import get_class_usage
-from reshaper.semantic import get_semantic_parent_of_decla_cursor
-from reshaper.semantic import get_declaration_cursor
 from reshaper.extract import extract_interface
+from reshaper import semantic
 from optparse import OptionParser
 
 
@@ -71,14 +69,15 @@ def main():
         fun_cursor = get_cursor_if(_tu,
                                    lambda c: c.spelling == fun_using_class and
                                        c.is_definition())
-        methods = get_class_usage(fun_cursor, class_to_extract)
+        methods = semantic.get_class_usage_from_fun(
+            fun_cursor, class_to_extract)
 
     cls_using_class = options.from_class
     if cls_using_class is not None:
         cls_cursor = get_cursor_if(_tu,
                                    lambda c: c.spelling == cls_using_class and
                                        c.is_definition())
-        methods = get_class_usage(cls_cursor, class_to_extract)
+        methods = semantic.get_class_usage_from_cls(cls_cursor, class_to_extract)
 
     # print out the interface class
     class_printer = extract_interface(class_cursor, methods)

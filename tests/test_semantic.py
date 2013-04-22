@@ -5,9 +5,7 @@ from clang.cindex import TranslationUnit
 from clang.cindex import Cursor
 from clang.cindex import CursorKind
 from nose.tools import eq_
-import reshaper.semantic as semantic_util
-from reshaper.semantic import get_full_qualified_name
-from reshaper.semantic import get_class_usage
+import reshaper.semantic as sem
 from reshaper.util import get_cursor_with_location, get_cursor_if, get_cursor
 
 parent_calling_func_test_input = """\
@@ -100,7 +98,7 @@ def test_get_cursors_add_parent():
     _tu = get_tu_from_text(parent_calling_func_test_input)
     assert(isinstance(_tu, TranslationUnit))
     spelling = "TargetFunc"
-    cursors = semantic_util.get_cursors_add_parent(_tu, spelling)
+    cursors = sem.get_cursors_add_parent(_tu, spelling)
     for cursor in cursors:
         assert(isinstance(cursor, Cursor))
         has_child(cursor, cursor.location.line == 1)
@@ -133,10 +131,10 @@ def test_get_calling_function():
     _tu = get_tu_from_text(parent_calling_func_test_input)
     assert(isinstance(_tu, TranslationUnit))
     spelling = "TargetFunc"
-    cursors = semantic_util.get_cursors_add_parent(_tu, spelling)
+    cursors = sem.get_cursors_add_parent(_tu, spelling)
     for cur in cursors:
         assert(isinstance(cur, Cursor))
-        parent = semantic_util.get_calling_function(cur)
+        parent = sem.get_calling_function(cur)
         if cur.location.line == 1:
             assert(not parent)
         elif cur.location.line == 7:
@@ -162,10 +160,10 @@ def test_get_declaration_cursor_class():
     spelling = "classFunc"
     curClass = get_cursor_with_location(_tu, spelling, 30, None)
     assert(isinstance(curClass, Cursor))
-    decla_cursor = semantic_util.get_declaration_cursor(curClass)
+    decla_cursor = sem.get_declaration_cursor(curClass)
     eq_(decla_cursor.location.line, 4)
     eq_(decla_cursor.kind, CursorKind.CXX_METHOD)
-    seman_parent = semantic_util.get_semantic_parent_of_decla_cursor(curClass)
+    seman_parent = sem.get_semantic_parent_of_decla_cursor(curClass)
     eq_(seman_parent, decla_cursor.semantic_parent)
     eq_(seman_parent.kind, CursorKind.CLASS_DECL)
 
@@ -177,10 +175,10 @@ def test_get_declaration_cursor_namespace():
     spelling = "nameFunc"
     cur = get_cursor_with_location(_tu, spelling, 31, None)
     assert(isinstance(cur, Cursor))
-    decla_cursor = semantic_util.get_declaration_cursor(cur)
+    decla_cursor = sem.get_declaration_cursor(cur)
     eq_(decla_cursor.location.line, 11)
     eq_(decla_cursor.kind, CursorKind.FUNCTION_DECL)
-    seman_parent = semantic_util.get_semantic_parent_of_decla_cursor(cur)
+    seman_parent = sem.get_semantic_parent_of_decla_cursor(cur)
     eq_(seman_parent, decla_cursor.semantic_parent)
     eq_(seman_parent.kind, CursorKind.NAMESPACE)
 
@@ -192,10 +190,10 @@ def test_get_declaration_cursor_annoy_namespace():
     spelling = "annoyNameFunc"
     cur = get_cursor_with_location(_tu, spelling, 32, None)
     assert(isinstance(cur, Cursor))
-    decla_cursor = semantic_util.get_declaration_cursor(cur)
+    decla_cursor = sem.get_declaration_cursor(cur)
     eq_(decla_cursor.location.line, 18)
     eq_(decla_cursor.kind, CursorKind.FUNCTION_DECL)
-    seman_parent = semantic_util.get_semantic_parent_of_decla_cursor(cur)
+    seman_parent = sem.get_semantic_parent_of_decla_cursor(cur)
     eq_(seman_parent, decla_cursor.semantic_parent)
     eq_(seman_parent.kind, CursorKind.NAMESPACE)
 
@@ -207,10 +205,10 @@ def test_get_declaration_cursor_global_func():
     spelling = "GlobalFunc"
     cur = get_cursor_with_location(_tu, spelling, 33, None)
     assert(isinstance(cur, Cursor))
-    decla_cursor = semantic_util.get_declaration_cursor(cur)
+    decla_cursor = sem.get_declaration_cursor(cur)
     eq_(decla_cursor.location.line, 23)
     eq_(decla_cursor.kind, CursorKind.FUNCTION_DECL)
-    seman_parent = semantic_util.get_semantic_parent_of_decla_cursor(cur)
+    seman_parent = sem.get_semantic_parent_of_decla_cursor(cur)
     eq_(seman_parent, decla_cursor.semantic_parent)
     eq_(seman_parent.kind, CursorKind.TRANSLATION_UNIT)
 
@@ -241,21 +239,21 @@ def test_get_full_qualified_name():
     tu_source = get_tu_from_text(get_info_test_input)
     mem_cursor = get_cursor_with_location(tu_source, "memFunc", 4, None)
     assert(isinstance(mem_cursor, Cursor))
-    mem_info = get_full_qualified_name(mem_cursor)
+    mem_info = sem.get_full_qualified_name(mem_cursor)
     eq_(mem_info, "TestClass::memFunc(int)")
 
     namespace_cursor = get_cursor_with_location(tu_source, "namespaceFunc", 10, None)
     assert(isinstance(namespace_cursor, Cursor))
-    name_info = get_full_qualified_name(namespace_cursor)
+    name_info = sem.get_full_qualified_name(namespace_cursor)
     eq_(name_info, "TestNamespace::namespaceFunc(TestClass &)")
 
     global_cursor = get_cursor_with_location(tu_source, "globalFunc", 14, None)
     assert(isinstance(global_cursor, Cursor))
-    global_info = get_full_qualified_name(global_cursor)
+    global_info = sem.get_full_qualified_name(global_cursor)
     eq_(global_info, "globalFunc()")
 
 
-_GET_CLASS_USAGE_TEST_INPUT = """
+_GET_CLASS_USAGE_FROM_FUN_TEST_INPUT = """
 struct A
 {
     void foo();
@@ -284,15 +282,43 @@ void fun3(A& a)
 void fun4();
 """
     
-def test_get_class_usage():
-    _tu = get_tu_from_text(_GET_CLASS_USAGE_TEST_INPUT)
+def test_get_class_usage_from_fun():
+    _TEST_INPUT = """
+struct A
+{
+    void foo();
+    int bar(double d);
+
+    int m_data;
+};
+
+void fun1()
+{
+    A a;
+    a.foo();
+}
+
+void fun2(A* a)
+{
+    a->foo();
+    a->bar(1.0);
+}
+
+void fun3(A& a)
+{
+    const int i = a.m_data;
+}
+
+void fun4();
+"""
+    _tu = get_tu_from_text(_TEST_INPUT)
 
     def check(fun_name, class_name, expected_methods):
         expected_methods = set(expected_methods)
         fun_cursor = get_cursor_if(_tu,
                                    (lambda c: c.spelling == fun_name and
                                      c.is_definition()))
-        methods = get_class_usage(fun_cursor, class_name)
+        methods = sem.get_class_usage_from_fun(fun_cursor, class_name)
         eq_(expected_methods, methods)
 
     check("fun1", "A", ['foo'])
@@ -300,12 +326,63 @@ def test_get_class_usage():
     check("fun3", "A", [])
 
     # check error conditions
-    eq_(set(), get_class_usage(None, "A"))
+    eq_(set(), sem.get_class_usage_from_fun(None, "A"))
 
     fun4_cursor = get_cursor(_tu, "fun4")
     assert(fun4_cursor is not None)
     assert(not fun4_cursor.is_definition())
-    eq_(set(), get_class_usage(fun4_cursor, "A"))
+    eq_(set(), sem.get_class_usage_from_fun(fun4_cursor, "A"))
     
 
+def test_get_class_usage_from_cls():
+    _TEST_INPUT = """
+struct A
+{
+    void foo();
+    int bar(double d);
+    double fun_not_called();
+
+    int m_data;
+};
+
+class B
+{
+    void fun1()
+    {
+        m_a.foo();
+    }
+
+    void fun2();
+
+    A m_a;
+};
+
+void B::fun2()
+{
+    A a;
+    a.bar(1.0);
+}
+
+class C
+{
+    void fun1()
+    {
+        int data = m_a.m_data;
+    }
+
+    A m_a;
+};
+"""
+    _tu = get_tu_from_text(_TEST_INPUT)
+
+    def check(cls_name, class_name, expected_methods):
+        expected_methods = set(expected_methods)
+        cls_cursor = get_cursor_if(_tu,
+                                   (lambda c: c.spelling == cls_name and
+                                     c.is_definition()))
+        methods = sem.get_class_usage_from_cls(cls_cursor, class_name)
+        eq_(expected_methods, methods)
+
+    check('B', 'A', ['foo', 'bar'])
+    check('C', 'A', [])
     

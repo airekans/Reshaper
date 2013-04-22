@@ -174,11 +174,10 @@ def get_class_usage_from_fun(fun_cursor, used_class):
     method_names = [c.spelling for c in target_member_funs]
     return set(method_names)
 
-def get_class_usage_from_cls(_tu, cls_cursor, used_class):
+def get_class_usage_from_cls(cls_cursor, used_class):
     """ get the usage of used_class from the class given as cls_cursor
     
     Arguments:
-    - `_tu`: Translation unit
     - `cls_cursor`: cursor of the class using used_class
     - `used_class`: the name of the used class
     """
@@ -196,31 +195,3 @@ def get_class_usage_from_cls(_tu, cls_cursor, used_class):
         
     return method_names
         
-def get_class_usage(fun_cursor, used_class):
-    """ get the usage of the class from the function given as fun_cursor.
-    """
-
-    if fun_cursor is None or not fun_cursor.is_definition():
-        return set()
-
-    # get all member function calls
-    def is_member_fun_call(c):
-        if c.kind != CursorKind.CALL_EXPR:
-            return False
-
-        for child in c.get_children():
-            return child.kind == CursorKind.MEMBER_REF_EXPR
-
-        return False
-        
-    # get all member function calls in the function
-    member_fun_calls = util.get_cursors_if(fun_cursor, is_member_fun_call)
-    
-    target_member_fun_calls = \
-        [c for c in member_fun_calls
-         if get_semantic_parent_of_decla_cursor(c).spelling == used_class]
-    target_member_funs = \
-        [get_declaration_cursor(c) for c in target_member_fun_calls]
-    method_names = [c.spelling for c in target_member_funs]
-    return set(method_names)
-
