@@ -3,17 +3,19 @@ Created on 2013-3-5
 
 @author: liangzhao
 '''
-import reshaper.class_serializer as cs 
+import reshaper.class_serializer as cs
+import reshaper.util as util
 import os
+import unittest
 
 TEST_HEADER_FILE = os.path.join(os.path.dirname(__file__), './test_data/test.h')
 
 
-import unittest
 class Test(unittest.TestCase):
     
     def setUp(self):
-        self.maxDiff = None
+        self.__tu = util.get_tu(TEST_HEADER_FILE)
+        self.assertFalse(util.check_diagnostics(self.__tu.diagnostics))
     
     def test_generate_code(self):
         expected_code = u'''\
@@ -33,9 +35,12 @@ void serialize(Archive & ar, const unsigned int version)
     ar & BOOST_SERIALIZATION_NVP(m_x);       
 }\
 '''
-        code = cs.generate_serialize_code(TEST_HEADER_FILE, 'A')
-        self.assertEqual(expected_code,
-                         code)
+        class_cursor = util.get_cursor_if(self.__tu,
+                                          lambda c: c.spelling == "A" and
+                                              c.is_definition())
+        code = cs.generate_serialize_code(class_cursor)
+        self.assertEqual(expected_code, code)
+        
         expected_code = u'''\
 friend bool operator == (const A& a, const A& b)
 { 
@@ -53,13 +58,16 @@ friend bool operator == (const A& a, const A& b)
                   true);
 }\
 '''        
-        code = cs.generate_eq_op_code(TEST_HEADER_FILE, \
-                                      'A')                         
-        self.assertEqual( expected_code, code)
+        code = cs.generate_eq_op_code(class_cursor)                         
+        self.assertEqual(expected_code, code)
         
         
         # class 'C' dose not have any member variable
-        code = cs.generate_eq_op_code(TEST_HEADER_FILE, 'C')
+        class_cursor = util.get_cursor_if(self.__tu,
+                                          lambda c: c.spelling == "C" and
+                                              c.is_definition())
+
+        code = cs.generate_eq_op_code(class_cursor)
         self.assertEqual('', code)
         
         

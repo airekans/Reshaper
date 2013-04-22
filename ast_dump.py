@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-from reshaper.util import get_tu, walk_ast, is_curor_in_file_func
+from reshaper.util import get_tu, walk_ast, is_cursor_in_file_func
 from optparse import OptionParser
 import sys
 from functools import partial
@@ -57,7 +57,7 @@ def main():
         if options.level is not None:
             can_visit = (level <= options.level)
         if not options.all :
-            can_visit = can_visit and is_curor_in_file_func(path)(cursor, level)
+            can_visit = can_visit and is_cursor_in_file_func(path)(cursor, level)
         return can_visit
         
     for file_path in args:     
@@ -66,6 +66,7 @@ def main():
             print "unable to load %s" % file_path
             sys.exit(1)
 
+            
         error_num = len(_tu.diagnostics)
         if error_num > 0:
             print "Source file has the following errors(%d):" % error_num

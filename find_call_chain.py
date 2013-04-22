@@ -4,11 +4,10 @@
 example: input  :C
          output  : A -> B -> C ; means A call B , B call C
 """
-
 import sys
 from clang.cindex import Cursor
 from clang.cindex import TranslationUnit
-from reshaper.util import get_tu
+from reshaper.util import get_tu, check_diagnostics
 from reshaper.util import get_cursor_with_location
 from reshaper.semantic import get_full_qualified_name
 import reshaper.semantic as semantic_util
@@ -93,7 +92,7 @@ def main():
     tu_source = get_tu(options.filename)
     assert(isinstance(tu_source, TranslationUnit))
 
-    if semantic_util.check_diagnostics(tu_source.diagnostics):
+    if check_diagnostics(tu_source.diagnostics):
         print "Error"
         print
         sys.exit(-1)

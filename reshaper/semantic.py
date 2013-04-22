@@ -61,16 +61,6 @@ def get_calling_function(source):
     else:
         return get_calling_function(source.parent)
 
-def check_diagnostics(diagnostics):
-    '''check diagnostics,
-    if exists, print to stdout and return True
-    '''
-    has_diagnostics = False
-    for dia in diagnostics:
-        has_diagnostics = True
-        print dia
-    return has_diagnostics
-
 def get_declaration_cursor(cursor):
     '''get declaration cursor of input cursor
     '''
@@ -111,8 +101,8 @@ def is_class(cursor):
     return cursor.kind == CursorKind.CLASS_DECL or \
             cursor.kind == CursorKind.STRUCT_DECL
 
-def is_class_name_matched(cursor, _class_name):
-    return cursor.spelling == _class_name and \
+def is_class_name_matched(cursor, class_name):
+    return cursor.spelling == class_name and \
            is_class(cursor)
            
            

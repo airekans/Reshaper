@@ -18,6 +18,11 @@ namespace std{
 	{
 
 	};
+
+	class string
+	{
+	     char* m_data;
+	};
 };
 
 

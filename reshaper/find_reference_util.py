@@ -3,9 +3,8 @@
 import os, sys
 from clang.cindex import Cursor
 from clang.cindex import CursorKind
-from reshaper.util import get_tu
+from reshaper.util import get_tu, check_diagnostics
 from reshaper.semantic import get_declaration_cursor
-from reshaper.semantic import check_diagnostics
 from reshaper.semantic import get_cursors_add_parent
 from optparse import OptionParser
 
