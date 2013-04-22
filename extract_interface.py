@@ -44,7 +44,12 @@ def main():
     src, class_to_extract = args
     if not os.path.exists(src):
         option_parser.error("Source file doesn't exist: %s" % src)
-    
+
+    # --from-function and --from-class are mutual exclusive
+    if options.from_function and options.from_class:
+        option_parser.error("options --from-function and"
+                            " --from-class are mutually exclusive")
+        
     methods = options.methods
     if methods is not None:
         methods = methods.split(',')
@@ -61,6 +66,7 @@ def main():
         print "source file %s does not contain any class named %s" % \
             (src, class_to_extract)
         sys.exit(1)
+
 
     # If user specifies to extract a class from other function's usage,
     # analyze the function
