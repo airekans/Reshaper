@@ -39,6 +39,25 @@ def get_cursors_add_parent(source, spelling):
         cursors.extend( get_cursors_add_parent(cursor, spelling))
     return cursors
 
+
+def get_methods_from_class(class_cursor, methods = None):
+    """ get selected methods from a given class cursor.
+    If methods is None is not specified,
+    then all methods will be returned.
+    
+    Arguments:
+    - `class_cursor`: given class cursor 
+    - `methods`: method names
+    """
+    method_set = set(methods) if methods is not None else None
+    member_method_cursors = \
+        util.get_cursors_if(class_cursor,
+                            lambda c: (c.kind == CursorKind.CXX_METHOD and
+                                  (c.spelling in method_set
+                                   if method_set is not None else True)))
+    return member_method_cursors
+
+    
 def scan_dir_parse_files(directory, parse_file):
     '''Scan directory recursivly to 
     get files with file_types
@@ -124,6 +143,59 @@ def get_full_qualified_name(cursor):
     else:
         return out_str
 
+def get_class_usage_from_fun(fun_cursor, used_class):
+    """get the usage of the class from the function given as fun_cursor.
+    
+    Arguments:
+    - `fun_cursor`: function cursor
+    - `used_class`: name of the used class
+    """
+    if fun_cursor is None or not fun_cursor.is_definition():
+        return set()
+
+    # get all member function calls
+    def is_member_fun_call(c):
+        if c.kind != CursorKind.CALL_EXPR:
+            return False
+
+        for child in c.get_children():
+            return child.kind == CursorKind.MEMBER_REF_EXPR
+
+        return False
+        
+    # get all member function calls in the function
+    member_fun_calls = util.get_cursors_if(fun_cursor, is_member_fun_call)
+    
+    target_member_fun_calls = \
+        [c for c in member_fun_calls
+         if get_semantic_parent_of_decla_cursor(c).spelling == used_class]
+    target_member_funs = \
+        [get_declaration_cursor(c) for c in target_member_fun_calls]
+    method_names = [c.spelling for c in target_member_funs]
+    return set(method_names)
+
+def get_class_usage_from_cls(_tu, cls_cursor, used_class):
+    """ get the usage of used_class from the class given as cls_cursor
+    
+    Arguments:
+    - `_tu`: Translation unit
+    - `cls_cursor`: cursor of the class using used_class
+    - `used_class`: the name of the used class
+    """
+    all_methods = get_methods_from_class(cls_cursor)
+
+    method_names = set()
+    for method in all_methods:
+        method_def = method.get_definition()
+        if method_def is not None:
+            used_methods = get_class_usage_from_fun(method_def, used_class)
+            method_names = method_names.union(used_methods)
+        else:
+            print "Cannot find definition of %s::%s" % \
+                (used_class, method.spelling)
+        
+    return method_names
+        
 def get_class_usage(fun_cursor, used_class):
     """ get the usage of the class from the function given as fun_cursor.
     """
