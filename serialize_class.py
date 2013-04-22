@@ -2,15 +2,13 @@
 Created on Apr 7, 2013
 
 @author: liangzhao
-
-
-
 '''
 
 from reshaper import class_serializer as cs
 from optparse import OptionParser 
 from reshaper import header_util as hu, util
 import sys
+
 
 def set_all_true_if_no_option(opts):
     '''

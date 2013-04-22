@@ -38,7 +38,6 @@ import logging
 class ClassSerializer(object):
     def __init__(self, class_cursor):
         assert(class_cursor is not None)
-        print class_cursor.spelling
         assert(class_cursor.is_definition())
         
         self.cursor = class_cursor
