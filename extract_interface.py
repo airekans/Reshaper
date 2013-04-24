@@ -77,7 +77,7 @@ def main():
         fun_cursor = get_cursor_if(_tu,
                                    partial(semantic.is_function_definition,
                                            fun_name = fun_using_class))
-        methods = semantic.get_class_usage_from_fun(
+        methods = semantic.get_func_callees(
             fun_cursor, class_to_extract)
 
     cls_using_class = options.from_class
@@ -85,7 +85,7 @@ def main():
         cls_cursor = get_cursor_if(_tu,
                                    partial(semantic.is_class_definition,
                                            class_name = cls_using_class))
-        methods = semantic.get_class_usage_from_cls(cls_cursor, class_to_extract)
+        methods = semantic.get_class_callees(cls_cursor, class_to_extract)
 
     # print out the interface class
     class_printer = extract_interface(class_cursor, methods)

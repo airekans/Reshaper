@@ -195,7 +195,7 @@ def get_full_qualified_name(cursor):
     else:
         return out_str
 
-def get_class_usage_from_fun(fun_cursor, used_class):
+def get_func_callees(fun_cursor, used_class):
     """get the usage of the class from the function given as fun_cursor.
     
     Arguments:
@@ -226,7 +226,7 @@ def get_class_usage_from_fun(fun_cursor, used_class):
     method_names = [c.spelling for c in target_member_funs]
     return set(method_names)
 
-def get_class_usage_from_cls(cls_cursor, used_class):
+def get_class_callees(cls_cursor, used_class):
     """ get the usage of used_class from the class given as cls_cursor
     
     Arguments:
@@ -239,11 +239,11 @@ def get_class_usage_from_cls(cls_cursor, used_class):
     for method in all_methods:
         method_def = method.get_definition()
         if method_def is not None:
-            used_methods = get_class_usage_from_fun(method_def, used_class)
+            used_methods = get_func_callees(method_def, used_class)
             method_names = method_names.union(used_methods)
         else:
             print "Cannot find definition of %s::%s" % \
                 (used_class, method.spelling)
         
     return method_names
-        
+
