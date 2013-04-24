@@ -1,3 +1,4 @@
+from reshaper.semantic import is_function_definition
 '''test_find_reference.py -- unittest for semantic.py
 '''
 
@@ -252,7 +253,21 @@ def test_get_full_qualified_name():
     global_info = sem.get_full_qualified_name(global_cursor)
     eq_(global_info, "globalFunc()")
 
+def test_is_function_definition():
+    _tu = get_tu_from_text(get_info_test_input)
+    fun_cursor = get_cursor(_tu, 'namespaceFunc')
+    assert(sem.is_function_definition(fun_cursor, 'namespaceFunc'))
+    assert(sem.is_function_definition(fun_cursor))
+    assert(not sem.is_function_definition(fun_cursor, 'abc'))
 
+def test_is_class_definition():
+    _tu = get_tu_from_text(get_info_test_input)
+    class_cursor = get_cursor(_tu, 'TestClass')
+    assert(sem.is_class_definition(class_cursor, 'TestClass'))
+    assert(sem.is_class_definition(class_cursor))
+    assert(not sem.is_class_definition(class_cursor, 'abc'))
+    
+    
 _GET_CLASS_USAGE_FROM_FUN_TEST_INPUT = """
 struct A
 {
