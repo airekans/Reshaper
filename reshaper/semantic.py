@@ -123,7 +123,59 @@ def is_class(cursor):
 def is_class_name_matched(cursor, class_name):
     return cursor.spelling == class_name and \
            is_class(cursor)
-           
+
+def is_class_definition(cursor, class_name = None):
+    """ Check whether the cursor is the definition of
+    class named class_name.
+    If class_name is not given, check whether the cursor
+    is a class difinition.
+    
+    Arguments:
+    - `cursor`: the class cursor to be checked
+    - `class_name`: the name of the class
+    """
+    if class_name is not None:
+        return is_class_name_matched(cursor, class_name) and \
+            cursor.is_definition()
+    else:
+        return is_class(cursor) and cursor.is_definition()
+
+
+def is_function(cursor):
+    """ check whether the cursor is a function.
+    A function is either a C function or a method of a class.
+    
+    Arguments:
+    - `cursor`: function cursor
+    """
+    return cursor.type.kind == TypeKind.FUNCTIONPROTO
+
+def is_function_name_matched(cursor, fun_name):
+    """ Check whether the cursor is a function named fun_name
+    
+    Arguments:
+    - `cursor`: function cursor
+    - `fun_name`: the name of the function
+    """
+    return is_function(cursor) and \
+        cursor.spelling == fun_name
+    
+def is_function_definition(cursor, fun_name = None):
+    """ Check whether the cursor is the definition of
+    function named fun_name.
+    If fun_name is not given, check whether the cursor is
+    a function definition.
+    
+    Arguments:
+    - `cursor`: function cursor
+    - `fun_name`: function name
+    """
+    if fun_name is not None:
+        return is_function_name_matched(cursor, fun_name) and \
+            cursor.is_definition()
+    else:
+        return is_function(cursor) and cursor.is_definition()
+    
            
 def get_full_qualified_name(cursor):
     '''use to get semantic_parent.spelling :: cursor.spelling or displayname 

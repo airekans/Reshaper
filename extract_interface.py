@@ -14,6 +14,7 @@ from reshaper.util import get_tu, get_cursor, get_cursors_if, get_cursor_if
 from reshaper.extract import extract_interface
 from reshaper import semantic
 from optparse import OptionParser
+from functools import partial
 
 
 def parse_options():
@@ -56,9 +57,10 @@ def main():
 
     _tu = get_tu(src)
     # TODO: the following line should be changed to work on class in a namespace
-    class_cursor = get_cursor_if(_tu,
-                                 lambda c: c.spelling == class_to_extract
-                                     and c.is_definition())
+    class_cursor = \
+        get_cursor_if(_tu,
+                      partial(semantic.is_class_definition,
+                              class_name = class_to_extract))
     
     if class_cursor is None or \
             class_cursor.kind != CursorKind.CLASS_DECL or \
@@ -73,16 +75,16 @@ def main():
     fun_using_class = options.from_function
     if fun_using_class is not None:
         fun_cursor = get_cursor_if(_tu,
-                                   lambda c: c.spelling == fun_using_class and
-                                       c.is_definition())
+                                   partial(semantic.is_function_definition,
+                                           fun_name = fun_using_class))
         methods = semantic.get_class_usage_from_fun(
             fun_cursor, class_to_extract)
 
     cls_using_class = options.from_class
     if cls_using_class is not None:
         cls_cursor = get_cursor_if(_tu,
-                                   lambda c: c.spelling == cls_using_class and
-                                       c.is_definition())
+                                   partial(semantic.is_class_definition,
+                                           class_name = cls_using_class))
         methods = semantic.get_class_usage_from_cls(cls_cursor, class_to_extract)
 
     # print out the interface class

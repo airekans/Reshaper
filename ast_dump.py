@@ -49,8 +49,7 @@ def main():
     (options, args) = option_parser.parse_args()
        
     if len(args) < 1:
-        print 'Please input files to parse'
-        sys.exit(1)
+        option_parser.error('Please input files to parse')
     
     def can_visit_cursor_func(cursor, level, path):
         can_visit =  True
