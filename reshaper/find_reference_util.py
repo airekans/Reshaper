@@ -27,7 +27,8 @@ def filter_cursors_by_usr(cursors, target_usr):
     for cur in cursors:
         if cur.kind == CursorKind.CALL_EXPR and \
                 len(list(cur.get_children())) > 0:
-            continue 
+            continue
+        
         cursor_usr = get_usr_of_declaration_cursor(cur)
         
         #FIXME:template class and template function;

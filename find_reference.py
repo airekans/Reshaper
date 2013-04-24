@@ -86,19 +86,20 @@ def main():
             options.spelling, \
             options.line, options.column)
     if not target_cursor:
-        print "Error : Can't get source cursor", 
+        print "Error : Can't get source cursor" 
         print "please check file:%s, name:%s, line:%s, column:%s "\
                 % (options.filename, options.spelling,\
                 options.line, options.column)
         sys.exit(-1)
+
     reference_usr = get_usr_of_declaration_cursor(target_cursor)
     
     #parse input directory
     refer_curs = []
     semantic_util.scan_dir_parse_files(options.directory, \
             partial(get_cursors_with_name, \
-            name = options.spelling, \
-            ref_curs = refer_curs))
+                    name = options.spelling, \
+                    ref_curs = refer_curs))
     final_output = filter_cursors_by_usr(refer_curs, reference_usr)
 
     #output result
