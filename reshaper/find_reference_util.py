@@ -81,30 +81,28 @@ def parse_options():
                              type = "string",
                              help = "output file name")
 
-    return option_parser.parse_args()
+    options, args = option_parser.parse_args()
+    return options, args, option_parser
 
 def parse_find_reference_args(default_output_filename):
     '''get user options and parse it for 
     finding reference
     '''
-    options, args = parse_options()
+    options, args, option_parser = parse_options()
 
     #check input args
     if options.filename is None or not os.path.isfile(options.filename):
-        print "file %s is not exists, please check it!" % options.filename
-        sys.exit(-1)
+        option_parser.error("file %s is not exists, please check it!" % options.filename)
 
     if options.spelling is None:
-        print "please input reference spelling"
-        sys.exit(-1)
+        option_parser.error("please input reference spelling")
 
     if options.line is None:
-        print "please input reference line No."
-        sys.exit(-1)
+        option_parser.error("please input reference line No.")
 
     if options.column is None:
         print "Warning : forget to input column",
-        print ", the first one in %s line %s will be chosen" \
+        print ", the first one in %s line %s will be used" \
                 % (options.filename, options.line)
 
     if options.output_file_name is not None\
