@@ -134,7 +134,7 @@ def test_get_calling_function():
     cursors = sem.get_cursors_add_parent(_tu, spelling)
     for cur in cursors:
         assert(isinstance(cur, Cursor))
-        parent = sem.get_calling_function(cur)
+        parent = sem.get_caller(cur)
         if cur.location.line == 1:
             assert(not parent)
         elif cur.location.line == 7:

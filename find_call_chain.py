@@ -42,7 +42,7 @@ def find_reference_update_output_contents(target_cursor, \
     target_info = get_full_qualified_name(target_cursor)
 
     for cursor in final_output:
-        calling_cursor = semantic_util.get_calling_function(cursor)
+        calling_cursor = semantic_util.get_caller(cursor)
         if calling_cursor is not None:
             calling_info = get_full_qualified_name(calling_cursor)
             output_contents.append("\"%s\" -> \"%s\";\n" % \
@@ -58,7 +58,7 @@ def handle_output_result(iuput_cursors, search_directory, \
     '''
     for cur in iuput_cursors:
         assert(isinstance(cur, Cursor))
-        calling_cursor = semantic_util.get_calling_function(cur)
+        calling_cursor = semantic_util.get_caller(cur)
         if calling_cursor is None:
             continue
         cur_usr = get_usr_of_declaration_cursor(calling_cursor)

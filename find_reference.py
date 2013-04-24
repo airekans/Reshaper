@@ -48,7 +48,7 @@ def get_output_string(target_cursor, result_cursors):
                 output_string += "global function\n"
 
         else:
-            cur_parent = semantic_util.get_calling_function(cur)
+            cur_parent = semantic_util.get_caller(cur)
             if cur_parent:
                 output_string += "Call function:"
                 out_str = cur_parent.displayname

@@ -68,7 +68,7 @@ def scan_dir_parse_files(directory, parse_file):
             if file_type in _file_types:
                 parse_file(os.path.join(root, file_name))
 
-def get_calling_function(source):
+def get_caller(source):
     '''get calling function of source cursor
     '''
     if not isinstance(source, Cursor) or \
@@ -78,7 +78,7 @@ def get_calling_function(source):
     elif source.parent.type.kind == TypeKind.FUNCTIONPROTO:
         return source.parent
     else:
-        return get_calling_function(source.parent)
+        return get_caller(source.parent)
 
 def get_declaration_cursor(cursor):
     '''get declaration cursor of input cursor
