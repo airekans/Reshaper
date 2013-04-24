@@ -195,12 +195,13 @@ def get_full_qualified_name(cursor):
     else:
         return out_str
 
-def get_func_callees(fun_cursor, used_class):
-    """get the usage of the class from the function given as fun_cursor.
+def get_func_callees(fun_cursor, callee_class):
+    """get the class callees of the function named fun_cursor.
+    class callees means the class methods.
     
     Arguments:
     - `fun_cursor`: function cursor
-    - `used_class`: name of the used class
+    - `callee_class`: name of the class
     """
     if fun_cursor is None or not fun_cursor.is_definition():
         return set()
@@ -220,18 +221,19 @@ def get_func_callees(fun_cursor, used_class):
     
     target_member_fun_calls = \
         [c for c in member_fun_calls
-         if get_semantic_parent_of_decla_cursor(c).spelling == used_class]
+         if get_semantic_parent_of_decla_cursor(c).spelling == callee_class]
     target_member_funs = \
         [get_declaration_cursor(c) for c in target_member_fun_calls]
     method_names = [c.spelling for c in target_member_funs]
     return set(method_names)
 
-def get_class_callees(cls_cursor, used_class):
-    """ get the usage of used_class from the class given as cls_cursor
+def get_class_callees(cls_cursor, callee_class):
+    """ get the class callees from the class given as cls_cursor.
+    class callee means class methods.
     
     Arguments:
-    - `cls_cursor`: cursor of the class using used_class
-    - `used_class`: the name of the used class
+    - `cls_cursor`: cursor of the class calling the class callees
+    - `callee_class`: the name of the used class
     """
     all_methods = get_methods_from_class(cls_cursor)
 
@@ -239,11 +241,11 @@ def get_class_callees(cls_cursor, used_class):
     for method in all_methods:
         method_def = method.get_definition()
         if method_def is not None:
-            used_methods = get_func_callees(method_def, used_class)
+            used_methods = get_func_callees(method_def, callee_class)
             method_names = method_names.union(used_methods)
         else:
             print "Cannot find definition of %s::%s" % \
-                (used_class, method.spelling)
+                (callee_class, method.spelling)
         
     return method_names
 
