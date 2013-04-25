@@ -1,13 +1,11 @@
 # This file provides common utility functions for the test suite.
-
-from clang.cindex import Cursor
-from clang.cindex import CursorKind
-from clang.cindex import TranslationUnit
+from clang.cindex import Cursor, CursorKind, TranslationUnit
 import ConfigParser
 import os
 from functools import partial
 
-def get_tu(source,all_warnings=False, config_path = '~/.reshaper.cfg'):
+
+def get_tu(source, all_warnings=False, config_path = '~/.reshaper.cfg'):
     """Obtain a translation unit from source and language.
 
     By default, the translation unit is created from source file "t.<ext>"
@@ -35,9 +33,21 @@ def get_tu(source,all_warnings=False, config_path = '~/.reshaper.cfg'):
             for ifile in include_files.split(','):
                 args += ['-include', ifile]
         
-    #print ' '.join(args)
-
     return TranslationUnit.from_source(source, args)
+
+
+def check_diagnostics(diagnostics):
+    '''check diagnostics,
+    if exists, print to stdout and return True
+    '''
+    error_num = len(diagnostics)
+    if error_num > 0:
+        print "Source file has the following errors(%d):" % error_num
+        for diag in diagnostics:
+            print diag.spelling
+
+    return error_num > 0
+
 
 def get_cursor(source, spelling):
     """Obtain a cursor from a source object.
@@ -142,15 +152,15 @@ def is_same_file(path1, path2):
     return os.path.abspath(path1) == \
            os.path.abspath(path2) 
 
-def is_curor_in_file_func(file_path):
-    def is_curor_in_file(cursor, _l):
+def is_cursor_in_file_func(file_path):
+    def is_cursor_in_file(cursor, _l):
         cursor_file = cursor.location.file
         if not cursor_file:
             return  True
         else:
             return is_same_file(cursor_file.name, file_path)
     
-    return is_curor_in_file
+    return is_cursor_in_file
 
 def walk_ast(source, visitor, is_visit_subtree_fun = lambda _c, _l: True):
     """walk the ast with the specified functions by DFS
@@ -166,7 +176,7 @@ def walk_ast(source, visitor, is_visit_subtree_fun = lambda _c, _l: True):
 
     if source is None:
         return
-    elif isinstance(source, Cursor):
+    elif hasattr(source, "get_children"):
         cursor = source
     else: 
         # Assume TU
@@ -185,10 +195,10 @@ def walk_ast(source, visitor, is_visit_subtree_fun = lambda _c, _l: True):
     walk_ast_with_level(cursor, 0)
 
 
-def get_function_signature(fun):
+def get_function_signature(fun_cursor):
     """get the signature of the function given as a cursor node in the AST.
     """
-    tokens = list(fun.get_tokens())
+    tokens = list(fun_cursor.get_tokens())
     if len(tokens) < 1:
         return ""
 
@@ -217,3 +227,4 @@ def get_function_signature(fun):
 
     return signature
 
+    

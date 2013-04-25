@@ -10,9 +10,11 @@ Usage: extract_interface.py class.cpp class_name
 from clang.cindex import CursorKind
 import sys
 import os
-from reshaper.util import get_tu, get_cursor, get_cursors_if
+from reshaper.util import get_tu, get_cursor, get_cursors_if, get_cursor_if
 from reshaper.extract import extract_interface
+from reshaper import semantic
 from optparse import OptionParser
+from functools import partial
 
 
 def parse_options():
@@ -23,68 +25,42 @@ def parse_options():
     option_parser.add_option("-m", "--methods", dest = "methods",
                              type = "string",
                              help = "Names of methods you want to extract")
-    option_parser.add_option("--from-usage", dest = "from_usage",
+    option_parser.add_option("--from-function", dest = "from_function",
                              type = "string",
-                             help = "Name of the function that using CLASSNAME")
+                             help = "Name of the function that uses CLASSNAME")
+    option_parser.add_option("--from-class", dest = "from_class",
+                             type = "string",
+                             help = "Name of the class that uses CLASSNAME")
 
-    return option_parser.parse_args()
+    # handle option or argument error.
+    options, args = option_parser.parse_args()
+    return option_parser, options, args
 
-def get_member_owner(member_cursor):
-    """ Get the owner of the member given as cursor
-    
-    Arguments:
-    - `member_cursor`:
-    """
-
-    if member_cursor.kind != CursorKind.MEMBER_REF_EXPR:
-        return None
-
-    for c in member_cursor.get_children():
-        return c
-
-    return None
-
-
-def get_class_usage(fun_cursor, used_class):
-    """ get the usage of the class from the function given as fun_cursor.
-    """
-
-    if not fun_cursor.is_definition():
-        return []
-
-    # get all member function calls
-    def is_member_fun_call(c):
-        if c.kind != CursorKind.CALL_EXPR:
-            return False
-
-        for child in c.get_children():
-            return child.kind == CursorKind.MEMBER_REF_EXPR
-
-        return False
-        
-    # get all member function calls in the function
-    get_cursors_if(fun_cursor, is_member_fun_call)
-
-    
     
 def main():
-    options, args = parse_options()
+    option_parser, options, args = parse_options()
     if len(args) != 2:
-        print "Please input source file and class name."
-        sys.exit(1)
+        option_parser.error("Please input source file and class name.")
 
     src, class_to_extract = args
     if not os.path.exists(src):
-        print "Source file doesn't exist: %s" % src
-        sys.exit(1)
-    
+        option_parser.error("Source file doesn't exist: %s" % src)
+
+    # --from-function and --from-class are mutual exclusive
+    if options.from_function and options.from_class:
+        option_parser.error("options --from-function and"
+                            " --from-class are mutually exclusive")
+        
     methods = options.methods
     if methods is not None:
         methods = methods.split(',')
 
     _tu = get_tu(src)
     # TODO: the following line should be changed to work on class in a namespace
-    class_cursor = get_cursor(_tu, class_to_extract)
+    class_cursor = \
+        get_cursor_if(_tu,
+                      partial(semantic.is_class_definition,
+                              class_name = class_to_extract))
     
     if class_cursor is None or \
             class_cursor.kind != CursorKind.CLASS_DECL or \
@@ -93,11 +69,23 @@ def main():
             (src, class_to_extract)
         sys.exit(1)
 
+
     # If user specifies to extract a class from other function's usage,
     # analyze the function
-    fun_using_class = options.from_usage
+    fun_using_class = options.from_function
     if fun_using_class is not None:
-        pass
+        fun_cursor = get_cursor_if(_tu,
+                                   partial(semantic.is_function_definition,
+                                           fun_name = fun_using_class))
+        methods = semantic.get_func_callees(
+            fun_cursor, class_to_extract)
+
+    cls_using_class = options.from_class
+    if cls_using_class is not None:
+        cls_cursor = get_cursor_if(_tu,
+                                   partial(semantic.is_class_definition,
+                                           class_name = cls_using_class))
+        methods = semantic.get_class_callees(cls_cursor, class_to_extract)
 
     # print out the interface class
     class_printer = extract_interface(class_cursor, methods)

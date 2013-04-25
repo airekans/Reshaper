@@ -3,11 +3,8 @@ utility module to get various info from a header file
 '''
 from reshaper import util
 from functools import partial
-from reshaper.util import is_curor_in_file_func
+from reshaper.util import is_cursor_in_file_func
 import reshaper.semantic as sem
-
-
-
 
 
 def get_name(cursor):
@@ -49,12 +46,12 @@ def get_non_static_pt_var_names(cursor):
     return get_children_attrs(cursor, keep_func)
 
     
-def get_class_cursor(source, _class_name, header_path):
-    ''' get class/struct cursor with _class_name and header_path'''
+def get_class_cursor_in_file(source, class_name, file_path):
+    ''' get class/struct cursor with class_name and file_path'''
     return util.get_cursor_if(source,
-                               partial(sem.is_class_name_matched, \
-                                       _class_name = _class_name),
-                               is_curor_in_file_func(header_path))
+                              partial(sem.is_class_name_matched, \
+                                      class_name = class_name),
+                              is_cursor_in_file_func(file_path))
  		
  	
 def get_all_class_cursors(source):
@@ -64,6 +61,16 @@ def get_all_class_cursors(source):
 def get_all_class_names(source, header_path):
     ''' get names of all class or struct type'''
     return util.get_cursors_if(source, sem.is_class, \
-                                is_curor_in_file_func(header_path), \
+                                is_cursor_in_file_func(header_path), \
                                 transform_fun = get_name)
+
+def get_classes_with_names(source, names):
+    """ get classes with given names
+
+    `names` : a list of class names
+    """
+
+    classes = get_all_class_cursors(source)
+    return [cls for cls in classes if cls.spelling in names]
+    
 

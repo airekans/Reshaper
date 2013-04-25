@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-from reshaper.util import get_tu, walk_ast, is_curor_in_file_func
+from reshaper.util import get_tu, walk_ast, is_cursor_in_file_func
 from optparse import OptionParser
 import sys
 from functools import partial
@@ -32,8 +32,7 @@ def print_cursor(cursor, level, is_print_ref = False):
         print prefix + "reference:"
         print_cursor(ref_cursor, level+1, is_print_ref)
 
-if __name__ == '__main__':
-    
+def main():
     option_parser = OptionParser(usage = "%prog [options] files") 
     option_parser.add_option("-l", "--level", dest = "level",
                              type="int",\
@@ -50,15 +49,14 @@ if __name__ == '__main__':
     (options, args) = option_parser.parse_args()
        
     if len(args) < 1:
-        print 'Please input files to parse'
-        sys.exit(1)
+        option_parser.error('Please input files to parse')
     
     def can_visit_cursor_func(cursor, level, path):
         can_visit =  True
         if options.level is not None:
             can_visit = (level <= options.level)
         if not options.all :
-            can_visit = can_visit and is_curor_in_file_func(path)(cursor, level)
+            can_visit = can_visit and is_cursor_in_file_func(path)(cursor, level)
         return can_visit
         
     for file_path in args:     
@@ -66,9 +64,20 @@ if __name__ == '__main__':
         if not _tu:
             print "unable to load %s" % file_path
             sys.exit(1)
-    
-        walk_ast(_tu, partial(print_cursor, is_print_ref =  options.reference), \
-                     partial(can_visit_cursor_func, path = file_path))
-    
 
+            
+        error_num = len(_tu.diagnostics)
+        if error_num > 0:
+            print "Source file has the following errors(%d):" % error_num
+            for diag in _tu.diagnostics:
+                print diag.spelling
+
+            sys.exit(1)
+    
+        walk_ast(_tu,
+                 partial(print_cursor, is_print_ref =  options.reference),
+                 partial(can_visit_cursor_func, path = file_path))
+        
+if __name__ == '__main__':
+    main()
     

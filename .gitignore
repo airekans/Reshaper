@@ -31,6 +31,9 @@ pip-log.txt
 nosetests.xml
 htmlcov
 
+# merge cache
+*.orig
+
 # Translations
 *.mo
 

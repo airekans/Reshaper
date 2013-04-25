@@ -36,14 +36,12 @@ import logging
 
 
 class ClassSerializer(object):
-    def __init__(self, header_path, class_name):
-        _tu = util.get_tu(header_path)
-        self.cursor = hu.get_class_cursor(_tu.cursor, class_name, header_path)
+    def __init__(self, class_cursor):
+        assert(class_cursor is not None)
+        assert(class_cursor.is_definition())
         
-        if not self.cursor:
-            raise Exception("Can not find class definition for %s in %s" % \
-                            (class_name, header_path))
-        self._class_name = class_name
+        self.cursor = class_cursor
+        self._class_name = class_cursor.spelling
     
     def render(self, code_template, **kwargs):
         all_val_empty = True
@@ -60,14 +58,13 @@ class ClassSerializer(object):
         return template.render(kwargs)
     
 
-def gen_code_with_member_var_separated(header_path, 
-                                        class_name, 
-                                        code_template):
+def gen_code_with_member_var_separated(code_template,
+                                       class_cursor = None):
     '''
     generate code for a class with member variables, 
     separate pointer and non pointer types 
     '''
-    cs = ClassSerializer(header_path, class_name) 
+    cs = ClassSerializer(class_cursor) 
       
     nonpt_member_vars = hu.get_non_static_nonpt_var_names(cs.cursor)
     pt_member_vars = hu.get_non_static_pt_var_names(cs.cursor)
@@ -76,32 +73,25 @@ def gen_code_with_member_var_separated(header_path,
                      nonpt_member_vars = nonpt_member_vars,
                      pt_member_vars = pt_member_vars)
     
-def gen_code_with_member_var(header_path,
-                             class_name, 
-                             code_template):
+def gen_code_with_member_var(code_template,
+                             class_cursor = None):
     '''
     generate code for a class with member variables
     '''
    
-    cs = ClassSerializer(header_path, class_name) 
+    cs = ClassSerializer(class_cursor) 
       
     member_vars = hu.get_non_static_var_names(cs.cursor)
-        
     return cs.render(code_template, member_vars = member_vars)    
     
-   
-    
-    
 
-def generate_serialize_code(header_path, class_name):
+def generate_serialize_code(class_cursor):
     ''' generate serialization code for a c++ class '''
-    return gen_code_with_member_var(header_path,
-                                    class_name,
-                                    SERIALIZE_TEMPLATE)
+    return gen_code_with_member_var(SERIALIZE_TEMPLATE,
+                                    class_cursor)
 
-def generate_eq_op_code(header_path, class_name):
+def generate_eq_op_code(class_cursor):
     ''' generate operator== code for a c++ class '''
-    return gen_code_with_member_var_separated(header_path,
-                                            class_name,
-                                            EQ_TEMPLATE)
+    return gen_code_with_member_var_separated(EQ_TEMPLATE,
+                                              class_cursor)
 
