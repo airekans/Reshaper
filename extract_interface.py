@@ -11,11 +11,10 @@ from clang.cindex import CursorKind
 import sys
 import os
 from reshaper.util import get_tu, get_cursor, get_cursors_if, get_cursor_if
-from reshaper.semantic import get_class_usage
-from reshaper.semantic import get_semantic_parent_of_decla_cursor
-from reshaper.semantic import get_declaration_cursor
 from reshaper.extract import extract_interface
+from reshaper import semantic
 from optparse import OptionParser
+from functools import partial
 
 
 def parse_options():
@@ -26,9 +25,12 @@ def parse_options():
     option_parser.add_option("-m", "--methods", dest = "methods",
                              type = "string",
                              help = "Names of methods you want to extract")
-    option_parser.add_option("--from-usage", dest = "from_usage",
+    option_parser.add_option("--from-function", dest = "from_function",
                              type = "string",
                              help = "Name of the function that uses CLASSNAME")
+    option_parser.add_option("--from-class", dest = "from_class",
+                             type = "string",
+                             help = "Name of the class that uses CLASSNAME")
 
     # handle option or argument error.
     options, args = option_parser.parse_args()
@@ -43,16 +45,22 @@ def main():
     src, class_to_extract = args
     if not os.path.exists(src):
         option_parser.error("Source file doesn't exist: %s" % src)
-    
+
+    # --from-function and --from-class are mutual exclusive
+    if options.from_function and options.from_class:
+        option_parser.error("options --from-function and"
+                            " --from-class are mutually exclusive")
+        
     methods = options.methods
     if methods is not None:
         methods = methods.split(',')
 
     _tu = get_tu(src)
     # TODO: the following line should be changed to work on class in a namespace
-    class_cursor = get_cursor_if(_tu,
-                                 lambda c: c.spelling == class_to_extract
-                                     and c.is_definition())
+    class_cursor = \
+        get_cursor_if(_tu,
+                      partial(semantic.is_class_definition,
+                              class_name = class_to_extract))
     
     if class_cursor is None or \
             class_cursor.kind != CursorKind.CLASS_DECL or \
@@ -61,13 +69,24 @@ def main():
             (src, class_to_extract)
         sys.exit(1)
 
+
     # If user specifies to extract a class from other function's usage,
     # analyze the function
-    fun_using_class = options.from_usage
+    fun_using_class = options.from_function
     if fun_using_class is not None:
-        fun_cursor = get_cursor_if(_tu, lambda c: c.spelling == fun_using_class and c.is_definition())
-        methods = get_class_usage(fun_cursor, class_to_extract)
-        
+        fun_cursor = get_cursor_if(_tu,
+                                   partial(semantic.is_function_definition,
+                                           fun_name = fun_using_class))
+        methods = semantic.get_func_callees(
+            fun_cursor, class_to_extract)
+
+    cls_using_class = options.from_class
+    if cls_using_class is not None:
+        cls_cursor = get_cursor_if(_tu,
+                                   partial(semantic.is_class_definition,
+                                           class_name = cls_using_class))
+        methods = semantic.get_class_callees(cls_cursor, class_to_extract)
+
     # print out the interface class
     class_printer = extract_interface(class_cursor, methods)
     print class_printer.get_definition()
