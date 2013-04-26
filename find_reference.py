@@ -75,7 +75,7 @@ def main():
     output_file = "referenceResult.txt"
     options = parse_find_reference_args(output_file)
     #get target reference info
-    tu_source = get_tu(os.path.abspath(options.filename))
+    tu_source = get_tu(os.path.abspath(options.filename), is_use_cache = True)
     assert(isinstance(tu_source, TranslationUnit))
 
     if check_diagnostics(tu_source.diagnostics):

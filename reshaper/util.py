@@ -5,7 +5,8 @@ import os
 from functools import partial
 
 
-def get_tu(source, all_warnings=False, config_path = '~/.reshaper.cfg'):
+def get_tu(source, all_warnings=False, config_path = '~/.reshaper.cfg',
+           is_use_cache = False):
     """Obtain a translation unit from source and language.
 
     By default, the translation unit is created from source file "t.<ext>"
@@ -36,8 +37,19 @@ def get_tu(source, all_warnings=False, config_path = '~/.reshaper.cfg'):
         if config_parser.has_option('Clang Options', 'precompile_header'):
             precompile_header = config_parser.get('Clang Options', 'precompile_header')
             args += ['-include-pch', precompile_header]
-        
-    return TranslationUnit.from_source(source, args)
+
+    if is_use_cache:
+        cache_file = source + '.ast'
+        if not os.path.exists(cache_file) or \
+           os.path.getmtime(cache_file) <= os.path.getmtime(source):
+            tu = TranslationUnit.from_source(source, args)
+            tu.save(cache_file)
+        else:
+            tu = TranslationUnit.from_ast_file(cache_file)
+    else:
+        tu = TranslationUnit.from_source(source, args)
+
+    return tu
 
 
 def check_diagnostics(diagnostics):
