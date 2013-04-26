@@ -32,6 +32,10 @@ def get_tu(source, all_warnings=False, config_path = '~/.reshaper.cfg'):
             # pylint: disable-msg=E1103
             for ifile in include_files.split(','):
                 args += ['-include', ifile]
+
+        if config_parser.has_option('Clang Options', 'precompile_header'):
+            precompile_header = config_parser.get('Clang Options', 'precompile_header')
+            args += ['-include-pch', precompile_header]
         
     return TranslationUnit.from_source(source, args)
 
