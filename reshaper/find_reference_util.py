@@ -23,22 +23,22 @@ def filter_cursors_by_usr(cursors, target_usr):
     Then, we need to remove the fake cursors by usr and return the 
     cursors we want.
     """
-    curs_dic = {}
-    for cur in cursors:
-        if cur.kind == CursorKind.CALL_EXPR and \
-                len(list(cur.get_children())) > 0:
+    cursor_dict = {}
+    for cursor in cursors:
+        if cursor.kind == CursorKind.CALL_EXPR and \
+           len(list(cursor.get_children())) > 0:
             continue
         
-        cursor_usr = get_usr_of_declaration_cursor(cur)
+        cursor_usr = get_usr_of_declaration_cursor(cursor)
         
         #FIXME:template class and template function;
         #its declaration USR is different from USR 
         if cursor_usr == target_usr:
-            curs_dic[os.path.abspath(cur.location.file.name), cur.location.line, cur.location.column]= cur
+            location = cursor.location
+            key = (os.path.abspath(location.file.name), location.line, location.column)
+            cursor_dict[key] = cursor
 
-    keys = curs_dic.keys()
-    keys.sort()
-    return [curs_dic[key] for key in keys]
+    return [cursor for cursor in cursor_dict.itervalues()]
 
 def get_cursors_with_name(file_name, name, ref_curs):
     """call back pass to semantic.scan_dir_parse_files 
