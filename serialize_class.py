@@ -35,9 +35,6 @@ def _main():
                              action="store_true", \
                              help="generate serialize operator")
     
-    option_parser.add_option("-a", "--ast", dest="ast", \
-                             type = "string",
-                             help="load cursors from ast file")
     
     options, args = option_parser.parse_args()
     
