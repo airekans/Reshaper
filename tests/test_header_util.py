@@ -40,7 +40,8 @@ class Test(unittest.TestCase):
         self.assertEqual(['m_p1', 'm_p2', 'm_p3'], pointer_vars)
         
     def test_get_all_class_decl_cursors(self):
-        cursors = hu.get_all_class_cursors(self.__tu_cursor)
+        cursors = hu.get_all_class_cursors(self.__tu_cursor, \
+                                           Test.TEST_HEADER_FILE)
         cursor_names = [c.spelling for c in cursors]
         self.assertEqual(['X', 'string', 'A', 'B', 'B1', 'C'], cursor_names)
     

@@ -1,8 +1,10 @@
 # This file provides common utility functions for the test suite.
-from clang.cindex import Cursor, CursorKind, TranslationUnit
+from clang.cindex import CursorKind, TranslationUnit
 import ConfigParser
 import os
 from functools import partial
+import logging
+
 
 
 def get_tu(source, all_warnings=False, config_path = '~/.reshaper.cfg'):
@@ -13,7 +15,8 @@ def get_tu(source, all_warnings=False, config_path = '~/.reshaper.cfg'):
     default it is C, so "t.c" is the default file name.
 
     all_warnings is a convenience argument to enable all compiler warnings.
-    """
+    """  
+        
     args = ['-x', 'c++', '-std=c++11']
  
     if all_warnings:
@@ -32,7 +35,9 @@ def get_tu(source, all_warnings=False, config_path = '~/.reshaper.cfg'):
             # pylint: disable-msg=E1103
             for ifile in include_files.split(','):
                 args += ['-include', ifile]
-        
+    
+    logging.debug(' '.join(args))    
+    
     return TranslationUnit.from_source(source, args)
 
 

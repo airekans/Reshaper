@@ -8,6 +8,7 @@ from reshaper import class_serializer as cs
 from optparse import OptionParser 
 from reshaper import header_util as hu, util
 import sys
+from clang.cindex import TranslationUnit
 
 
 def set_all_true_if_no_option(opts):
@@ -33,6 +34,11 @@ def _main():
     option_parser.add_option("-s", "--serialize", dest="serialize", \
                              action="store_true", \
                              help="generate serialize operator")
+    
+    option_parser.add_option("-a", "--ast", dest="ast", \
+                             type = "string",
+                             help="load cursors from ast file")
+    
     options, args = option_parser.parse_args()
     
     if len(args) < 1:
@@ -41,12 +47,14 @@ def _main():
     header_path = args[0]
 
     tu_ = util.get_tu(header_path)
+    
+         
     if util.check_diagnostics(tu_.diagnostics):
         sys.exit(1)
     if len(args) == 1:
-        classes = hu.get_all_class_cursors(tu_)
+        classes = hu.get_all_class_cursors(tu_, header_path)
     else:
-        classes = hu.get_classes_with_names(tu_, args[1:])
+        classes = hu.get_classes_with_names(tu_, args[1:], header_path)
 
     tmp_classes = []
     for cls in classes:
