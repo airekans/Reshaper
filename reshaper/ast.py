@@ -2,7 +2,32 @@
 '''
 
 from clang.cindex import Cursor
+import pickle
 
+class CacheCursor(object):
+    def __init__(self, cursor, keep_func):
+        self.spelling = cursor.spelling 
+        self.displayname = cursor.displayname
+        self.kind = cursor.kind.name
+        self._children = []
+        for c in cursor.get_children():
+            if not keep_func(c):
+                continue
+            self._children.append(CacheCursor(c, keep_func))
+    def dump(self,file_path):
+        pickle.dump(self, open(file_path,'w'))
+    
+    @staticmethod 
+    def load(file_path):    
+        return pickle.load(open(file_path))
+    
+    def print_all(self, level =0):
+        prefix = "**" * level
+        print prefix + "spelling:", self.spelling
+        print prefix + "displayname:", self.displayname
+        print prefix + "kind:", self.kind
+        for c in self._children:
+            c.print_all(level+1)
 
 class StaticCursor(object):
     """ StaticCursor is a cursor that will not change the object ID

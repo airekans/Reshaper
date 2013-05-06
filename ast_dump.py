@@ -6,6 +6,7 @@ import sys
 from functools import partial
 from reshaper.semantic import get_declaration_cursor
 
+
 def print_cursor(cursor, level, is_print_ref = False):
     prefix = "**" * level
 
@@ -73,10 +74,18 @@ def main():
                 print diag.spelling
 
             sys.exit(1)
-    
+
         walk_ast(_tu,
-                 partial(print_cursor, is_print_ref =  options.reference),
-                 partial(can_visit_cursor_func, path = file_path))
+                  partial(print_cursor, is_print_ref =  options.reference),
+                  partial(can_visit_cursor_func, path = file_path))
+        
+        from reshaper.ast import CacheCursor
+        cache_cursor = CacheCursor(_tu.cursor, is_cursor_in_file_func(file_path)) 
+        cache_cursor.dump('dump.txt')
+        
+        cache_cursor1 = CacheCursor.load('dump.txt')
+        cache_cursor1.print_all()
+        
         
 if __name__ == '__main__':
     main()
