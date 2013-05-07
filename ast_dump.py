@@ -4,7 +4,7 @@ from reshaper.util import get_tu, walk_ast, is_cursor_in_file_func
 from optparse import OptionParser
 import sys
 from functools import partial
-from reshaper.semantic import get_declaration_cursor
+
 
 
 def print_cursor(cursor, level, is_print_ref = False):
@@ -27,8 +27,8 @@ def print_cursor(cursor, level, is_print_ref = False):
     print 
     
     if is_print_ref:
-        ref_cursor = get_declaration_cursor(cursor)
-        if not ref_cursor or ref_cursor == cursor:
+        ref_cursor = cursor.get_declaration()
+        if not ref_cursor:
             return
         print prefix + "reference:"
         print_cursor(ref_cursor, level+1, is_print_ref)
@@ -79,12 +79,7 @@ def main():
                   partial(print_cursor, is_print_ref =  options.reference),
                   partial(can_visit_cursor_func, path = file_path))
         
-        from reshaper.ast import CacheCursor
-        cache_cursor = CacheCursor(_tu.cursor, is_cursor_in_file_func(file_path)) 
-        cache_cursor.dump('dump.txt')
-        
-        cache_cursor1 = CacheCursor.load('dump.txt')
-        cache_cursor1.print_all()
+
         
         
 if __name__ == '__main__':

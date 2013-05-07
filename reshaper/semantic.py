@@ -6,11 +6,9 @@ from clang.cindex import Cursor
 from clang.cindex import CursorKind
 from clang.cindex import TranslationUnit
 from clang.cindex import TypeKind
-from clang.cindex import Config
 from reshaper import util 
 
 _file_types = ('.cpp', '.c', '.cc')
-_conf = Config()
 
 def get_cursors_add_parent(source, spelling):
     '''Get Cursors through tu or cursor 
@@ -18,7 +16,7 @@ def get_cursors_add_parent(source, spelling):
     '''
     children = []
     cursors = []
-    if isinstance(source, Cursor):
+    if hasattr(source, "get_children"):
         children = source.get_children()
     else:
         # Assume TU
@@ -80,15 +78,11 @@ def get_caller(source):
     else:
         return get_caller(source.parent)
 
-def get_declaration_cursor(cursor):
-    '''get declaration cursor of input cursor
-    '''
-    return _conf.lib.clang_getCursorReferenced(cursor)
 
 def get_semantic_parent_of_decla_cursor(cursor):
     '''get semantic_parent of declaration cursor
     '''
-    decla_cursor = get_declaration_cursor(cursor)
+    decla_cursor = cursor.get_declaration()
     if not isinstance(decla_cursor, Cursor) or \
             decla_cursor.semantic_parent is None:
         return None
@@ -223,7 +217,7 @@ def get_func_callees(fun_cursor, callee_class):
         [c for c in member_fun_calls
          if get_semantic_parent_of_decla_cursor(c).spelling == callee_class]
     target_member_funs = \
-        [get_declaration_cursor(c) for c in target_member_fun_calls]
+        [c.get_declaration() for c in target_member_fun_calls]
     method_names = [c.spelling for c in target_member_funs]
     return set(method_names)
 

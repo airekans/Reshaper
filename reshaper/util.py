@@ -4,10 +4,23 @@ import ConfigParser
 import os
 from functools import partial
 import logging
+from reshaper.ast import TUCache
 
 
 
-def get_tu(source, all_warnings=False, config_path = '~/.reshaper.cfg'):
+def get_tu_from_text(source):
+    '''copy it from util.py, just for test
+    '''
+    name = 't.cpp'
+    args = []
+    args.append('-std=c++11')
+
+    return TUCache(TranslationUnit.from_source(name, args, 
+                                               unsaved_files=[(name,
+                                                              source)]))
+
+def get_tu(source, all_warnings=False, config_path = '~/.reshaper.cfg', 
+           cache_folder = './'):
     """Obtain a translation unit from source and language.
 
     By default, the translation unit is created from source file "t.<ext>"
@@ -16,6 +29,12 @@ def get_tu(source, all_warnings=False, config_path = '~/.reshaper.cfg'):
 
     all_warnings is a convenience argument to enable all compiler warnings.
     """  
+    
+    cache_path = os.path.join(cache_folder, source+'.dump')
+#     if os.path.isfile(cache_path):
+#         return CacheCursor.load(cache_path)
+    
+    
         
     args = ['-x', 'c++', '-std=c++11']
  
@@ -38,7 +57,13 @@ def get_tu(source, all_warnings=False, config_path = '~/.reshaper.cfg'):
     
     logging.debug(' '.join(args))    
     
-    return TranslationUnit.from_source(source, args)
+    _tu = TranslationUnit.from_source(source, args)
+    
+    cache_tu = TUCache(_tu) 
+    cache_tu.dump(cache_path)
+    
+    
+    return cache_tu
 
 
 def check_diagnostics(diagnostics):
