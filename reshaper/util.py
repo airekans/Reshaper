@@ -7,6 +7,19 @@ import logging
 from reshaper.ast import TUCache
 
 
+def is_same_file(path1, path2):
+    return os.path.abspath(path1) == \
+           os.path.abspath(path2)
+
+def is_cursor_in_file_func(file_path):
+    def is_cursor_in_file(cursor, _l = -1):
+        cursor_file = cursor.location.file
+        if not cursor_file:
+            return  True
+        else:
+            return is_same_file(cursor_file.name, file_path)
+    
+    return is_cursor_in_file
 
 def get_tu_from_text(source):
     '''copy it from util.py, just for test
@@ -58,7 +71,7 @@ def get_tu(source, all_warnings=False, config_path = '~/.reshaper.cfg',
     
     _tu = TranslationUnit.from_source(source, args)
     
-    cache_tu = TUCache(_tu) 
+    cache_tu = TUCache(_tu, is_cursor_in_file_func(source)) 
     cache_tu.dump(cache_path)
     
     return cache_tu
@@ -176,19 +189,9 @@ def get_cursor_with_location(_tu, spelling, line, column = None):
     return None
 
 
-def is_same_file(path1, path2):
-    return os.path.abspath(path1) == \
-           os.path.abspath(path2) 
+ 
 
-def is_cursor_in_file_func(file_path):
-    def is_cursor_in_file(cursor, _l = -1):
-        cursor_file = cursor.location.file
-        if not cursor_file:
-            return  True
-        else:
-            return is_same_file(cursor_file.name, file_path)
-    
-    return is_cursor_in_file
+
 
 def walk_ast(source, visitor, is_visit_subtree_fun = lambda _c, _l: True):
     """walk the ast with the specified functions by DFS

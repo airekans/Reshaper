@@ -83,6 +83,7 @@ class CursorCache(object):
         self._definition = None
         self._declaration = None
         self.semantic_parent =  None
+        self.lexical_parent =  None
         self._parent =  None
         
         self._tokens = []
@@ -129,6 +130,9 @@ class CursorCache(object):
         
         _semantic_parent = self._cursor.semantic_parent 
         self.semantic_parent = self.create_ref_cursor_cache(_semantic_parent)
+        
+        _lexical_parent =  self._cursor.lexical_parent
+        self.lexical_parent = self.create_ref_cursor_cache(_lexical_parent)
         
         for c in self._children:
             c.update_ref_cursors()
@@ -178,9 +182,9 @@ class DiagnosticCache(object):
 
 
 class TUCache(object):
-    def __init__(self, tu):
+    def __init__(self, tu, keep_func= lambda _c: True):
         CursorCache.cursor2cache.clear()
-        self.cursor = CursorCache(tu.cursor)
+        self.cursor = CursorCache(tu.cursor, keep_func)
         self.cursor.update_ref_cursors()
         self.diagnostics = []
         for diag in tu.diagnostics:
