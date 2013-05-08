@@ -2,7 +2,7 @@
 '''
 
 from clang.cindex import Cursor
-import pickle, cPickle
+import cPickle
 from clang.cindex import Config
 
 _CONF = Config()
@@ -191,11 +191,11 @@ class TUCache(object):
             self.diagnostics.append(DiagnosticCache(diag))
         
     def dump(self,file_path):
-        cPickle.dump(self, open(file_path,'w'), True)
+        cPickle.dump(self, open(file_path,'wb'), cPickle.HIGHEST_PROTOCOL)
     
     @staticmethod 
     def load(file_path):    
-        return cPickle.load(open(file_path))
+        return cPickle.load(open(file_path,'rb'))
         
     def get_parent(self):
         return None   
