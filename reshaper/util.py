@@ -30,11 +30,10 @@ def get_tu(source, all_warnings=False, config_path = '~/.reshaper.cfg',
     all_warnings is a convenience argument to enable all compiler warnings.
     """  
     
-    cache_path = os.path.join(cache_folder, source+'.dump')
-#     if os.path.isfile(cache_path):
-#         return CacheCursor.load(cache_path)
-    
-    
+    _, filename = os.path.split(source)
+    cache_path = os.path.join(cache_folder, filename + '.dump')
+    if os.path.isfile(cache_path):
+        return TUCache.load(cache_path)
         
     args = ['-x', 'c++', '-std=c++11']
  
@@ -61,7 +60,6 @@ def get_tu(source, all_warnings=False, config_path = '~/.reshaper.cfg',
     
     cache_tu = TUCache(_tu) 
     cache_tu.dump(cache_path)
-    
     
     return cache_tu
 

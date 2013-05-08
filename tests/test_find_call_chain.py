@@ -1,8 +1,7 @@
 'test_find_call_chain.py -- unittest for find'
 
-from clang.cindex import Cursor
 from clang.cindex import TranslationUnit
-from reshaper.util import get_cursor_with_location
+from reshaper.util import get_cursor_with_location, get_tu_from_text
 from reshaper.semantic import get_cursors_add_parent
 from reshaper.find_reference_util import get_usr_of_declaration_cursor
 from reshaper.find_reference_util import filter_cursors_by_usr
@@ -52,16 +51,6 @@ int main()
 }
 """
 
-def get_tu_from_text(source):
-    '''copy it from util.py, 
-    just for test
-    '''
-    name = 't.cpp'
-    args = []
-    args.append('-std=c++11')
-
-    return TranslationUnit.from_source(name, args, unsaved_files=[(name,
-                                       source)])
 
 def fake_find_reference_update_output_contents(tu_source, target_cursor):
     '''as update_output_contents only changes var

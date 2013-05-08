@@ -1,17 +1,16 @@
 """util functions for finding reference
 """
 import os, sys
-from clang.cindex import Cursor
 from clang.cindex import CursorKind
 from reshaper.util import get_tu, check_diagnostics
-from reshaper.semantic import get_cursors_add_parent
+from reshaper.semantic import get_cursors_add_parent, is_cursor
 from optparse import OptionParser
 
 def get_usr_of_declaration_cursor(cursor):
     """get declaration cursor and return its USR
     """
     declaration_cursor = cursor.get_declaration()
-    if isinstance(declaration_cursor, Cursor):
+    if is_cursor(declaration_cursor):
         return declaration_cursor.get_usr()
     return None
 

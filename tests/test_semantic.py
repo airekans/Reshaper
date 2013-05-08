@@ -72,14 +72,14 @@ def has_child(cursor, is_translation_unit):
     '''called by test_get_cursors_add_parent to 
     test if having got the corrent parent
     '''
-    assert(isinstance(cursor, Cursor))
+    assert(isinstance(cursor, CursorCache))
 
     _has_child = False
 
     if is_translation_unit:
         assert(not cursor.parent)
     else:
-        assert(isinstance(cursor.parent, Cursor))
+        assert(isinstance(cursor.parent, CursorCache))
         for child in cursor.parent.get_children():
             if child == cursor:
                 _has_child = True

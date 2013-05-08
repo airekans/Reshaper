@@ -13,8 +13,10 @@ class TypeKindCache(object):
     def __init__(self, type_kind):
         self.name = type_kind.name
         self.spelling = type_kind.spelling
-    def __eq__(self, kind):
-        return self.name == kind.name
+    def __eq__(self, type_kind):
+        return self.name == type_kind.name
+    def __cmp__(self, type_kind):
+        return cmp(self.name, type_kind.name)
 
 class TypeCache(object):
     '''cache of Type'''
@@ -28,11 +30,24 @@ class CursorKindCache(object):
         
     def __eq__(self, kind):
         return self.name == kind.name 
+    
+    def __cmp__(self, kind):
+        return cmp(self.name, kind.name)
+
+class FileCache(object):
+    ''' cache of File'''
+    def __init__(self, file_):
+        self.name = file_.name
 
 class LocationCache(object):
+    ''' cache of Location'''
     def __init__(self, location):
         self.column = location.column
         self.line = location.line
+        if location.file:
+            self.file = FileCache(location.file)
+        else:
+            self.file = None
 
 class ExtentCache(object):
     '''cache of Extent'''
@@ -46,35 +61,16 @@ class TokenCache(object):
         self.spelling =  token.spelling
 
 
-def memorized(class_):
-    instances = {}
-    def getinstance(*args, **kwargs):
-        c_id = id(args[0])
-        if c_id not in instances:
-            instances[c_id] = class_(*args, **kwargs)
-            return instances[c_id]
-        return getinstance
 
-@memorized
+
 class CursorCache(object):
+    ''' Cache for Cursor'''
     cursor2cache = {}
-    
-#     def __new__(cls,  cursor, keep_func = lambda c: True):
-#         if cursor is None:
-#             return None
-#         
-#         cursor_id = id(cursor)
-#         if CursorCache.cursor2cache.get(cursor_id):
-#             return CursorCache.cursor2cache[cursor_id]
-#         else:
-#             return super(CursorCache, cls).__new__(cls, cursor, keep_func)   
-    
+
     def __init__(self, cursor, keep_func = lambda c: True):
         
-#         cursor_id = id(cursor)
-#         if CursorCache.cursor2cache.get(cursor_id):
-#             return
-        
+        self._cursor = cursor
+        self._keep_func = keep_func
         
         self.spelling = cursor.spelling 
         self.displayname = cursor.displayname
@@ -83,31 +79,66 @@ class CursorCache(object):
         self.location = LocationCache(cursor.location)
         self.type = TypeCache(cursor.type)
         
-#         _definition = cursor.get_definition()
-#         
-#         if(_definition and _definition != cursor):
-#             self._definition = CursorCache(_definition, keep_func)
-#         else:
-#             self._definition = self
-#         
-#         _declaration = _CONF.lib.clang_getCursorReferenced(cursor)
-#         if(_declaration and _declaration != cursor):
-#             self._declaration = CursorCache(_declaration, keep_func)
-#         else:
-#             self._declaration = self
+        self._usr = cursor.get_usr()
+        self._definition = None
+        self._declaration = None
+        self.semantic_parent =  None
+        self._parent =  None
         
         self._tokens = []
         for t in cursor.get_tokens():
             self._tokens.append(TokenCache(t))
-        
+
         self._children = []
         
         for c in cursor.get_children():
             if not keep_func(c):
                 continue
-            self._children.append(CursorCache(c, keep_func))
+            child = CursorCache(c, keep_func)
+            child.set_parent(self)
+            self._children.append(child)
+       
+        key = cursor.hash
+        CursorCache.cursor2cache[key] = self
+   
+   
+   
+    def create_ref_cursor_cache(self, ref_cursor):
+        return CursorCache.do_create_ref_cursor_cache(ref_cursor, \
+                                                      self._keep_func)
+    
             
-        #CursorCache.cursor2cache[cursor_id] = self 
+    @staticmethod
+    def do_create_ref_cursor_cache(ref_cursor, keep_func):
+        
+        if not ref_cursor:
+            return None
+        
+        key = ref_cursor.hash
+        if key in CursorCache.cursor2cache:
+            return CursorCache.cursor2cache[key]
+        else:
+            return CursorCache(ref_cursor, keep_func)
+    
+    def update_ref_cursors(self):
+        _definition = self._cursor.get_definition()
+        self._definition = self.create_ref_cursor_cache(_definition)
+         
+        _declaration = _CONF.lib.clang_getCursorReferenced(self._cursor)
+        self._declaration = self.create_ref_cursor_cache(_declaration)
+        
+        _semantic_parent = self._cursor.semantic_parent 
+        self.semantic_parent = self.create_ref_cursor_cache(_semantic_parent)
+        
+        for c in self._children:
+            c.update_ref_cursors()
+        
+    
+    def __getstate__(self):
+        dic_copy = dict(self.__dict__)
+        del dic_copy['_keep_func']
+        del dic_copy['_cursor'] 
+        return dic_copy    
         
     def get_children(self):    
         return self._children
@@ -123,14 +154,23 @@ class CursorCache(object):
         for c in self._children:
             c.print_all(level+1)
     
-#     def is_definition(self):
-#         return self._is_definition
-# 
-#     def get_definition(self):
-#         return self._definition
+    def is_definition(self):
+        return self._is_definition
+ 
+    def get_definition(self):
+        return self._definition
     
-#     def get_declaration(self):
-#         return self._declaration
+    def get_declaration(self):
+        return self._declaration
+    
+    def get_usr(self):
+        return self._usr
+    
+    def get_parent(self):
+        return self._parent
+    
+    def set_parent(self, parent):
+        self._parent =  parent
 
 class DiagnosticCache(object):
     def __init__(self, diag):
@@ -139,8 +179,9 @@ class DiagnosticCache(object):
 
 class TUCache(object):
     def __init__(self, tu):
+        CursorCache.cursor2cache.clear()
         self.cursor = CursorCache(tu.cursor)
-        print len(CursorCache.cursor2cache)
+        self.cursor.update_ref_cursors()
         self.diagnostics = []
         for diag in tu.diagnostics:
             self.diagnostics.append(DiagnosticCache(diag))
@@ -152,70 +193,10 @@ class TUCache(object):
     def load(file_path):    
         return pickle.load(open(file_path))
         
-        
-class StaticCursor(object):
-    """ StaticCursor is a cursor that will not change the object ID
-    after getting the children again and again.
-    E.g. If you add an attribute to the child cursor, it will "disappear"
-    after you get it again by using get_children.
-    for child in cursor.get_children():
-        child.parent = cursor
-    for child in cursor.get_children():
-        assert(hasattr(child, "parent")) # this will fail
-    
-    So you travese the AST easily with StaticCursor.
-
-    Note that if you get cursor by using the native API of cindex,
-    the return cursor will be Cursor instead of StaticCursor,
-    so this operation will invalidate the static AST.
-    
-    """
-    
-    def __init__(self, cursor, parent = None):
-        """ Create a new StaticCursor with a cindex.Cursor
-        and a optional parent
-        """
-
-        self.__cursor = cursor
-        self.__parent = parent
-        self.__children = [StaticCursor(child, self)
-                           for child in cursor.get_children()]
-        
     def get_parent(self):
-        return self.__parent
+        return None   
+       
 
-    def get_children(self):
-        """ Simulate the Cursor.get_children function
-        """
-        return self.__children
 
-    def get_cursor(self):
-        return self.__cursor
-
-    def __getattr__(self, name):
-        return getattr(self.__cursor, name)
-        
-
-def get_static_ast(source):
-    """Get static AST from the given cursor or translation unit.
-    AST from cursor is dynamic, i.e. they will change if the code is changed after
-    you got the cursor.
-
-    We need a static AST and extra information to make AST processing easier.
-    parent and children will be add to the cursor.
-    
-    Arguments:
-    - `source`: Cursor or TranslationUnit the AST rooted at.
-    """
-
-    if source is None:
-        return None
-    elif isinstance(source, Cursor):
-        cursor = source
-    else: 
-        # Assume TU
-        cursor = source.cursor
-
-    return StaticCursor(cursor)
 
         

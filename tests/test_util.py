@@ -5,7 +5,6 @@ from clang.cindex import CursorKind
 import os
 from functools import partial
 from nose.tools import eq_, with_setup
-from .util import get_tu_from_text
 
 
 INPUT_DIR = os.path.join(os.path.dirname(__file__), 'test_data')

@@ -2,13 +2,21 @@
 """
 
 import os
-from clang.cindex import Cursor
+
 from clang.cindex import CursorKind
-from clang.cindex import TranslationUnit
 from clang.cindex import TypeKind
 from reshaper import util 
+from reshaper.ast import TUCache, CursorCache
 
 _file_types = ('.cpp', '.c', '.cc')
+
+
+def is_cursor(source):
+    return isinstance(source, CursorCache)
+        
+def is_tu(source):
+    return isinstance(source, TUCache)
+
 
 def get_cursors_add_parent(source, spelling):
     '''Get Cursors through tu or cursor 
@@ -23,7 +31,7 @@ def get_cursors_add_parent(source, spelling):
         children = source.cursor.get_children()
 
     for cursor in children:
-        if isinstance(source, TranslationUnit):
+        if is_tu(source):
             cursor.parent = None
         else:
             cursor.parent = source
@@ -69,9 +77,9 @@ def scan_dir_parse_files(directory, parse_file):
 def get_caller(source):
     '''get calling function of source cursor
     '''
-    if not isinstance(source, Cursor) or \
+    if not is_cursor(source) or \
             source.parent is None or \
-            not isinstance(source.parent, Cursor):
+            not is_cursor(source.parent):
         return None
     elif source.parent.type.kind == TypeKind.FUNCTIONPROTO:
         return source.parent
@@ -83,7 +91,7 @@ def get_semantic_parent_of_decla_cursor(cursor):
     '''get semantic_parent of declaration cursor
     '''
     decla_cursor = cursor.get_declaration()
-    if not isinstance(decla_cursor, Cursor) or \
+    if not is_cursor(decla_cursor) or \
             decla_cursor.semantic_parent is None:
         return None
     return decla_cursor.semantic_parent
