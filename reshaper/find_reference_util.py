@@ -6,7 +6,9 @@ from clang.cindex import CursorKind
 from reshaper.util import get_tu, check_diagnostics
 from reshaper.semantic import get_declaration_cursor
 from reshaper.semantic import get_cursors_add_parent
+from reshaper.option import setup_find_reference_options
 from optparse import OptionParser
+import reshaper.option
 
 def get_usr_of_declaration_cursor(cursor):
     """get declaration cursor and return its USR
@@ -56,40 +58,14 @@ def get_cursors_with_name(file_name, name, ref_curs):
     #don't forget to define global _refer_curs'
     ref_curs.extend(cursors)
 
-def parse_options():
-    """ parse the command line options and arguments and returns them
-    """
-
-    option_parser = OptionParser(usage = "%prog [options]")
-    option_parser.add_option("-f", "--file", dest = "filename",
-                             type = "string",
-                             help = "Names of file to find reference")
-    option_parser.add_option("-s", "--spelling", dest = "spelling",
-                             type = "string",
-                             help = "spelling of target to find reference")
-    option_parser.add_option("-l", "--line", dest = "line",
-                             type = "int",
-                             help = "line of target to find reference")
-    option_parser.add_option("-c", "--column", dest = "column",
-                             type = "int",
-                             help = "column of target to find reference",
-                             default = None)
-    option_parser.add_option("-d", "--directory", dest = "directory",
-                             type = "string",
-                             help = "directory to search for finding reference",
-                             default = ".")
-    option_parser.add_option("-o", "--output-file", dest = "output_file_name",
-                             type = "string",
-                             help = "output file name")
-
-    options, args = option_parser.parse_args()
-    return options, args, option_parser
 
 def parse_find_reference_args(default_output_filename):
     '''get user options and parse it for 
     finding reference
     '''
-    options, args, option_parser = parse_options()
+    option_parser = OptionParser(usage = "%prog [options]")
+    setup_find_reference_options(option_parser)
+    options, args = option_parser.parse_args()
 
     #check input args
     if options.filename is None:
