@@ -7,7 +7,7 @@ from functools import partial
 
 
 def get_tu(source, all_warnings=False, config_path = '~/.reshaper.cfg',
-           is_use_cache = False, cdb_path = None):
+           cdb_path = None):
     """Obtain a translation unit from source in C++.
 
     By default, the translation unit is created from source file "t.<ext>"
@@ -48,19 +48,8 @@ def get_tu(source, all_warnings=False, config_path = '~/.reshaper.cfg',
         cmd_args = list(cmds[0].arguments)[1:]
         cmd_args.remove(source) # remove the file name
         args += cmd_args
-    
-    if is_use_cache:
-        cache_file = source + '.ast'
-        if not os.path.exists(cache_file) or \
-           os.path.getmtime(cache_file) <= os.path.getmtime(source):
-            tu = TranslationUnit.from_source(source, args)
-            tu.save(cache_file)
-        else:
-            tu = TranslationUnit.from_ast_file(cache_file)
-    else:
-        tu = TranslationUnit.from_source(source, args)
 
-    return tu
+    return TranslationUnit.from_source(source, args)
 
 
 def check_diagnostics(diagnostics):
