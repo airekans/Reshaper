@@ -29,7 +29,7 @@ def main():
     in_file = args[0]
     out_file = options.out_file
 
-    compile_command_regex = re.compile(r"^gcc .*-c (?P<file>\S+)")
+    compile_command_regex = re.compile(r"^(?P<CC>gcc) .*-c (?P<file>\S+)")
     in_fd = open(in_file)
     cdb = []
     for line in in_fd:
@@ -37,7 +37,7 @@ def main():
         if result is not None:
             cdb.append({
                 "directory": options.work_dir,
-                "command": line.strip(),
+                "command": line.strip().replace('gcc ', 'clang++ '),
                 "file": result.group("file")
             })
 
