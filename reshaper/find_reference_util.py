@@ -92,7 +92,10 @@ def parse_find_reference_args(default_output_filename):
     options, args, option_parser = parse_options()
 
     #check input args
-    if options.filename is None or not os.path.isfile(options.filename):
+    if options.filename is None:
+        option_parser.error("please input file to search")
+    
+    if not os.path.isfile(options.filename):
         option_parser.error("file %s is not exists, please check it!" % options.filename)
 
     if options.spelling is None:
