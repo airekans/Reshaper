@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
-from reshaper.util import get_tu, walk_ast, is_cursor_in_file_func
+from reshaper.util import walk_ast, is_cursor_in_file_func
+from reshaper.ast import get_tu
 from optparse import OptionParser
 import sys
 from functools import partial
@@ -15,6 +16,10 @@ def print_cursor(cursor, level, is_print_ref = False):
     print prefix + "spelling:", cursor.spelling
     print prefix + "displayname:", cursor.displayname
     print prefix + "kind:", cursor.kind.name
+    print prefix + "usr:", cursor.get_usr()
+    print prefix + "hash:", cursor.hash
+    if cursor.location.file:
+        print prefix + "file:", cursor.location.file.name
     
     if cursor.type is not None:
         print prefix + "type kind:", cursor.type.kind.name

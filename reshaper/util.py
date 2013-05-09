@@ -11,6 +11,10 @@ def is_same_file(path1, path2):
 
 def is_cursor_in_file_func(file_path):
     def is_cursor_in_file(cursor, _l = -1):
+        if not cursor:
+            return True
+        if not cursor.location:
+            return True
         cursor_file = cursor.location.file
         if not cursor_file:
             return  True
