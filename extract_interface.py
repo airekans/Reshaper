@@ -31,7 +31,10 @@ def parse_options():
     option_parser.add_option("--from-class", dest = "from_class",
                              type = "string",
                              help = "Name of the class that uses CLASSNAME")
-
+    option_parser.add_option("--cdb-path", dest = "cdb_path",
+                             type = "string",
+                             help = "path to the compilation database")
+    
     # handle option or argument error.
     options, args = option_parser.parse_args()
     return option_parser, options, args
@@ -55,7 +58,7 @@ def main():
     if methods is not None:
         methods = methods.split(',')
 
-    _tu = get_tu(src)
+    _tu = get_tu(src, cdb_path = options.cdb_path)
     # TODO: the following line should be changed to work on class in a namespace
     class_cursor = \
         get_cursor_if(_tu,

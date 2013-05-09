@@ -1,13 +1,14 @@
 # This file provides common utility functions for the test suite.
 from clang.cindex import Cursor, CursorKind, TranslationUnit
+from clang.cindex import CompilationDatabase as CDB
 import ConfigParser
 import os
 from functools import partial
 
 
 def get_tu(source, all_warnings=False, config_path = '~/.reshaper.cfg',
-           is_use_cache = False):
-    """Obtain a translation unit from source and language.
+           is_use_cache = False, cdb_path = None):
+    """Obtain a translation unit from source in C++.
 
     By default, the translation unit is created from source file "t.<ext>"
     where <ext> is the default file extension for the specified language. By
@@ -15,7 +16,7 @@ def get_tu(source, all_warnings=False, config_path = '~/.reshaper.cfg',
 
     all_warnings is a convenience argument to enable all compiler warnings.
     """
-    args = ['-x', 'c++', '-std=c++11']
+    args = ['-x', 'c++']
  
     if all_warnings:
         args += ['-Wall', '-Wextra']
@@ -38,6 +39,16 @@ def get_tu(source, all_warnings=False, config_path = '~/.reshaper.cfg',
             precompile_header = config_parser.get('Clang Options', 'precompile_header')
             args += ['-include-pch', precompile_header]
 
+    if cdb_path:
+        cdb = CDB.fromDirectory(cdb_path)
+        cmds = cdb.getCompileCommands(os.path.join(cdb_path, source))
+        if cmds is None or len(cmds) != 1:
+            raise Exception("cannot find the CDB command for %s" % source)
+
+        cmd_args = list(cmds[0].arguments)[1:]
+        cmd_args.remove(source) # remove the file name
+        args += cmd_args
+    
     if is_use_cache:
         cache_file = source + '.ast'
         if not os.path.exists(cache_file) or \
