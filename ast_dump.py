@@ -2,6 +2,7 @@
 
 from reshaper.util import get_tu, walk_ast, is_cursor_in_file_func
 from reshaper.util import check_diagnostics
+from reshaper.option import setup_options
 from optparse import OptionParser
 import sys
 from functools import partial
@@ -34,7 +35,8 @@ def print_cursor(cursor, level, is_print_ref = False):
         print_cursor(ref_cursor, level+1, is_print_ref)
 
 def main():
-    option_parser = OptionParser(usage = "%prog [options] files") 
+    option_parser = OptionParser(usage = "%prog [options] files")
+    setup_options(option_parser)
     option_parser.add_option("-l", "--level", dest = "level",
                              type="int",\
                              help = "max level to print")
@@ -45,9 +47,6 @@ def main():
     option_parser.add_option("-r", "--reference", dest = "reference",
                              action="store_true",
                              help = "print info of referenced cursor")
-    option_parser.add_option("--cdb-path", dest = "cdb_path",
-                             type = "string",
-                             help = "path to the compilation database")
     
     (options, args) = option_parser.parse_args()
        
@@ -63,7 +62,8 @@ def main():
         return can_visit
         
     for file_path in args:     
-        _tu = get_tu(file_path, cdb_path = options.cdb_path)
+        _tu = get_tu(file_path, config_path= options.config,
+                     cdb_path = options.cdb_path)
         if not _tu:
             print "unable to load %s" % file_path
             sys.exit(1)
