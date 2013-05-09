@@ -8,7 +8,7 @@ from functools import partial
 
 
 def print_cursor(cursor, level, is_print_ref = False):
-    prefix = "**" * level
+    prefix = "************" * level
 
     lexical_parent = cursor.lexical_parent
     semantic_parent = cursor.semantic_parent

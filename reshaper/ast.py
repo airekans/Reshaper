@@ -7,7 +7,25 @@ from clang.cindex import Config
 
 _CONF = Config()
 
-class TypeKindCache(object):
+
+class Flyweight(object):
+    key2objs = {}
+    def __new__(cls, *arg, **karg):
+        
+        if not arg:
+            return super(Flyweight, cls).__new__(cls) 
+        
+        obj = arg[0]
+        if obj is None:
+            return None
+        
+        key = '.'.join([cls.__name__, obj.name])
+        if key not in Flyweight.key2objs:
+            Flyweight.key2objs[key] = super(Flyweight, cls).__new__(cls, *arg, **karg)         
+        return Flyweight.key2objs[key]
+
+
+class TypeKindCache(Flyweight):
     '''cache of TypeKind
     '''
     def __init__(self, type_kind):
@@ -23,7 +41,8 @@ class TypeCache(object):
     def __init__(self, t):
         self.kind = TypeKindCache(t.kind)
 
-class CursorKindCache(object):
+
+class CursorKindCache(Flyweight):
     '''cache of CursorKind '''
     def __init__(self, kind):
         self.name = kind.name
@@ -34,7 +53,8 @@ class CursorKindCache(object):
     def __cmp__(self, kind):
         return cmp(self.name, kind.name)
 
-class FileCache(object):
+
+class FileCache(Flyweight):
     ''' cache of File'''
     def __init__(self, file_):
         self.name = file_.name

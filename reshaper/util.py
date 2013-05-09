@@ -46,7 +46,7 @@ def get_tu(source, all_warnings=False, config_path = '~/.reshaper.cfg',
     _, filename = os.path.split(source)
     cache_path = os.path.join(cache_folder, filename + '.dump')
     if os.path.isfile(cache_path):
-        return TUCache.load(cache_path)
+         return TUCache.load(cache_path)
         
     args = ['-x', 'c++', '-std=c++11']
  
@@ -70,8 +70,10 @@ def get_tu(source, all_warnings=False, config_path = '~/.reshaper.cfg',
     logging.debug(' '.join(args))    
     
     _tu = TranslationUnit.from_source(source, args)
+#     cache_tu =  TUCache(_tu)
     
-    cache_tu = TUCache(_tu, is_cursor_in_file_func(source)) 
+    
+    cache_tu = TUCache(_tu, is_cursor_in_file_func(source))
     cache_tu.dump(cache_path)
     
     return cache_tu
