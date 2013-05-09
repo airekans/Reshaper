@@ -1,10 +1,8 @@
 # This file provides common utility functions for the test suite.
-from clang.cindex import CursorKind, TranslationUnit
-import ConfigParser
+
 import os
 from functools import partial
-import logging
-from reshaper.ast import TUCache
+from clang.cindex import CursorKind
 
 
 def is_same_file(path1, path2):
@@ -21,62 +19,9 @@ def is_cursor_in_file_func(file_path):
     
     return is_cursor_in_file
 
-def get_tu_from_text(source):
-    '''copy it from util.py, just for test
-    '''
-    name = 't.cpp'
-    args = []
-    args.append('-std=c++11')
 
-    return TUCache(TranslationUnit.from_source(name, args, 
-                                               unsaved_files=[(name,
-                                                              source)]))
 
-def get_tu(source, all_warnings=False, config_path = '~/.reshaper.cfg', 
-           cache_folder = './'):
-    """Obtain a translation unit from source and language.
 
-    By default, the translation unit is created from source file "t.<ext>"
-    where <ext> is the default file extension for the specified language. By
-    default it is C, so "t.c" is the default file name.
-
-    all_warnings is a convenience argument to enable all compiler warnings.
-    """  
-    
-    _, filename = os.path.split(source)
-    cache_path = os.path.join(cache_folder, filename + '.dump')
-    if os.path.isfile(cache_path):
-         return TUCache.load(cache_path)
-        
-    args = ['-x', 'c++', '-std=c++11']
- 
-    if all_warnings:
-        args += ['-Wall', '-Wextra']
-
-    if config_path:
-        config_parser = ConfigParser.SafeConfigParser()
-        config_parser.read(os.path.expanduser(config_path))
-        if config_parser.has_option('Clang Options', 'include_paths'):
-            include_paths = config_parser.get('Clang Options', 'include_paths')
-            # pylint: disable-msg=E1103
-            args += ['-I' + p for p in include_paths.split(',')]
-            
-        if config_parser.has_option('Clang Options', 'include_files'):
-            include_files = config_parser.get('Clang Options', 'include_files')
-            # pylint: disable-msg=E1103
-            for ifile in include_files.split(','):
-                args += ['-include', ifile]
-    
-    logging.debug(' '.join(args))    
-    
-    _tu = TranslationUnit.from_source(source, args)
-#     cache_tu =  TUCache(_tu)
-    
-    
-    cache_tu = TUCache(_tu, is_cursor_in_file_func(source))
-    cache_tu.dump(cache_path)
-    
-    return cache_tu
 
 
 def check_diagnostics(diagnostics):

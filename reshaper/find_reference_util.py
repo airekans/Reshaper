@@ -2,7 +2,8 @@
 """
 import os, sys
 from clang.cindex import CursorKind
-from reshaper.util import get_tu, check_diagnostics
+from reshaper.util import  check_diagnostics
+from reshaper.ast import get_tu
 from reshaper.semantic import get_cursors_add_parent, is_cursor
 from optparse import OptionParser
 
@@ -106,15 +107,15 @@ def parse_find_reference_args(default_output_filename):
                 % (options.filename, options.line)
 
     if options.output_file_name is not None:
-       try:
-           file_handle = open(options.output_file_name, 'w')
-       except IOError, e:
-           print e
-           tmp_output_file = os.path.join(".", \
+        try:
+            file_handle = open(options.output_file_name, 'w')
+        except IOError, e:
+            print e
+            tmp_output_file = os.path.join(".", \
                 default_output_filename)
-           print "Error occurs, default output file %s will be used"\
+            print "Error occurs, default output file %s will be used"\
                 % tmp_output_file
-           options.output_file_name = tmp_output_file 
+            options.output_file_name = tmp_output_file 
 
     return options
  

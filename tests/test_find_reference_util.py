@@ -2,13 +2,11 @@
 find_reference_util.py
 '''
 
-from clang.cindex import TranslationUnit
-from clang.cindex import Cursor
 from nose.tools import eq_
 from reshaper.util import get_cursor_with_location
 from reshaper.semantic import get_cursors_add_parent
 from reshaper.find_reference_util import filter_cursors_by_usr
-from reshaper.util import get_tu_from_text
+from reshaper.ast import get_tu_from_text
 
 filter_usr_test_input = """\
 class TestClass

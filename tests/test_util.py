@@ -1,4 +1,5 @@
-from reshaper.util import get_tu, get_cursors_if
+from reshaper.util import get_cursors_if
+from reshaper.ast import get_tu
 from reshaper.util import get_cursor, get_cursor_if, get_cursors
 from reshaper.util import walk_ast, get_function_signature
 from clang.cindex import CursorKind

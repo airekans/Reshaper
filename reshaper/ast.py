@@ -1,9 +1,12 @@
 ''' This module contains functions process the AST from cursor.
 '''
-
-from clang.cindex import Cursor
+from clang.cindex import  TranslationUnit
 import cPickle
 from clang.cindex import Config
+from reshaper.util import get_cursor_if
+import ConfigParser
+import logging, os
+
 
 _CONF = Config()
 
@@ -79,9 +82,6 @@ class TokenCache(object):
     def __init__(self, token):
         self.extent = ExtentCache(token.extent)
         self.spelling =  token.spelling
-
-
-
 
 class CursorCache(object):
     ''' Cache for Cursor'''
@@ -219,8 +219,91 @@ class TUCache(object):
         
     def get_parent(self):
         return None   
-       
+    
+    
+
+def get_tu(source, all_warnings=False, config_path = '~/.reshaper.cfg', 
+           cache_folder = './'):
+    """Obtain a translation unit from source and language.
+
+    By default, the translation unit is created from source file "t.<ext>"
+    where <ext> is the default file extension for the specified language. By
+    default it is C, so "t.c" is the default file name.
+
+    all_warnings is a convenience argument to enable all compiler warnings.
+    """  
+    
+    _, filename = os.path.split(source)
+    cache_path = os.path.join(cache_folder, filename + '.dump')
+#     if os.path.isfile(cache_path):
+#         return TUCache.load(cache_path)
+        
+    args = ['-x', 'c++', '-std=c++11']
+ 
+    if all_warnings:
+        args += ['-Wall', '-Wextra']
+
+    if config_path:
+        config_parser = ConfigParser.SafeConfigParser()
+        config_parser.read(os.path.expanduser(config_path))
+        if config_parser.has_option('Clang Options', 'include_paths'):
+            include_paths = config_parser.get('Clang Options', 'include_paths')
+            # pylint: disable-msg=E1103
+            args += ['-I' + p for p in include_paths.split(',')]
+            
+        if config_parser.has_option('Clang Options', 'include_files'):
+            include_files = config_parser.get('Clang Options', 'include_files')
+            # pylint: disable-msg=E1103
+            for ifile in include_files.split(','):
+                args += ['-include', ifile]
+    
+    logging.debug(' '.join(args))    
+    
+    _tu = TranslationUnit.from_source(source, args)
+    cache_tu =  TUCache(_tu)
+    
+    
+    #cache_tu = TUCache(_tu, is_cursor_in_file_func(source))
+    cache_tu.dump(cache_path)
+    
+    return cache_tu
 
 
 
+def get_tu_from_text(source):
+    '''copy it from util.py, just for test
+    '''
+    name = 't.cpp'
+    args = []
+    args.append('-std=c++11')
+
+    return TUCache(TranslationUnit.from_source(name, args, 
+                                               unsaved_files=[(name,
+                                                              source)]))
+        
+        
+class CursorProxy():
+    def __init__(self, _cursor):
+        self._cursor = _cursor
+        self._source_path = _cursor.location.file
+        self._hash = _cursor.hash
+    
+    #pickle dump and load
+    def __getstate__(self):
+        dic_copy = dict(self.__dict__)
+        del dic_copy['_cursor'] 
+        return dic_copy      
+    
+    def __getattr__(self, name):
+        if self._cursor is None:
+            self.__load_cursor()
+        return getattr(self._cursor, name)
+    
+    def is_same_cursor(self, _cursor, _l):
+        return _cursor.hash == self._hash
+    
+    def __load_cursor(self):
+        _tu = get_tu(self._source_path)
+        self._cursor = get_cursor_if(_tu, self.is_same_cursor)
+        
         

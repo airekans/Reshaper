@@ -6,15 +6,15 @@ Created on Apr 4, 2013
 import unittest
 import os
 import reshaper.header_util as hu
-from reshaper import util
 from clang.cindex import CursorKind
+from reshaper.ast import get_tu
 
 class Test(unittest.TestCase):
     TEST_HEADER_FILE = os.path.join(os.path.dirname(__file__),
                                      'test_data','test.h')
     
     def setUp(self):
-        self.__tu_cursor = util.get_tu(Test.TEST_HEADER_FILE, config_path = None).cursor
+        self.__tu_cursor = get_tu(Test.TEST_HEADER_FILE, config_path = None).cursor
         assert(self.__tu_cursor)
     
 

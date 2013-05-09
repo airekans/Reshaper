@@ -1,7 +1,7 @@
 'test_find_call_chain.py -- unittest for find'
 
-from clang.cindex import TranslationUnit
-from reshaper.util import get_cursor_with_location, get_tu_from_text
+from reshaper.util import get_cursor_with_location
+from reshaper.ast import  get_tu_from_text
 from reshaper.semantic import get_cursors_add_parent
 from reshaper.find_reference_util import get_usr_of_declaration_cursor
 from reshaper.find_reference_util import filter_cursors_by_usr

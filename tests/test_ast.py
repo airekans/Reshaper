@@ -1,4 +1,4 @@
-from reshaper.util import get_tu_from_text
+from reshaper.ast import get_tu_from_text
 from nose.tools import eq_
 
 def test_get_parent():

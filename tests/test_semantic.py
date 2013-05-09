@@ -1,15 +1,13 @@
-from reshaper.semantic import is_function_definition
 '''test_find_reference.py -- unittest for semantic.py
 '''
 
-from clang.cindex import TranslationUnit
-from clang.cindex import Cursor
 from clang.cindex import CursorKind
 from reshaper.ast import TUCache, CursorCache
 from nose.tools import eq_
 import reshaper.semantic as sem
 from reshaper.util import get_cursor_with_location, \
-                          get_cursor_if, get_cursor,get_tu_from_text
+                          get_cursor_if, get_cursor
+from reshaper.ast import get_tu_from_text
 
 parent_calling_func_test_input = """\
 void TargetFunc()
