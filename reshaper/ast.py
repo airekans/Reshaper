@@ -328,6 +328,22 @@ def get_tu(source, all_warnings=False, config_path = '~/.reshaper.cfg',
     
     return cache_tu
 
+def save_ast(_dir, file_path, is_readable):
+    _tu = get_tu(file_path, is_from_cache_first = False)
+    if not _tu:
+        print "unable to load %s" % file_path
+        return False
+        
+    cache_path = get_ast_path(_dir, file_path)
+        
+    if is_readable:
+        _tu.readable_dump(cache_path)
+    else:
+        _tu.dump(cache_path)
+        
+    return True
+
+
 def get_tu_from_text(source):
     '''copy it from util.py, just for test
     '''
