@@ -1,7 +1,7 @@
 ''' This module contains functions process the AST from cursor.
 '''
 from clang.cindex import  TranslationUnit
-import cPickle
+import cPickle, pickle
 from clang.cindex import Config
 from reshaper.util import get_cursor_if, is_cursor_in_file_func
 import ConfigParser
@@ -26,18 +26,28 @@ class Flyweight(object):
         if key not in Flyweight.key2objs:
             Flyweight.key2objs[key] = super(Flyweight, cls).__new__(cls, *arg, **karg)         
         return Flyweight.key2objs[key]
+    
+    def __init__(self, obj):
+        self.name = obj.name
+    
+    def __eq__(self, obj):
+        if not obj:
+            return False
+        return self.name == obj.name
+    
+    def __cmp__(self, obj):
+        if not obj:
+            return 1
+        return cmp(self.name, obj.name)
 
 
 class TypeKindCache(Flyweight):
     '''cache of TypeKind
     '''
     def __init__(self, type_kind):
-        self.name = type_kind.name
+        Flyweight.__init__(self, type_kind)
         self.spelling = type_kind.spelling
-    def __eq__(self, type_kind):
-        return self.name == type_kind.name
-    def __cmp__(self, type_kind):
-        return cmp(self.name, type_kind.name)
+    
 
 class TypeCache(object):
     '''cache of Type'''
@@ -48,19 +58,12 @@ class TypeCache(object):
 class CursorKindCache(Flyweight):
     '''cache of CursorKind '''
     def __init__(self, kind):
-        self.name = kind.name
-        
-    def __eq__(self, kind):
-        return self.name == kind.name 
-    
-    def __cmp__(self, kind):
-        return cmp(self.name, kind.name)
-
+        Flyweight.__init__(self, kind)
 
 class FileCache(Flyweight):
-    ''' cache of File'''
-    def __init__(self, file_):
-        self.name = file_.name
+    ''' cache of File '''
+    def __init__(self, _file):
+        Flyweight.__init__(self, _file)
 
 class LocationCache(object):
     ''' cache of Location'''
@@ -73,9 +76,12 @@ class LocationCache(object):
             self.file = None
     def __eq__(self, location):
         return self.file == location.file and \
-               self.line == location.file.line and \
-               self.column == location.file.column
-   
+               self.line == location.line and \
+               self.column == location.column
+    def __cmp__(self, location):
+        return cmp( (self.file, self.line, self.column),
+                    (location.file, location.line, location.column)
+                  )
                
 class ExtentCache(object):
     '''cache of Extent'''
@@ -90,11 +96,16 @@ class TokenCache(object):
 
 
 class CursorProxy(object):
+    hash2cursor = {}
+    
     def __init__(self, _cursor):
         self._cursor = _cursor
         self.location = LocationCache(_cursor.location)
         self.kind = CursorKindCache(_cursor.kind)
         self._parent =  None
+        
+        self.hash = _cursor.hash
+        CursorProxy.hash2cursor[self.hash] = self
     
     #pickle dump and load
     def __getstate__(self):
@@ -126,14 +137,13 @@ class CursorProxy(object):
 
 class CursorCache(CursorProxy):
     ''' Cache for Cursor'''
-    hash2cursor_cache = {}
 
-    def __init__(self, cursor, keep_func = lambda c: True):
+    def __init__(self, cursor, tu_file_path, is_get_children = True):
         CursorProxy.__init__(self,cursor)
         
+        self._tu_file_path = tu_file_path
         self._cursor = cursor
-        self._keep_func = keep_func
-        
+         
         self.spelling = cursor.spelling 
         self.displayname = cursor.displayname
         self.usr = cursor.get_usr()
@@ -146,7 +156,6 @@ class CursorCache(CursorProxy):
         self._declaration = None
         self.semantic_parent =  None
         self.lexical_parent =  None
-        self.hash = cursor.hash
         
         self._tokens = []
         for t in cursor.get_tokens():
@@ -154,32 +163,30 @@ class CursorCache(CursorProxy):
 
         self._children = []
         
-        for c in cursor.get_children():
-            if not keep_func(c):
-                child = CursorProxy(c)
-            else:
-                child = CursorCache(c, keep_func)
-            child.set_parent(self)
-            self._children.append(child)
-       
+        if is_get_children:
+            for c in cursor.get_children():
+                if not self.is_cursor_in_tu_file(c):
+                    child = CursorProxy(c)
+                else:
+                    child = CursorCache(c, tu_file_path, is_get_children)
+                child.set_parent(self)
+                self._children.append(child)
         
-        CursorCache.hash2cursor_cache[self.hash] = self
-   
+    
+    def is_cursor_in_tu_file(self, c):
+        return is_cursor_in_file_func(self._tu_file_path)(c)    
+        
     def create_ref_cursor_cache(self, ref_cursor):
-        return CursorCache.do_create_ref_cursor_cache(ref_cursor, \
-                                                      self._keep_func)
-            
-    @staticmethod
-    def do_create_ref_cursor_cache(ref_cursor, keep_func):
-        
+                
         if not ref_cursor:
             return None
         
         key = ref_cursor.hash
-        if key in CursorCache.hash2cursor_cache:
-            return CursorCache.hash2cursor_cache[key]
+        if key in CursorProxy.hash2cursor:
+            return CursorProxy.hash2cursor[key]
         else:
-            return CursorCache(ref_cursor, keep_func)
+            #not keep child
+            return CursorCache(ref_cursor, self._tu_file_path, False)
     
     def update_ref_cursors(self):
         _definition = self._cursor.get_definition()
@@ -200,7 +207,7 @@ class CursorCache(CursorProxy):
     
     def __getstate__(self):
         dic_copy = dict(self.__dict__)
-        del dic_copy['_keep_func']
+        del dic_copy['_tu_file_path']
         del dic_copy['_cursor'] 
         return dic_copy   
     
@@ -243,13 +250,16 @@ class DiagnosticCache(object):
 
 
 class TUCache(object):
-    def __init__(self, tu, keep_func= lambda _c: True):
-        CursorCache.hash2cursor_cache.clear()
-        self.cursor = CursorCache(tu.cursor, keep_func)
+    def __init__(self, tu, tu_path):
+        CursorCache.hash2cursor.clear()
+        self.cursor = CursorCache(tu.cursor, tu_path, True)
         self.cursor.update_ref_cursors()
         self.diagnostics = []
         for diag in tu.diagnostics:
             self.diagnostics.append(DiagnosticCache(diag))
+    
+    def readable_dump(self, file_path):
+        pickle.dump(self, open(file_path,'wb'))
         
     def dump(self,file_path):
         cPickle.dump(self, open(file_path,'wb'), cPickle.HIGHEST_PROTOCOL)
@@ -268,6 +278,9 @@ def get_ast_path(dir_name, source):
     _, filename = os.path.split(source)
     return os.path.join(dir_name, filename + '.ast')
 
+
+_source2tu = {}
+
 def get_tu(source, all_warnings=False, config_path = '~/.reshaper.cfg', 
            cache_folder = '', is_from_cache_first = True):
     """Obtain a translation unit from source and language.
@@ -278,6 +291,8 @@ def get_tu(source, all_warnings=False, config_path = '~/.reshaper.cfg',
 
     all_warnings is a convenience argument to enable all compiler warnings.
     """  
+    
+    #if _source2tu
     
     if is_from_cache_first:
         cache_path = get_ast_path(cache_folder, source)
@@ -308,12 +323,10 @@ def get_tu(source, all_warnings=False, config_path = '~/.reshaper.cfg',
     _tu = TranslationUnit.from_source(source, args)
     #cache_tu =  TUCache(_tu)
     
-    cache_tu = TUCache(_tu, is_cursor_in_file_func(source))
+    cache_tu = TUCache(_tu, source)
     
     
     return cache_tu
-
-
 
 def get_tu_from_text(source):
     '''copy it from util.py, just for test
@@ -325,8 +338,4 @@ def get_tu_from_text(source):
     return TUCache(TranslationUnit.from_source(name, args, 
                                                unsaved_files=[(name,
                                                               source)]))
-        
-        
-
-        
         

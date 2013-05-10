@@ -19,7 +19,9 @@ def print_cursor(cursor, level, is_print_ref = False):
     print prefix + "usr:", cursor.get_usr()
     print prefix + "hash:", cursor.hash
     if cursor.location.file:
-        print prefix + "file:", cursor.location.file.name
+        print prefix + "file: %s:%d:%d" % (cursor.location.file.name, \
+                                           cursor.location.line, \
+                                           cursor.location.column)
     
     if cursor.type is not None:
         print prefix + "type kind:", cursor.type.kind.name
