@@ -95,51 +95,13 @@ class TokenCache(object):
         self.spelling =  token.spelling
 
 
-class CursorProxy(object):
-    hash2cursor = {}
-    
-    def __init__(self, _cursor):
-        self._cursor = _cursor
-        self.location = LocationCache(_cursor.location)
-        self.kind = CursorKindCache(_cursor.kind)
-        self._parent =  None
-        
-        self.hash = _cursor.hash
-        CursorProxy.hash2cursor[self.hash] = self
-    
-    #pickle dump and load
-    def __getstate__(self):
-        dic_copy = dict(self.__dict__)
-        del dic_copy['_cursor'] 
-        return dic_copy      
-    
-    def __setstate__(self, state):
-        self.__dict__.update(state)
-        _tu = get_tu(self.location.file.name)
-        self._cursor = get_cursor_if(_tu, self.is_same_cursor)
-        assert(self._cursor)
-    
-    def __getattr__(self, name):           
-        return getattr(self._cursor, name)
-    
-    def is_same_cursor(self, _cursor):
-        return self.location == _cursor.location and \
-               self.kind == _cursor.kind 
-        
-    def get_parent(self):
-        return self._parent
-    
-    def set_parent(self, parent):
-        self._parent =  parent
-        
-    def update_ref_cursors(self):
-        pass # do nothing
 
-class CursorCache(CursorProxy):
+
+class CursorCache(object):
     ''' Cache for Cursor'''
-
+    hash2cursor = {}
     def __init__(self, cursor, tu_file_path, is_get_children = True):
-        CursorProxy.__init__(self,cursor)
+        
         
         self._tu_file_path = tu_file_path
         self._cursor = cursor
@@ -154,8 +116,8 @@ class CursorCache(CursorProxy):
         self._usr = cursor.get_usr()
         self._definition = None
         self._declaration = None
-        self.semantic_parent =  None
-        self.lexical_parent =  None
+        self._semantic_parent =  None
+        self._lexical_parent =  None
         
         self._tokens = []
         for t in cursor.get_tokens():
@@ -163,10 +125,18 @@ class CursorCache(CursorProxy):
 
         self._children = []
         
+        self._cursor = cursor
+        self.location = LocationCache(cursor.location)
+        self.kind = CursorKindCache(cursor.kind)
+        self._parent =  None
+        
+        self.hash = cursor.hash
+        CursorCache.hash2cursor[self.hash] = self
+        
         if is_get_children:
             for c in cursor.get_children():
                 if not self.is_cursor_in_tu_file(c):
-                    child = CursorProxy(c)
+                    child = CursorLazyLoad(c, tu_file_path)
                 else:
                     child = CursorCache(c, tu_file_path, is_get_children)
                 child.set_parent(self)
@@ -182,8 +152,8 @@ class CursorCache(CursorProxy):
             return None
         
         key = ref_cursor.hash
-        if key in CursorProxy.hash2cursor:
-            return CursorProxy.hash2cursor[key]
+        if key in CursorCache.hash2cursor:
+            return CursorCache.hash2cursor[key]
         else:
             #not keep child
             return CursorCache(ref_cursor, self._tu_file_path, False)
@@ -196,10 +166,10 @@ class CursorCache(CursorProxy):
         self._declaration = self.create_ref_cursor_cache(_declaration)
         
         _semantic_parent = self._cursor.semantic_parent 
-        self.semantic_parent = self.create_ref_cursor_cache(_semantic_parent)
+        self._semantic_parent = self.create_ref_cursor_cache(_semantic_parent)
         
         _lexical_parent =  self._cursor.lexical_parent
-        self.lexical_parent = self.create_ref_cursor_cache(_lexical_parent)
+        self._lexical_parent = self.create_ref_cursor_cache(_lexical_parent)
         
         for c in self._children:
             c.update_ref_cursors()
@@ -213,6 +183,7 @@ class CursorCache(CursorProxy):
     
     def __setstate__(self, state):
         self.__dict__.update(state)
+        self._cursor = None
         
     def get_children(self):    
         return self._children
@@ -239,10 +210,65 @@ class CursorCache(CursorProxy):
     
     def get_usr(self):
         return self._usr
+        
+    def get_parent(self):
+        return self._parent
     
-    def __getattr__(self, name):
-        return object.__getattribute__(self, name)
+    def set_parent(self, parent):
+        self._parent =  parent
+        
+    def is_same_cursor(self, _cursor):
+        return self.location == _cursor.location and \
+               self.kind == _cursor.kind
+               
+    @property
+    def semantic_parent(self):
+        return self._semantic_parent
+        
+    @property
+    def lexical_parent(self):    
+        return self._lexical_parent
+
+
+class CursorLazyLoad(CursorCache):
     
+    def __init__(self, cursor, tu_file_path):
+        CursorCache.__init__(self, cursor, tu_file_path, False)
+    
+    def __load_cursor(self):
+        if self._cursor:
+            return
+        _tu = get_tu(self.location.file.name)
+        self._cursor = get_cursor_if(_tu, self.is_same_cursor)
+        assert(self._cursor)
+    
+    
+    def get_children(self):
+        self.__load_cursor()
+        return self._cursor.get_children()
+    
+    def get_definition(self):
+        self.__load_cursor()
+        return self._cursor.get_definition()
+    
+    def get_declaration(self):
+        self.__load_cursor()
+        return self._declaration
+    
+    @property
+    def semantic_parent(self):
+        self.__load_cursor()
+        return self._cursor.semantic_parent
+        
+    @property
+    def lexical_parent(self):    
+        self.__load_cursor()
+        return self._cursor.lexical_parent
+         
+    def update_ref_cursors(self):
+        pass # do nothing
+
+
 
 class DiagnosticCache(object):
     def __init__(self, diag):
@@ -292,12 +318,16 @@ def get_tu(source, all_warnings=False, config_path = '~/.reshaper.cfg',
     all_warnings is a convenience argument to enable all compiler warnings.
     """  
     
-    #if _source2tu
+    full_path = os.path.abspath(source)
+    if full_path in _source2tu:
+        return _source2tu[full_path]
     
     if is_from_cache_first:
         cache_path = get_ast_path(cache_folder, source)
         if os.path.isfile(cache_path):
-            return TUCache.load(cache_path)
+            _tu =  TUCache.load(cache_path)
+            _source2tu[full_path] = _tu
+            return _tu
         
     args = ['-x', 'c++', '-std=c++11']
  
@@ -324,7 +354,7 @@ def get_tu(source, all_warnings=False, config_path = '~/.reshaper.cfg',
     #cache_tu =  TUCache(_tu)
     
     cache_tu = TUCache(_tu, source)
-    
+    _source2tu[full_path] = cache_tu
     
     return cache_tu
 
