@@ -27,6 +27,10 @@ class Flyweight(object):
             Flyweight.key2objs[key] = super(Flyweight, cls).__new__(cls, *arg, **karg)         
         return Flyweight.key2objs[key]
     
+    def __getstate__(self):
+        dic_copy = dict(self.__dict__)
+        return dic_copy   
+    
     def __init__(self, obj):
         self.name = obj.name
     
@@ -135,41 +139,38 @@ class CursorCache(object):
         
         if is_get_children:
             for c in cursor.get_children():
-                if not self.is_cursor_in_tu_file(c):
-                    child = CursorLazyLoad(c, tu_file_path)
-                else:
-                    child = CursorCache(c, tu_file_path, is_get_children)
+                child = self.create_cursor_cache(c, is_get_children)
                 child.set_parent(self)
                 self._children.append(child)
-        
     
-    def is_cursor_in_tu_file(self, c):
-        return is_cursor_in_file_func(self._tu_file_path)(c)    
+    def is_cursor_in_tu_file(self, cursor):
+        return is_cursor_in_file_func(self._tu_file_path)(cursor)  
         
-    def create_ref_cursor_cache(self, ref_cursor):
+    def create_cursor_cache(self, cursor, is_get_children):
                 
-        if not ref_cursor:
+        if not cursor:
             return None
         
-        key = ref_cursor.hash
+        key = cursor.hash
         if key in CursorCache.hash2cursor:
             return CursorCache.hash2cursor[key]
+        elif not self.is_cursor_in_tu_file(cursor):
+            return CursorLazyLoad(cursor, self._tu_file_path)
         else:
-            #not keep child
-            return CursorCache(ref_cursor, self._tu_file_path, False)
+            return CursorCache(cursor, self._tu_file_path, is_get_children) 
     
     def update_ref_cursors(self):
         _definition = self._cursor.get_definition()
-        self._definition = self.create_ref_cursor_cache(_definition)
+        self._definition = self.create_cursor_cache(_definition, False)
          
         _declaration = _CONF.lib.clang_getCursorReferenced(self._cursor)
-        self._declaration = self.create_ref_cursor_cache(_declaration)
+        self._declaration = self.create_cursor_cache(_declaration, False)
         
         _semantic_parent = self._cursor.semantic_parent 
-        self._semantic_parent = self.create_ref_cursor_cache(_semantic_parent)
+        self._semantic_parent = self.create_cursor_cache(_semantic_parent, False)
         
         _lexical_parent =  self._cursor.lexical_parent
-        self._lexical_parent = self.create_ref_cursor_cache(_lexical_parent)
+        self._lexical_parent = self.create_cursor_cache(_lexical_parent, False)
         
         for c in self._children:
             c.update_ref_cursors()
