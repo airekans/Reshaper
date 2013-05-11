@@ -104,7 +104,7 @@ class TokenCache(object):
 class CursorCache(object):
     ''' Cache for Cursor'''
     hash2cursor = {}
-    def __init__(self, cursor, tu_file_path, is_get_children = True):
+    def __init__(self, cursor, tu_file_path, is_populate_children = True):
         
         
         self._tu_file_path = tu_file_path
@@ -137,16 +137,19 @@ class CursorCache(object):
         self.hash = cursor.hash
         CursorCache.hash2cursor[self.hash] = self
         
-        if is_get_children:
+        if is_populate_children:
             for c in cursor.get_children():
-                child = self.create_cursor_cache(c, is_get_children)
+                child = self.create_cursor_cache(c, is_populate_children,
+                                                 is_ref_cursor = False)
+                if not child:
+                    continue
                 child.set_parent(self)
                 self._children.append(child)
     
     def is_cursor_in_tu_file(self, cursor):
         return is_cursor_in_file_func(self._tu_file_path)(cursor)  
         
-    def create_cursor_cache(self, cursor, is_get_children):
+    def create_cursor_cache(self, cursor, is_populate_children, is_ref_cursor):
                 
         if not cursor:
             return None
@@ -155,22 +158,36 @@ class CursorCache(object):
         if key in CursorCache.hash2cursor:
             return CursorCache.hash2cursor[key]
         elif not self.is_cursor_in_tu_file(cursor):
-            return CursorLazyLoad(cursor, self._tu_file_path)
+            if is_ref_cursor:
+                return CursorLazyLoad(cursor, self._tu_file_path)
+            else:
+                return None
         else:
-            return CursorCache(cursor, self._tu_file_path, is_get_children) 
+            return CursorCache(cursor, self._tu_file_path, is_populate_children) 
     
     def update_ref_cursors(self):
+        is_populate_children = False
+        is_ref_cursor = True
+        
         _definition = self._cursor.get_definition()
-        self._definition = self.create_cursor_cache(_definition, False)
+        self._definition = self.create_cursor_cache(_definition,
+                                                     is_populate_children,
+                                                     is_ref_cursor)
          
         _declaration = _CONF.lib.clang_getCursorReferenced(self._cursor)
-        self._declaration = self.create_cursor_cache(_declaration, False)
+        self._declaration = self.create_cursor_cache(_declaration, 
+                                                     is_populate_children,
+                                                     is_ref_cursor)
         
         _semantic_parent = self._cursor.semantic_parent 
-        self._semantic_parent = self.create_cursor_cache(_semantic_parent, False)
+        self._semantic_parent = self.create_cursor_cache(_semantic_parent, 
+                                                         is_populate_children,
+                                                         is_ref_cursor)
         
         _lexical_parent =  self._cursor.lexical_parent
-        self._lexical_parent = self.create_cursor_cache(_lexical_parent, False)
+        self._lexical_parent = self.create_cursor_cache(_lexical_parent,
+                                                        is_populate_children,
+                                                        is_ref_cursor)
         
         for c in self._children:
             c.update_ref_cursors()
@@ -359,7 +376,7 @@ def get_tu(source, all_warnings=False, config_path = '~/.reshaper.cfg',
     
     return cache_tu
 
-def save_ast(_dir, file_path, is_readable):
+def save_ast(file_path, _dir=None , is_readable=False):
     _tu = get_tu(file_path, is_from_cache_first = False)
     if not _tu:
         print "unable to load %s" % file_path

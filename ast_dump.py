@@ -7,12 +7,18 @@ import sys
 from functools import partial
 
 
+def print_ref_cursor(prefix, label, cursor):
+    print prefix + label, \
+         cursor.spelling if cursor is not None else None
 
 def print_cursor(cursor, level, is_print_ref = False):
     prefix = "************" * level
 
     lexical_parent = cursor.lexical_parent
     semantic_parent = cursor.semantic_parent
+    declaration = cursor.get_declaration()
+    definition = cursor.get_definition()
+    
     print prefix + "spelling:", cursor.spelling
     print prefix + "displayname:", cursor.displayname
     print prefix + "kind:", cursor.kind.name
@@ -27,11 +33,12 @@ def print_cursor(cursor, level, is_print_ref = False):
         print prefix + "type kind:", cursor.type.kind.name
     
     print prefix + "is_definition:", cursor.is_definition()
-    print prefix + "lexical_parent:", \
-        lexical_parent.spelling if lexical_parent is not None else None
-    print prefix + "semantic_parent:", \
-         semantic_parent.spelling if semantic_parent is not None else None
-    print 
+    
+    print_ref_cursor(prefix, "semantic_parent:", semantic_parent)
+    print_ref_cursor(prefix, "lexical_parent:", lexical_parent)
+    print_ref_cursor(prefix, "definition:", definition)
+    print_ref_cursor(prefix, "declaration:", declaration)
+       
     
     if is_print_ref:
         ref_cursor = cursor.get_declaration()

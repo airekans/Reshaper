@@ -110,10 +110,22 @@ def get_cursors_if(source, is_satisfied_fun,
     def visit(cursor, _):
         if is_satisfied_fun(cursor):
             cursors.append(transform_fun(cursor))
+          
+        semantic_parent = cursor.semantic_parent
+        if(semantic_parent and is_satisfied_fun(semantic_parent)):
+            cursors.append(transform_fun(semantic_parent))
+        
+        declaration = cursor.get_declaration()
+        if(declaration and is_satisfied_fun(declaration)):
+            cursors.append(transform_fun(declaration))
 
     walk_ast(source, visit, is_visit_subtree_fun)
 
-    return cursors
+    def unique(l):
+        seen = set()
+        return [c for c in l if c.hash not in seen and not seen.add(c.hash)]
+
+    return unique(cursors)
 
 def get_cursor_with_location(_tu, spelling, line, column = None):
     '''Get specific cursor by line and column

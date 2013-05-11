@@ -1,5 +1,5 @@
 from reshaper.util import get_cursors_if
-from reshaper.ast import get_tu
+from reshaper.ast import get_tu, save_ast
 from reshaper.util import get_cursor, get_cursor_if, get_cursors
 from reshaper.util import walk_ast, get_function_signature
 from clang.cindex import CursorKind
@@ -15,6 +15,8 @@ _tu = None
 def setup():
     global _tu
     source = os.path.join(INPUT_DIR, 'class.cpp')
+    save_ast(source)
+    
     _tu = get_tu(source, config_path = None)
     assert(_tu is not None)
 
@@ -50,12 +52,14 @@ def test_get_tu():
 @with_setup(setup)
 def test_get_cursor():
     # test get existing cursor
-    cursor = get_cursor(_tu, 'A')
-    assert(cursor is not None)
-    eq_(cursor.spelling, 'A')
+    cursor_A = get_cursor(_tu, 'A')
+    assert(cursor_A is not None)
+    eq_(cursor_A.spelling, 'A')
 
     cursor = get_cursor(_tu, 'bar')
-    assert(cursor is not None)
+    assert(cursor is None) # can't get cursor not defined in this file
+    cursor = get_cursor(cursor_A, 'bar')
+    assert(cursor is not None) 
     eq_(cursor.spelling, 'bar')
     
     # test get non-existing cursor
@@ -68,7 +72,7 @@ def test_get_cursor_if():
     assert(cursor is not None)
     eq_(cursor.spelling, 'A')
 
-    cursor = get_cursor_if(_tu, lambda c: c.kind == CursorKind.CXX_METHOD)
+    cursor = get_cursor_if(cursor, lambda c: c.kind == CursorKind.CXX_METHOD)
     assert(cursor is not None)
     eq_(cursor.spelling, 'foo')
     
