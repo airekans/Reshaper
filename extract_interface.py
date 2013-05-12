@@ -10,7 +10,8 @@ Usage: extract_interface.py class.cpp class_name
 from clang.cindex import CursorKind
 import sys
 import os
-from reshaper.util import get_tu, get_cursor, get_cursors_if, get_cursor_if
+from reshaper.ast import get_tu
+from reshaper.util import get_cursor_if
 from reshaper.extract import extract_interface
 from reshaper import semantic
 from optparse import OptionParser

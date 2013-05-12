@@ -7,11 +7,10 @@ also can be output to a file specified by -o
 Usage : find_reference.py -f test.cpp -l 37 -d . -o sample.txt
 """
 import os, sys
-from clang.cindex import Cursor
 from clang.cindex import CursorKind
-from clang.cindex import TranslationUnit
 import reshaper.semantic as semantic_util
-from reshaper.util import get_tu, check_diagnostics
+from reshaper.util import check_diagnostics
+from reshaper.ast import get_tu
 from reshaper.util import get_cursor_with_location
 from reshaper.find_reference_util import get_usr_of_declaration_cursor
 from reshaper.find_reference_util import get_cursors_with_name
@@ -27,9 +26,8 @@ def get_output_string(target_cursor, result_cursors):
             (target_cursor.displayname, target_cursor.location.file.name, \
             target_cursor.location.line, target_cursor.location.column)
     for cur in result_cursors:
-        if not isinstance(cur, Cursor):
-            continue
-
+        assert semantic_util.is_cursor(cur)
+            
         output_string += "--------------------------------"
         output_string += "--------------------------------\n "
         output_string += "file : %s \n" % \
@@ -76,7 +74,7 @@ def main():
     options = parse_find_reference_args(output_file)
     #get target reference info
     tu_source = get_tu(os.path.abspath(options.filename))
-    assert(isinstance(tu_source, TranslationUnit))
+    assert(semantic_util.is_tu(tu_source))
 
     if check_diagnostics(tu_source.diagnostics):
         print "Warning : file %s, diagnostics occurs" % options.filename,

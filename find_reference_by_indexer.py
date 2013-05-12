@@ -11,8 +11,8 @@ Usage : find_reference_by_usr.py -f test.cpp -l 37 -d . -o sample.txt
 import os, sys
 import bsddb
 from clang.cindex import TranslationUnit
-from reshaper.semantic import check_diagnostics
-from reshaper.util import get_tu
+from reshaper.util import check_diagnostics
+from reshaper.ast import get_tu
 from reshaper.util import get_cursor_with_location
 from reshaper.find_reference_util import get_usr_of_declaration_cursor
 from reshaper.find_reference_util import parse_find_reference_args

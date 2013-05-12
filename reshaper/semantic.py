@@ -88,7 +88,7 @@ def get_caller(source):
 def get_semantic_parent_of_decla_cursor(cursor):
     '''get semantic_parent of declaration cursor
     '''
-    decla_cursor = cursor.get_declaration()
+    decla_cursor = util.get_declaration(cursor)
     if not is_cursor(decla_cursor) or \
             decla_cursor.semantic_parent is None:
         return None
@@ -223,7 +223,7 @@ def get_func_callees(fun_cursor, callee_class):
         [c for c in member_fun_calls
          if get_semantic_parent_of_decla_cursor(c).spelling == callee_class]
     target_member_funs = \
-        [c.get_declaration() for c in target_member_fun_calls]
+        [util.get_declaration(c) for c in target_member_fun_calls]
     method_names = [c.spelling for c in target_member_funs]
     return set(method_names)
 

@@ -9,7 +9,7 @@ from optparse import OptionParser
 from reshaper import header_util as hu, util
 import sys
 from clang.cindex import TranslationUnit
-
+from reshaper.ast import get_tu
 
 def set_all_true_if_no_option(opts):
     '''
@@ -43,7 +43,7 @@ def _main():
         
     header_path = args[0]
 
-    tu_ = util.get_tu(header_path)
+    tu_ = get_tu(header_path)
     
          
     if util.check_diagnostics(tu_.diagnostics):

@@ -336,6 +336,8 @@ def get_tu(source, all_warnings=False, config_path = '~/.reshaper.cfg',
     all_warnings is a convenience argument to enable all compiler warnings.
     """  
     
+    assert(os.path.isfile(source))
+    
     full_path = os.path.abspath(source)
     if full_path in _source2tu:
         return _source2tu[full_path]
