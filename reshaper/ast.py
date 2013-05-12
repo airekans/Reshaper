@@ -401,5 +401,5 @@ def get_tu_from_text(source):
 
     return TUCache(TranslationUnit.from_source(name, args, 
                                                unsaved_files=[(name,
-                                                              source)]))
+                                                              source)]), name)
         
