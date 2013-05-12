@@ -7,18 +7,18 @@ import sys
 from functools import partial
 
 
-def print_ref_cursor(prefix, label, cursor):
-    print prefix + label, \
-         cursor.spelling if cursor is not None else None
+
 
 def print_cursor(cursor, level, is_print_ref = False):
-    prefix = "************" * level
-
-    lexical_parent = cursor.lexical_parent
-    semantic_parent = cursor.semantic_parent
-    declaration = cursor.get_declaration()
-    definition = cursor.get_definition()
     
+    
+    prefix = "*****" * level
+    
+    
+    if cursor is None:
+        print prefix, None
+        return
+ 
     print prefix + "spelling:", cursor.spelling
     print prefix + "displayname:", cursor.displayname
     print prefix + "kind:", cursor.kind.name
@@ -34,18 +34,27 @@ def print_cursor(cursor, level, is_print_ref = False):
     
     print prefix + "is_definition:", cursor.is_definition()
     
-    print_ref_cursor(prefix, "semantic_parent:", semantic_parent)
-    print_ref_cursor(prefix, "lexical_parent:", lexical_parent)
-    print_ref_cursor(prefix, "definition:", definition)
-    print_ref_cursor(prefix, "declaration:", declaration)
+    if is_print_ref:
+        
+        lexical_parent = cursor.lexical_parent
+        semantic_parent = cursor.semantic_parent
+        declaration = cursor.get_declaration()
+        definition = cursor.get_definition()
+    
+        print prefix + "semantic_parent:"
+        print_cursor(semantic_parent, level+1, False)
+        
+        print prefix + "lexical_parent:"
+        print_cursor(lexical_parent, level+1, False)
+        
+        print prefix +  "definition:"
+        print_cursor(definition, level+1, False)
+        
+        print prefix + "declaration:"
+        print_cursor(declaration, level+1, False)
        
     
-    if is_print_ref:
-        ref_cursor = cursor.get_declaration()
-        if not ref_cursor:
-            return
-        print prefix + "reference:"
-        print_cursor(ref_cursor, level+1, is_print_ref)
+    
 
 def main():
     option_parser = OptionParser(usage = "%prog [options] files") 

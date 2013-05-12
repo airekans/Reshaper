@@ -6,17 +6,15 @@ import os
 from clang.cindex import CursorKind
 from clang.cindex import TypeKind
 from reshaper import util 
-from reshaper.ast import TUCache, CursorCache
 
 _file_types = ('.cpp', '.c', '.cc')
 
 
 def is_cursor(source):
-    return isinstance(source, CursorCache)
+    return hasattr(source, "get_children")
         
 def is_tu(source):
-    return isinstance(source, TUCache)
-
+    return hasattr(source, "cursor")
 
 def get_cursors_add_parent(source, spelling):
     '''Get Cursors through tu or cursor 
@@ -24,7 +22,7 @@ def get_cursors_add_parent(source, spelling):
     '''
     children = []
     cursors = []
-    if hasattr(source, "get_children"):
+    if is_cursor(source):
         children = source.get_children()
     else:
         # Assume TU

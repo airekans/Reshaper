@@ -10,7 +10,7 @@ from nose.tools import eq_, with_setup
 
 INPUT_DIR = os.path.join(os.path.dirname(__file__), 'test_data')
 _tu = None
-
+_cursor_A = None
 
 def setup():
     global _tu
@@ -19,6 +19,11 @@ def setup():
     
     _tu = get_tu(source, config_path = None)
     assert(_tu is not None)
+    
+    global _cursor_A
+    _cursor_A = get_cursor(_tu, 'A')
+    assert(_cursor_A is not None)
+    eq_(_cursor_A.spelling, 'A')
 
 
 def test_get_tu():
@@ -52,13 +57,11 @@ def test_get_tu():
 @with_setup(setup)
 def test_get_cursor():
     # test get existing cursor
-    cursor_A = get_cursor(_tu, 'A')
-    assert(cursor_A is not None)
-    eq_(cursor_A.spelling, 'A')
+   
 
     cursor = get_cursor(_tu, 'bar')
     assert(cursor is None) # can't get cursor not defined in this file
-    cursor = get_cursor(cursor_A, 'bar')
+    cursor = get_cursor(_cursor_A, 'bar')
     assert(cursor is not None) 
     eq_(cursor.spelling, 'bar')
     
@@ -83,7 +86,7 @@ def test_get_cursor_if():
 def test_get_cursors():
     # test get existing cursor
     cursors = get_cursors(_tu, 'result_test_fun')
-    eq_(2, len(cursors))
+    eq_(1, len(cursors))
     for cursor in cursors:
         eq_('result_test_fun', cursor.spelling)
 
@@ -92,7 +95,7 @@ def test_get_cursors():
 
 @with_setup(setup)
 def test_get_cursors_if():
-    cursors = get_cursors_if(_tu, lambda c: c.spelling == 'A')
+    cursors = get_cursors_if(_cursor_A, lambda c: c.spelling == 'A')
     eq_(len(cursors), 2) # the class itself and the constructor
     for cursor in cursors:
         eq_(cursor.spelling, 'A')
@@ -113,7 +116,7 @@ def test_get_cursors_if():
                                        c.spelling == 'result_test_fun',
                              transform_fun = lambda c: c.spelling)
 
-    eq_(['result_test_fun', 'result_test_fun'], cursors)
+    eq_(['result_test_fun'], cursors)
     
 
 @with_setup(setup)
@@ -129,23 +132,23 @@ def test_walk_ast():
     walk_ast(_tu, count_level_node)
     eq_(1, namespace.node_count)
 
-    cursor_A = get_cursor(_tu, 'A')
+    
     namespace.node_count = 0
-    walk_ast(cursor_A, partial(count_level_node, expected_level = 1))
+    walk_ast(_cursor_A, partial(count_level_node, expected_level = 1))
     eq_(14, namespace.node_count)
 
     namespace.node_count = 0
-    walk_ast(cursor_A, partial(count_level_node, expected_level = 2))
+    walk_ast(_cursor_A, partial(count_level_node, expected_level = 2))
     eq_(19, namespace.node_count)
 
     # test with is_visit_subtree_fun
     namespace.node_count = 0
-    walk_ast(cursor_A, partial(count_level_node, expected_level = 2),
+    walk_ast(_cursor_A, partial(count_level_node, expected_level = 2),
              lambda _, level: level <= 2)
     eq_(19, namespace.node_count)
     
     namespace.node_count = 0
-    walk_ast(cursor_A, partial(count_level_node, expected_level = 2),
+    walk_ast(_cursor_A, partial(count_level_node, expected_level = 2),
              lambda _, level: level < 2)
     eq_(0, namespace.node_count)
     
@@ -154,7 +157,7 @@ def test_get_function_signature_with_fun_no_params():
     # function with no parameters
     expected_fun_sig = "void foo()"
     
-    methods = get_cursors_if(_tu,
+    methods = get_cursors_if(_cursor_A,
                              (lambda c: c.kind == CursorKind.CXX_METHOD and
                               c.spelling == 'foo'))
     eq_(1, len(methods))
@@ -165,19 +168,19 @@ def test_get_function_signature_with_fun_params():
     # function with parameters
     expected_fun_sig = "int bar(double d)"
     
-    methods = get_cursors_if(_tu,
+    methods = get_cursors_if(_cursor_A,
                              (lambda c: c.kind == CursorKind.CXX_METHOD and
                               c.spelling == 'bar'))
     eq_(1, len(methods))
     eq_(expected_fun_sig, get_function_signature(methods[0]))
 
     # parameter of User defined type
-    expected_fun_sig = "TestStruct result_test_fun(TestStruct*)"
+    expected_fun_sig = "TestStruct A::result_test_fun(TestStruct* t)"
     
     methods = get_cursors_if(_tu,
                              (lambda c: c.kind == CursorKind.CXX_METHOD and
                               c.spelling == 'result_test_fun'))
-    eq_(2, len(methods))
+    eq_(1, len(methods))
     eq_(expected_fun_sig, get_function_signature(methods[0]))
 
 @with_setup(setup)
@@ -185,9 +188,9 @@ def test_get_function_signature_with_complex_return_type_fun():
     # function with parameters
     expected_fun_sig = "double (*return_fun_fun(int, double))(int, double)"
     
-    methods = get_cursors_if(_tu,
-                             (lambda c: c.kind == CursorKind.CXX_METHOD and
-                              c.spelling == 'return_fun_fun'))
+    methods = get_cursors_if(_cursor_A,
+                             lambda c: (c.kind == CursorKind.CXX_METHOD and
+                              c.spelling == 'return_fun_fun') )
     eq_(1, len(methods))
     eq_(expected_fun_sig, get_function_signature(methods[0]))
 
@@ -198,7 +201,7 @@ def test_get_function_signature_with_multiline_function():
      const int i,
      const double d)"""
     
-    methods = get_cursors_if(_tu,
+    methods = get_cursors_if(_cursor_A,
                              (lambda c: c.kind == CursorKind.CXX_METHOD and
                               c.spelling == 'static_multiline_fun'))
     eq_(1, len(methods))
@@ -208,7 +211,7 @@ def test_get_function_signature_with_multiline_function():
 @with_setup(setup)
 def test_get_function_signature_with_error_cursor():
     # create a cursor return 0 token
-    methods = get_cursors_if(_tu,
+    methods = get_cursors_if(_cursor_A,
                              (lambda c: c.kind == CursorKind.CXX_METHOD and
                               c.spelling == 'foo'))
     eq_(1, len(methods))

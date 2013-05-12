@@ -3,7 +3,8 @@
 import os
 from functools import partial
 from clang.cindex import CursorKind
-
+from clang.cindex import Config
+_CONF = Config()
 
 def is_same_file(path1, path2):
     return os.path.abspath(path1) == \
@@ -23,10 +24,12 @@ def is_cursor_in_file_func(file_path):
     
     return is_cursor_in_file
 
-
-
-
-
+def get_declaration(cursor):
+    if hasattr(cursor, "get_declaration"):
+        return cursor.get_declaration()
+    else:
+        return _CONF.lib.clang_getCursorReferenced(cursor)
+                
 
 def check_diagnostics(diagnostics):
     '''check diagnostics,
@@ -115,15 +118,24 @@ def get_cursors_if(source, is_satisfied_fun,
         if(semantic_parent and is_satisfied_fun(semantic_parent)):
             cursors.append(transform_fun(semantic_parent))
         
-        declaration = cursor.get_declaration()
+        declaration = get_declaration(cursor)
         if(declaration and is_satisfied_fun(declaration)):
             cursors.append(transform_fun(declaration))
 
     walk_ast(source, visit, is_visit_subtree_fun)
 
     def unique(l):
+        if not l:
+            return l
+        
+        if hasattr(l[0], 'hash'):
+            hash_func = lambda c: c.hash
+        else:
+            hash_func = id
+            
         seen = set()
-        return [c for c in l if c.hash not in seen and not seen.add(c.hash)]
+        return [c for c in l if hash_func(c) not in seen and 
+                                             not seen.add(hash_func(c))]
 
     return unique(cursors)
 
