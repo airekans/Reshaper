@@ -75,8 +75,9 @@ def main():
     output_file = "referenceResult.txt"
     options = parse_find_reference_args(output_file)
     #get target reference info
-    tu_source = get_tu(os.path.abspath(options.filename))
-    assert(isinstance(tu_source, TranslationUnit))
+    tu_source = get_tu(os.path.abspath(options.filename),
+                       config_path = options.config,
+                       cdb_path = options.cdb_path)
 
     if check_diagnostics(tu_source.diagnostics):
         print "Warning : file %s, diagnostics occurs" % options.filename,
