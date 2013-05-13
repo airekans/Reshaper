@@ -12,21 +12,29 @@ import logging, os
 _CONF = Config()
 
 
-class Flyweight(object):
+class FlyweightBase(object):
+    '''Base class for using the flyweight pattern.
+       By default, it will use name as key.
+       You may override get_key function to change the behavior.
+     '''
     key2objs = {}
     def __new__(cls, *arg, **karg):
         
         if not arg:
-            return super(Flyweight, cls).__new__(cls) 
+            return super(FlyweightBase, cls).__new__(cls) 
         
         obj = arg[0]
         if obj is None:
             return None
         
-        key = '.'.join([cls.__name__, obj.name])
-        if key not in Flyweight.key2objs:
-            Flyweight.key2objs[key] = super(Flyweight, cls).__new__(cls, *arg, **karg)         
-        return Flyweight.key2objs[key]
+        key = '.'.join([cls.__name__, cls.get_key(obj)])
+        if key not in FlyweightBase.key2objs:
+            FlyweightBase.key2objs[key] = super(FlyweightBase, cls).__new__(cls, *arg, **karg)         
+        return FlyweightBase.key2objs[key]
+    
+    @classmethod
+    def get_key(cls, obj):
+        return obj.name
     
     def __getstate__(self):
         dic_copy = dict(self.__dict__)
@@ -46,11 +54,11 @@ class Flyweight(object):
         return cmp(self.name, obj.name)
 
 
-class TypeKindCache(Flyweight):
+class TypeKindCache(FlyweightBase):
     '''cache of TypeKind
     '''
     def __init__(self, type_kind):
-        Flyweight.__init__(self, type_kind)
+        FlyweightBase.__init__(self, type_kind)
         self.spelling = type_kind.spelling
     
 
@@ -60,15 +68,15 @@ class TypeCache(object):
         self.kind = TypeKindCache(t.kind)
 
 
-class CursorKindCache(Flyweight):
+class CursorKindCache(FlyweightBase):
     '''cache of CursorKind '''
     def __init__(self, kind):
-        Flyweight.__init__(self, kind)
+        FlyweightBase.__init__(self, kind)
 
-class FileCache(Flyweight):
+class FileCache(FlyweightBase):
     ''' cache of File '''
     def __init__(self, _file):
-        Flyweight.__init__(self, _file)
+        FlyweightBase.__init__(self, _file)
 
 class LocationCache(object):
     ''' cache of Location'''
@@ -390,9 +398,9 @@ def get_tu(source, all_warnings=False, config_path = '~/.reshaper.cfg',
     
     return cache_tu
 
-def save_ast(file_path, _dir=None , is_readable=False):
+def save_ast(file_path, _dir=None , is_readable=False, cdb_path = None):
     _tu = get_tu(file_path, is_from_cache_first = False,
-            cdb_path='/home/yahuang/programming/yahuang-bc-tflex-gui-10/')
+                 cdb_path = cdb_path)
     if not _tu:
         print "unable to load %s" % file_path
         return False

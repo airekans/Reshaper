@@ -4,7 +4,7 @@ import os, sys
 from clang.cindex import CursorKind
 from reshaper.util import  check_diagnostics
 from reshaper.ast import get_tu
-from reshaper.semantic import get_declaration_cursor
+from reshaper.util import get_declaration
 from reshaper.semantic import get_cursors_add_parent, is_cursor
 from reshaper.option import setup_find_reference_options
 from optparse import OptionParser

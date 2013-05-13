@@ -1,14 +1,14 @@
-from reshaper.ast import get_tu_from_text
+from reshaper.ast import get_tu_from_text, FlyweightBase
 from nose.tools import eq_
 
 def test_get_parent():
     TEST_INPUT = '''\
-struct A {
+struct ClassA {
     int a;
     double d;
 };
 
-A var_a;
+ClassA var_a;
 '''
 
     tu = get_tu_from_text(TEST_INPUT)
@@ -29,6 +29,32 @@ A var_a;
         eq_(children_count, len(cursor.get_children()))
 
     check_ast(tu.cursor, None)
-
+    
+    
+def test_flyweightbase():
+    ''' test for FlyweightBase'''
+    class ClassA(object):
+        ''' test class as input for FlyWeight'''
+        def __init__(self, name):
+            self.name = name
+                
+    class FlywightA1(FlyweightBase):
+        '''FlywightA1 '''
+        def __init__(self, obj_a):
+            FlyweightBase.__init__(self, obj_a)
+            
+    class FlywightA2(FlyweightBase):
+        ''' FlywightA2 '''
+        def __init__(self, obj_a):
+            FlyweightBase.__init__(self, obj_a)
+            
+    _a1 = ClassA('_a1')
+    a11 = ClassA('_a1')
+    a2 =  ClassA('a2')
+    
+    eq_(id(FlywightA1(_a1)), id(FlywightA1(a11)))
+    assert(id(FlywightA1(_a1)) != id(FlywightA1(a2)))
+    
+    assert(id(FlywightA1(_a1)) != id(FlywightA2(_a1)))
     
     
