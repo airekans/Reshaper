@@ -3,6 +3,7 @@
 from clang.cindex import  TranslationUnit
 import cPickle, pickle
 from clang.cindex import Config
+from clang.cindex import CompilationDatabase as CDB
 from reshaper.util import get_cursor_if, is_cursor_in_file_func
 import ConfigParser
 import logging, os
@@ -390,7 +391,8 @@ def get_tu(source, all_warnings=False, config_path = '~/.reshaper.cfg',
     return cache_tu
 
 def save_ast(file_path, _dir=None , is_readable=False):
-    _tu = get_tu(file_path, is_from_cache_first = False)
+    _tu = get_tu(file_path, is_from_cache_first = False,
+            cdb_path='/home/yahuang/programming/yahuang-bc-tflex-gui-10/')
     if not _tu:
         print "unable to load %s" % file_path
         return False
