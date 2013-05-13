@@ -13,6 +13,7 @@ import os
 from reshaper.ast import get_tu
 from reshaper.util import get_cursor_if
 from reshaper.extract import extract_interface
+from reshaper.option import setup_options
 from reshaper import semantic
 from optparse import OptionParser
 from functools import partial
@@ -23,6 +24,7 @@ def parse_options():
     """
 
     option_parser = OptionParser(usage = "%prog [options] FILE CLASSNAME")
+    setup_options(option_parser)
     option_parser.add_option("-m", "--methods", dest = "methods",
                              type = "string",
                              help = "Names of methods you want to extract")
@@ -32,7 +34,7 @@ def parse_options():
     option_parser.add_option("--from-class", dest = "from_class",
                              type = "string",
                              help = "Name of the class that uses CLASSNAME")
-
+    
     # handle option or argument error.
     options, args = option_parser.parse_args()
     return option_parser, options, args
@@ -56,7 +58,8 @@ def main():
     if methods is not None:
         methods = methods.split(',')
 
-    _tu = get_tu(src)
+    _tu = get_tu(src, config_path= options.config,
+                 cdb_path = options.cdb_path)
     # TODO: the following line should be changed to work on class in a namespace
     class_cursor = \
         get_cursor_if(_tu,

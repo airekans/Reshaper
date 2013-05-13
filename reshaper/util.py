@@ -1,5 +1,4 @@
 # This file provides common utility functions for the test suite.
-
 import os
 from functools import partial
 from clang.cindex import CursorKind
@@ -142,18 +141,17 @@ def get_cursors_if(source, is_satisfied_fun,
 def get_cursor_with_location(_tu, spelling, line, column = None):
     '''Get specific cursor by line and column
     '''
-    def check_cursor_spelling_displayname(cursor, spelling):
-        if cursor.is_definition() and cursor.spelling == spelling:
-            return True
-        elif spelling in cursor.displayname:
-            return True
-        return False
+    def check_cursor_spelling_displayname(cursor):
+        return (cursor.is_definition() and cursor.spelling == spelling) or \
+            spelling in cursor.displayname
 
-    alternate_cursors = get_cursors_if(_tu, partial(check_cursor_spelling_displayname, spelling = spelling))
+    alternate_cursors = get_cursors_if(_tu, check_cursor_spelling_displayname)
     for cursor in alternate_cursors:
+        # We cannot get useful information from CALL_EXPR, so skip it
         if cursor.kind == CursorKind.CALL_EXPR and \
                 len(list(cursor.get_children())) > 0:
             continue
+        
         if column is not None:
             if cursor.location.line == line and \
                     cursor.location.column == column:

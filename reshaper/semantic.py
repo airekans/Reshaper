@@ -245,7 +245,7 @@ def get_class_callees(cls_cursor, callee_class):
             method_names = method_names.union(used_methods)
         else:
             print "Cannot find definition of %s::%s" % \
-                (callee_class, method.spelling)
+                (cls_cursor.spelling, method.spelling)
         
     return method_names
 

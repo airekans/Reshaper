@@ -326,7 +326,8 @@ def get_ast_path(dir_name, source):
 _source2tu = {}
 
 def get_tu(source, all_warnings=False, config_path = '~/.reshaper.cfg', 
-           cache_folder = '', is_from_cache_first = True):
+           cache_folder = '', is_from_cache_first = True,
+           cdb_path = None):
     """Obtain a translation unit from source and language.
 
     By default, the translation unit is created from source file "t.<ext>"
@@ -368,6 +369,16 @@ def get_tu(source, all_warnings=False, config_path = '~/.reshaper.cfg',
             for ifile in include_files.split(','):
                 args += ['-include', ifile]
     
+    if cdb_path:
+        cdb = CDB.fromDirectory(cdb_path)
+        cmds = cdb.getCompileCommands(os.path.join(cdb_path, source))
+        if cmds is None or len(cmds) != 1:
+            raise Exception("cannot find the CDB command for %s" % source)
+
+        cmd_args = list(cmds[0].arguments)[1:]
+        cmd_args.remove(source) # remove the file name
+        args += cmd_args
+
     logging.debug(' '.join(args))    
     
     _tu = TranslationUnit.from_source(source, args)

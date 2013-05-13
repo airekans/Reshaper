@@ -1,7 +1,9 @@
 #!/usr/bin/env python
 
-from reshaper.util import walk_ast, is_cursor_in_file_func
 from reshaper.ast import get_tu
+from reshaper.util import walk_ast, is_cursor_in_file_func
+from reshaper.util import check_diagnostics
+from reshaper.option import setup_options
 from optparse import OptionParser
 import sys
 from functools import partial
@@ -57,7 +59,8 @@ def print_cursor(cursor, level, is_print_ref = False):
     
 
 def main():
-    option_parser = OptionParser(usage = "%prog [options] files") 
+    option_parser = OptionParser(usage = "%prog [options] files")
+    setup_options(option_parser)
     option_parser.add_option("-l", "--level", dest = "level",
                              type="int",\
                              help = "max level to print")
@@ -65,7 +68,6 @@ def main():
                              action="store_true",
                              help = "walk all cursor nodes including\
                                      the ones not defined in this file")
-    
     option_parser.add_option("-r", "--reference", dest = "reference",
                              action="store_true",
                              help = "print info of referenced cursor")
@@ -79,23 +81,20 @@ def main():
         can_visit =  True
         if options.level is not None:
             can_visit = (level <= options.level)
-        if not options.all :
+        if not options.all:
             can_visit = can_visit and is_cursor_in_file_func(path)(cursor, level)
         return can_visit
         
     for file_path in args:     
-        _tu = get_tu(file_path)
+        _tu = get_tu(file_path, config_path= options.config,
+                     cdb_path = options.cdb_path)
         if not _tu:
             print "unable to load %s" % file_path
             sys.exit(1)
-
-                        
+            
         error_num = len(_tu.diagnostics)
-        if error_num > 0:
-            print "Source file has the following errors(%d):" % error_num
-            for diag in _tu.diagnostics:
-                print diag.spelling
 
+        if check_diagnostics(_tu.diagnostics):
             sys.exit(1)
 
         walk_ast(_tu,

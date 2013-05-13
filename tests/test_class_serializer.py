@@ -16,7 +16,7 @@ class Test(unittest.TestCase):
     
     def setUp(self):
         save_ast(TEST_HEADER_FILE)
-        self.__tu = get_tu(TEST_HEADER_FILE)
+        self.__tu = get_tu(TEST_HEADER_FILE, config_path = None)
         self.assertFalse(util.check_diagnostics(self.__tu.diagnostics))
     
     def test_generate_code(self):
