@@ -1,5 +1,10 @@
-from reshaper.ast import get_tu_from_text, FlyweightBase
+from reshaper.ast import get_tu_from_text, FlyweightBase, \
+                            CursorCache, CursorLazyLoad
 from nose.tools import eq_
+from clang.cindex import TranslationUnit
+import os
+from reshaper.util import get_cursor
+
 
 def test_get_parent():
     TEST_INPUT = '''\
@@ -50,11 +55,31 @@ def test_flyweightbase():
             
     _a1 = ClassA('_a1')
     a11 = ClassA('_a1')
-    a2 =  ClassA('a2')
+    _a2 =  ClassA('_a2')
     
     eq_(id(FlywightA1(_a1)), id(FlywightA1(a11)))
-    assert(id(FlywightA1(_a1)) != id(FlywightA1(a2)))
-    
+    assert(id(FlywightA1(_a1)) != id(FlywightA1(_a2)))
     assert(id(FlywightA1(_a1)) != id(FlywightA2(_a1)))
     
+    eq_(FlywightA1(_a1), _a1)
+    assert(FlywightA1(_a1) < _a2)
+    
+
+INPUT_DIR = os.path.join(os.path.dirname(__file__), 'test_data')
+def testCursorCache():
+    source = os.path.join(INPUT_DIR, 'class.cpp')
+    _tu = TranslationUnit.from_source(source)
+    assert(_tu)
+    assert(_tu.cursor)
+    cursor_cache = CursorCache(_tu.cursor, source) 
+    
+    cc_func = get_cursor(cursor_cache, 'result_test_fun')
+    assert(isinstance(cc_func, CursorCache))
+    
+    cc_class = cc_func.semantic_parent
+    assert(cc_class is None) #can't find cursor not defined in source
+    
+    cursor_cache.update_ref_cursors() 
+    cc_class = cc_func.semantic_parent
+    assert(isinstance(cc_func, CursorLazyLoad)) #ref cursor defined in other file
     
