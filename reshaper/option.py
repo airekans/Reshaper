@@ -2,6 +2,8 @@
 common options for reshaper tools.
 """
 
+import os
+
     
 def setup_options(option_parser):
     """ setup common options for reshaper tools
@@ -11,6 +13,7 @@ def setup_options(option_parser):
     """
     option_parser.add_option("--config", dest = "config",
                              type = "string",
+                             default = os.path.expanduser("~/.reshaper.cfg"),
                              help = "Path to the config file. Default is ~/.reshaper.cfg")
     option_parser.add_option("--cdb-path", dest = "cdb_path",
                              type = "string",
