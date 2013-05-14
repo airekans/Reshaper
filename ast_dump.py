@@ -37,6 +37,7 @@ def print_cursor(cursor, level, is_print_ref = False):
     print prefix + "is_definition:", cursor.is_definition()
     
     if is_print_ref:
+        print prefix + 'REFERENCE_BEGIN'
         
         lexical_parent = cursor.lexical_parent
         semantic_parent = cursor.semantic_parent
@@ -54,7 +55,8 @@ def print_cursor(cursor, level, is_print_ref = False):
         
         print prefix + "declaration:"
         print_cursor(declaration, level+1, False)
-       
+        
+        print prefix + 'REFERENCE_END'
     
     
 
