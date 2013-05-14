@@ -46,12 +46,12 @@ class FlyweightBase(object):
     def __eq__(self, obj):
         if not obj:
             return False
-        return self.name == obj.name
+        return self.__class__.get_key(self) == self.__class__.get_key(obj)
     
     def __cmp__(self, obj):
         if not obj:
             return 1
-        return cmp(self.name, obj.name)
+        return cmp(self.__class__.get_key(self), self.__class__.get_key(obj))
 
 
 class TypeKindCache(FlyweightBase):
@@ -78,7 +78,7 @@ class FileCache(FlyweightBase):
     def __init__(self, _file):
         FlyweightBase.__init__(self, _file)
 
-class LocationCache(object):
+class LocationCache(FlyweightBase):
     ''' cache of Location'''
     def __init__(self, location):
         self.column = location.column
@@ -87,14 +87,12 @@ class LocationCache(object):
             self.file = FileCache(location.file)
         else:
             self.file = None
-    def __eq__(self, location):
-        return self.file == location.file and \
-               self.line == location.line and \
-               self.column == location.column
-    def __cmp__(self, location):
-        return cmp( (self.file, self.line, self.column),
-                    (location.file, location.line, location.column)
-                  )
+    
+    @classmethod
+    def get_key(self, location):    
+        filename = location.file.name if location.file else ''    
+        return '.'.join([filename, str(location.line), str(location.column)])     
+   
                
 class ExtentCache(object):
     '''cache of Extent'''
@@ -113,7 +111,7 @@ class TokenCache(object):
 class CursorCache(object):
     ''' Cache for Cursor'''
     hash2cursor = {}
-    def __init__(self, cursor, tu_file_path, is_populate_children = True):
+    def __init__(self, cursor, tu_file_path, is_get_children = True):
         
         
         self._tu_file_path = tu_file_path
@@ -132,9 +130,7 @@ class CursorCache(object):
         self._semantic_parent =  None
         self._lexical_parent =  None
         
-        self._tokens = []
-        for t in cursor.get_tokens():
-            self._tokens.append(TokenCache(t))
+        self._tokens = [TokenCache(t) for t in cursor.get_tokens()]
 
         self._children = []
         
@@ -146,9 +142,9 @@ class CursorCache(object):
         self.hash = cursor.hash
         CursorCache.hash2cursor[self.hash] = self
         
-        if is_populate_children:
+        if is_get_children:
             for c in cursor.get_children():
-                child = self.create_cursor_cache(c, is_populate_children,
+                child = self.create_cursor_cache(c, is_get_children,
                                                  is_ref_cursor = False)
                 if not child:
                     continue
@@ -159,7 +155,8 @@ class CursorCache(object):
         return is_cursor_in_file_func(self._tu_file_path)(cursor)  
         
     def create_cursor_cache(self, cursor, is_populate_children, is_ref_cursor):
-                
+        '''is_ref_cursor means the cursor is
+           declaration, definition, semantic_parent or lexical_parent '''         
         if not cursor:
             return None
         
@@ -224,7 +221,7 @@ class CursorCache(object):
         print prefix + "displayname:", self.displayname
         print prefix + "kind:", self.kind
         for c in self._children:
-            c.print_all(level+1)
+            c.print_all(level + 1)
     
     def is_definition(self):
         return self._is_definition
@@ -307,14 +304,14 @@ class TUCache(object):
         CursorCache.hash2cursor.clear()
         self.cursor = CursorCache(tu.cursor, tu_path, True)
         self.cursor.update_ref_cursors()
-        self.diagnostics = []
-        for diag in tu.diagnostics:
-            self.diagnostics.append(DiagnosticCache(diag))
+        self.diagnostics = [DiagnosticCache(diag) for diag in tu.diagnostics]
     
-    def readable_dump(self, file_path):
+    def text_dump(self, file_path):
+        ''' dump with text format '''
         pickle.dump(self, open(file_path,'wb'))
         
     def dump(self,file_path):
+        ''' dump with binary format, which is faster and uses less space'''
         cPickle.dump(self, open(file_path,'wb'), cPickle.HIGHEST_PROTOCOL)
     
     @staticmethod 
@@ -328,7 +325,7 @@ def get_ast_path(dir_name, source):
     if not dir_name:
         return source + '.ast'
     
-    _, filename = os.path.split(source)
+    filename = os.path.basename(source)
     return os.path.join(dir_name, filename + '.ast')
 
 
@@ -346,7 +343,9 @@ def get_tu(source, all_warnings=False, config_path = '~/.reshaper.cfg',
     all_warnings is a convenience argument to enable all compiler warnings.
     """  
     
-    assert(os.path.isfile(source))
+    if not os.path.isfile(source):
+        logging.error('File %s dose not exist', source)
+        return None
     
     full_path = os.path.abspath(source)
     if full_path in _source2tu:
@@ -391,7 +390,6 @@ def get_tu(source, all_warnings=False, config_path = '~/.reshaper.cfg',
     logging.debug(' '.join(args))    
     
     _tu = TranslationUnit.from_source(source, args)
-    #cache_tu =  TUCache(_tu)
     
     cache_tu = TUCache(_tu, source)
     _source2tu[full_path] = cache_tu
@@ -408,7 +406,7 @@ def save_ast(file_path, _dir=None , is_readable=False, cdb_path = None):
     cache_path = get_ast_path(_dir, file_path)
         
     if is_readable:
-        _tu.readable_dump(cache_path)
+        _tu.text_dump(cache_path)
     else:
         _tu.dump(cache_path)
         
@@ -416,7 +414,7 @@ def save_ast(file_path, _dir=None , is_readable=False, cdb_path = None):
 
 
 def get_tu_from_text(source):
-    '''copy it from util.py, just for test
+    '''just for unit test
     '''
     name = 't.cpp'
     args = []

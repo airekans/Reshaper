@@ -1,5 +1,6 @@
 from reshaper.ast import get_tu_from_text, FlyweightBase, \
-                            CursorCache, CursorLazyLoad
+                            CursorCache, CursorLazyLoad, \
+                            LocationCache
 from nose.tools import eq_
 from clang.cindex import TranslationUnit
 import os
@@ -64,6 +65,30 @@ def test_flyweightbase():
     eq_(FlywightA1(_a1), _a1)
     assert(FlywightA1(_a1) < _a2)
     
+    
+    class File(object):
+        def __init__(self, name):
+            self.name = name
+            
+    class Location(object):
+        def __init__(self, _file, line, column):
+            self.file = _file
+            self.line = line
+            self.column = column
+    
+    file = File('test.cpp')
+    line = 100
+    column = 5
+    
+    loc1 = Location(file,line,column)
+    loc2 = Location(file,line,column)
+    
+    assert(id(loc1) != id(loc2))
+        
+    eq_( id(LocationCache(loc1)), \
+         id(LocationCache(loc2)))       
+            
+    
 
 INPUT_DIR = os.path.join(os.path.dirname(__file__), 'test_data')
 def testCursorCache():
@@ -82,4 +107,6 @@ def testCursorCache():
     cursor_cache.update_ref_cursors() 
     cc_class = cc_func.semantic_parent
     assert(isinstance(cc_class, CursorLazyLoad)) #ref cursor defined in other file
+    
+    
     
