@@ -75,8 +75,9 @@ def main():
     output_file = "referenceResult.txt"
     options = parse_find_reference_args(output_file)
     #get target reference info
-    tu_source = get_tu(os.path.abspath(options.filename))
-    assert(isinstance(tu_source, TranslationUnit))
+    tu_source = get_tu(os.path.abspath(options.filename),
+                       config_path = options.config,
+                       cdb_path = options.cdb_path)
 
     if check_diagnostics(tu_source.diagnostics):
         print "Warning : file %s, diagnostics occurs" % options.filename,
@@ -86,19 +87,20 @@ def main():
             options.spelling, \
             options.line, options.column)
     if not target_cursor:
-        print "Error : Can't get source cursor", 
+        print "Error : Can't get source cursor" 
         print "please check file:%s, name:%s, line:%s, column:%s "\
                 % (options.filename, options.spelling,\
                 options.line, options.column)
         sys.exit(-1)
+
     reference_usr = get_usr_of_declaration_cursor(target_cursor)
     
     #parse input directory
     refer_curs = []
     semantic_util.scan_dir_parse_files(options.directory, \
             partial(get_cursors_with_name, \
-            name = options.spelling, \
-            ref_curs = refer_curs))
+                    name = options.spelling, \
+                    ref_curs = refer_curs))
     final_output = filter_cursors_by_usr(refer_curs, reference_usr)
 
     #output result

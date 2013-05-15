@@ -1,6 +1,9 @@
 *.py[cod]
 *~
 
+# Core dump files
+core.*
+
 # C extensions
 *.so
 
