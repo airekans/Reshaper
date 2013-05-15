@@ -76,12 +76,12 @@ def test_flyweightbase():
             self.line = line
             self.column = column
     
-    file = File('test.cpp')
+    file_ = File('test.cpp')
     line = 100
     column = 5
     
-    loc1 = Location(file,line,column)
-    loc2 = Location(file,line,column)
+    loc1 = Location(file_, line, column)
+    loc2 = Location(file_, line, column)
     
     assert(id(loc1) != id(loc2))
         
