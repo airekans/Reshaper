@@ -7,6 +7,20 @@ import re
 from optparse import OptionParser
 
 
+def convert_file_to_cdb(in_fd, work_dir):
+    compile_command_regex = re.compile(r"^(?P<CC>gcc) .*-c (?P<file>\S+)")
+    cdb = []
+    for line in in_fd:
+        result = compile_command_regex.match(line)
+        if result is not None:
+            cdb.append({
+                "directory": work_dir,
+                "command": line.strip().replace('gcc ', 'clang++ '),
+                "file": result.group("file")
+            })
+
+    return cdb
+
 def main():
     """ main flow of the program
     """
@@ -28,21 +42,12 @@ def main():
     
     in_file = args[0]
     out_file = options.out_file
-
-    compile_command_regex = re.compile(r"^(?P<CC>gcc) .*-c (?P<file>\S+)")
+    
     in_fd = open(in_file)
-    cdb = []
-    for line in in_fd:
-        result = compile_command_regex.match(line)
-        if result is not None:
-            cdb.append({
-                "directory": options.work_dir,
-                "command": line.strip().replace('gcc ', 'clang++ '),
-                "file": result.group("file")
-            })
-
+    cdb = convert_file_to_cdb(in_fd, options.work_dir)
     out_fd = open(out_file, 'w')
     json.dump(cdb, out_fd, indent=2)
+
 
 if __name__ == '__main__':
     main()
