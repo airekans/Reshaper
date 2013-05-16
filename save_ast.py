@@ -13,7 +13,7 @@ def main():
     setup_options(option_parser)
     option_parser.add_option("-d", "--dir", dest = "dir", \
                              type="string", default='', \
-                             help = "max level to print")
+                             help = "destination dir to put output file, by default it is the same dir as input")
     option_parser.add_option("-r", "--readable", dest = "readable", \
                              action="store_true", \
                              help = "dump with readable format (slow)")
