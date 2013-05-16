@@ -7,7 +7,7 @@ from nose.tools import eq_
 import reshaper.semantic as sem
 from reshaper.util import get_cursor_with_location, \
                           get_cursor_if, get_cursor
-from reshaper.ast import get_tu_from_text
+from .util import get_tu_from_text
 
 parent_calling_func_test_input = """\
 void TargetFunc()

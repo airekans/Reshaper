@@ -413,14 +413,3 @@ def save_ast(file_path, _dir=None , is_readable=False, cdb_path = None):
     return True
 
 
-def get_tu_from_text(source):
-    '''just for unit test
-    '''
-    name = 't.cpp'
-    args = []
-    args.append('-std=c++11')
-
-    return TUCache(TranslationUnit.from_source(name, args, 
-                                               unsaved_files=[(name,
-                                                              source)]), name)
-        
