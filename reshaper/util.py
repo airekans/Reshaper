@@ -40,13 +40,14 @@ def get_tu(source, all_warnings=False, config_path = '~/.reshaper.cfg',
             args += ['-include-pch', precompile_header]
 
     if cdb_path:
-        cdb = CDB.fromDirectory(cdb_path)
-        cmds = cdb.getCompileCommands(os.path.join(cdb_path, source))
+        abs_cdb_path = os.path.abspath(cdb_path)
+        cdb = CDB.fromDirectory(abs_cdb_path)
+        cmds = cdb.getCompileCommands(os.path.join(abs_cdb_path, source))
         if cmds is None or len(cmds) != 1:
             raise Exception("cannot find the CDB command for %s" % source)
 
         cmd_args = list(cmds[0].arguments)[1:]
-        cmd_args.remove(source) # remove the file name
+        cmd_args.remove(cmds[0]) # remove the file name
         args += cmd_args
 
     return TranslationUnit.from_source(source, args)
