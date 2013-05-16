@@ -2,6 +2,7 @@
 
 from reshaper.ast import save_ast
 from optparse import OptionParser
+from reshaper.option import setup_options
 import sys
 import os
 
@@ -9,6 +10,7 @@ import os
 def main():
    
     option_parser = OptionParser(usage = "%prog [options] files") 
+    setup_options(option_parser)
     option_parser.add_option("-d", "--dir", dest = "dir", \
                              type="string", default='', \
                              help = "max level to print")

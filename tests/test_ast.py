@@ -109,5 +109,7 @@ def testCursorCache():
     cc_class = cc_func.semantic_parent
     assert(isinstance(cc_class, CursorLazyLoad)) #ref cursor defined in other file
     
-    
+ 
+
+  
     

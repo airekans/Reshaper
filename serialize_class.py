@@ -7,6 +7,7 @@ Created on Apr 7, 2013
 from reshaper import class_serializer as cs
 from optparse import OptionParser 
 from reshaper import header_util as hu, util
+from reshaper.option import setup_options
 import sys
 from clang.cindex import TranslationUnit
 from reshaper.ast import get_tu
@@ -29,6 +30,7 @@ def set_all_true_if_no_option(opts):
 def _main():
     ''' main function '''
     option_parser = OptionParser(usage="%prog [options] FILE [CLASSNAMES]")
+    setup_options(option_parser)
     option_parser.add_option("-e", "--equal", dest="equal", \
                              action="store_true", help="generate operator==")
     option_parser.add_option("-s", "--serialize", dest="serialize", \
