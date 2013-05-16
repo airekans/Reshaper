@@ -45,7 +45,9 @@ def _main():
         
     header_path = args[0]
 
-    tu_ = get_tu(header_path)
+    tu_ = get_tu(header_path, 
+                 config_path= options.config,
+                 cdb_path = options.cdb_path)
     
          
     if util.check_diagnostics(tu_.diagnostics):

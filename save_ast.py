@@ -23,7 +23,9 @@ def main():
         option_parser.error('Please input files to parse')
     
     for file_path in args:     
-        save_ast(file_path, options.dir, options.readable)
+        save_ast(file_path, options.dir, options.readable, \
+                 config_path= options.config,
+                 cdb_path = options.cdb_path)
         
         
 if __name__ == '__main__':
