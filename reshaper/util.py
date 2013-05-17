@@ -1,56 +1,35 @@
 # This file provides common utility functions for the test suite.
-from clang.cindex import Cursor, CursorKind, TranslationUnit
-from clang.cindex import CompilationDatabase as CDB
-import ConfigParser
 import os
 from functools import partial
+from clang.cindex import CursorKind
+from clang.cindex import Config
+_CONF = Config()
+
+def is_same_file(path1, path2):
+    return os.path.abspath(path1) == \
+           os.path.abspath(path2)
+
+def is_cursor_in_file_func(file_path):
+    def is_cursor_in_file(cursor, _l = -1):
+        if not cursor:
+            return True
+        if not cursor.location:
+            return True
+        cursor_file = cursor.location.file
+        if not cursor_file:
+            return  True
+        else:
+            return is_same_file(cursor_file.name, file_path)
+    
+    return is_cursor_in_file
 
 
-def get_tu(source, all_warnings=False, config_path = '~/.reshaper.cfg',
-           cdb_path = None):
-    """Obtain a translation unit from source in C++.
-
-    By default, the translation unit is created from source file "t.<ext>"
-    where <ext> is the default file extension for the specified language. By
-    default it is C, so "t.c" is the default file name.
-
-    all_warnings is a convenience argument to enable all compiler warnings.
-    """
-    args = ['-x', 'c++']
- 
-    if all_warnings:
-        args += ['-Wall', '-Wextra']
-
-    if config_path:
-        config_parser = ConfigParser.SafeConfigParser()
-        config_parser.read(os.path.expanduser(config_path))
-        if config_parser.has_option('Clang Options', 'include_paths'):
-            include_paths = config_parser.get('Clang Options', 'include_paths')
-            # pylint: disable-msg=E1103
-            args += ['-I' + p for p in include_paths.split(',')]
-            
-        if config_parser.has_option('Clang Options', 'include_files'):
-            include_files = config_parser.get('Clang Options', 'include_files')
-            # pylint: disable-msg=E1103
-            for ifile in include_files.split(','):
-                args += ['-include', ifile]
-
-        if config_parser.has_option('Clang Options', 'precompile_header'):
-            precompile_header = config_parser.get('Clang Options', 'precompile_header')
-            args += ['-include-pch', precompile_header]
-
-    if cdb_path:
-        abs_cdb_path = os.path.abspath(cdb_path)
-        cdb = CDB.fromDirectory(abs_cdb_path)
-        cmds = cdb.getCompileCommands(os.path.abspath(source))
-        if cmds is None or len(cmds) != 1:
-            raise Exception("cannot find the CDB command for %s" % source)
-
-        filter_options = ['clang', 'clang++', '-MMD', '-MP']
-        args += [arg for arg in cmds[0].arguments if arg not in filter_options]
-
-    return TranslationUnit.from_source(source, args)
-
+def get_declaration(cursor):
+    if hasattr(cursor, "get_declaration"):
+        return cursor.get_declaration()
+    else:
+        return _CONF.lib.clang_getCursorReferenced(cursor)
+                
 
 def check_diagnostics(diagnostics):
     '''check diagnostics,
@@ -134,10 +113,31 @@ def get_cursors_if(source, is_satisfied_fun,
     def visit(cursor, _):
         if is_satisfied_fun(cursor):
             cursors.append(transform_fun(cursor))
+          
+        semantic_parent = cursor.semantic_parent
+        if(semantic_parent and is_satisfied_fun(semantic_parent)):
+            cursors.append(transform_fun(semantic_parent))
+        
+        declaration = get_declaration(cursor)
+        if(declaration and is_satisfied_fun(declaration)):
+            cursors.append(transform_fun(declaration))
 
     walk_ast(source, visit, is_visit_subtree_fun)
 
-    return cursors
+    def unique(l):
+        if not l:
+            return l
+        
+        if hasattr(l[0], 'hash'):
+            hash_func = lambda c: c.hash
+        else:
+            hash_func = id
+            
+        seen = set()
+        return [c for c in l if hash_func(c) not in seen and 
+                                             not seen.add(hash_func(c))]
+
+    return unique(cursors)
 
 def get_cursor_with_location(_tu, spelling, line, column = None):
     '''Get specific cursor by line and column
@@ -163,19 +163,9 @@ def get_cursor_with_location(_tu, spelling, line, column = None):
     return None
 
 
-def is_same_file(path1, path2):
-    return os.path.abspath(path1) == \
-           os.path.abspath(path2) 
+ 
 
-def is_cursor_in_file_func(file_path):
-    def is_cursor_in_file(cursor, _l):
-        cursor_file = cursor.location.file
-        if not cursor_file:
-            return  True
-        else:
-            return is_same_file(cursor_file.name, file_path)
-    
-    return is_cursor_in_file
+
 
 def walk_ast(source, visitor, is_visit_subtree_fun = lambda _c, _l: True):
     """walk the ast with the specified functions by DFS

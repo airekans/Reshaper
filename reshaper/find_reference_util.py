@@ -1,11 +1,11 @@
 """util functions for finding reference
 """
 import os, sys
-from clang.cindex import Cursor
 from clang.cindex import CursorKind
-from reshaper.util import get_tu, check_diagnostics
-from reshaper.semantic import get_declaration_cursor
-from reshaper.semantic import get_cursors_add_parent
+from reshaper.util import  check_diagnostics
+from reshaper.ast import get_tu
+from reshaper.util import get_declaration
+from reshaper.semantic import get_cursors_add_parent, is_cursor
 from reshaper.option import setup_find_reference_options
 from optparse import OptionParser
 import reshaper.option
@@ -13,8 +13,8 @@ import reshaper.option
 def get_usr_of_declaration_cursor(cursor):
     """get declaration cursor and return its USR
     """
-    declaration_cursor = get_declaration_cursor(cursor)
-    if isinstance(declaration_cursor, Cursor):
+    declaration_cursor = cursor.get_declaration()
+    if is_cursor(declaration_cursor):
         return declaration_cursor.get_usr()
     return None
 
@@ -40,7 +40,7 @@ def filter_cursors_by_usr(cursors, target_usr):
             key = (os.path.abspath(location.file.name), location.line, location.column)
             cursor_dict[key] = cursor
 
-    return [cursor for cursor in cursor_dict.itervalues()]
+    return sorted([cursor for cursor in cursor_dict.itervalues()])
 
 def get_cursors_with_name(file_name, name, ref_curs):
     """call back pass to semantic.scan_dir_parse_files 
@@ -52,7 +52,7 @@ def get_cursors_with_name(file_name, name, ref_curs):
     current_tu = get_tu(file_name)
     if check_diagnostics(current_tu.diagnostics):
         print "Warning : diagnostics occurs, skip file %s" % file_name
-        return
+       # return
 
     cursors = get_cursors_add_parent(current_tu, name)
     #don't forget to define global _refer_curs'
@@ -85,15 +85,16 @@ def parse_find_reference_args(default_output_filename):
         print ", the first one in %s line %s will be used" \
                 % (options.filename, options.line)
 
-    if options.output_file_name is not None\
-            and not os.path.isfile(options.output_file_name):
-        tmp_output_file = os.path.join(".", \
+    if options.output_file_name is not None:
+        try:
+            file_handle = open(options.output_file_name, 'w')
+        except IOError, e:
+            print e
+            tmp_output_file = os.path.join(".", \
                 default_output_filename)
-        print "Warning : output_file_name %s don't exists" \
-                % options.output_file_name,
-        print "will create one under current directory :%s"\
+            print "Error occurs, default output file %s will be used"\
                 % tmp_output_file
-        options.output_file_name = tmp_output_file 
+            options.output_file_name = tmp_output_file 
 
     return options
  

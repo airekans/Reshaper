@@ -54,9 +54,10 @@ def get_class_cursor_in_file(source, class_name, file_path):
                               is_cursor_in_file_func(file_path))
  		
  	
-def get_all_class_cursors(source):
-    ''' get all cursors of class or struct type'''
-    return util.get_cursors_if(source, sem.is_class)
+def get_all_class_cursors(source, header_path):
+    ''' get all cursors of class or struct type, defined in header_path'''
+    return util.get_cursors_if(source, sem.is_class, \
+                                is_cursor_in_file_func(header_path))
  
 def get_all_class_names(source, header_path):
     ''' get names of all class or struct type'''
@@ -64,13 +65,13 @@ def get_all_class_names(source, header_path):
                                 is_cursor_in_file_func(header_path), \
                                 transform_fun = get_name)
 
-def get_classes_with_names(source, names):
+def get_classes_with_names(source, names, header_path):
     """ get classes with given names
 
     `names` : a list of class names
     """
 
-    classes = get_all_class_cursors(source)
+    classes = get_all_class_cursors(source, header_path)
     return [cls for cls in classes if cls.spelling in names]
     
 

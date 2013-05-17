@@ -5,9 +5,8 @@ example: input  :C
          output  : A -> B -> C ; means A call B , B call C
 """
 import sys
-from clang.cindex import Cursor
-from clang.cindex import TranslationUnit
-from reshaper.util import get_tu, check_diagnostics
+from reshaper.ast import get_tu
+from reshaper.util import check_diagnostics
 from reshaper.util import get_cursor_with_location
 from reshaper.semantic import get_full_qualified_name
 import reshaper.semantic as semantic_util
@@ -57,7 +56,7 @@ def handle_output_result(iuput_cursors, search_directory, \
     before (use global_usr_list to judge if a cursor is handled already)
     '''
     for cur in iuput_cursors:
-        assert(isinstance(cur, Cursor))
+        assert(semantic_util.is_cursor(cur))
         calling_cursor = semantic_util.get_caller(cur)
         if calling_cursor is None:
             continue
@@ -90,7 +89,7 @@ def main():
     output_file = "findCallChainResult.txt"
     options = parse_find_reference_args(output_file)
     tu_source = get_tu(options.filename)
-    assert(isinstance(tu_source, TranslationUnit))
+    assert(semantic_util.is_tu(tu_source))
 
     if check_diagnostics(tu_source.diagnostics):
         print "Error"

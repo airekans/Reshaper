@@ -7,8 +7,10 @@ Created on Apr 7, 2013
 from reshaper import class_serializer as cs
 from optparse import OptionParser 
 from reshaper import header_util as hu, util
+from reshaper.option import setup_options
 import sys
-
+from clang.cindex import TranslationUnit
+from reshaper.ast import get_tu
 
 def set_all_true_if_no_option(opts):
     '''
@@ -28,11 +30,14 @@ def set_all_true_if_no_option(opts):
 def _main():
     ''' main function '''
     option_parser = OptionParser(usage="%prog [options] FILE [CLASSNAMES]")
+    setup_options(option_parser)
     option_parser.add_option("-e", "--equal", dest="equal", \
                              action="store_true", help="generate operator==")
     option_parser.add_option("-s", "--serialize", dest="serialize", \
                              action="store_true", \
                              help="generate serialize operator")
+    
+    
     options, args = option_parser.parse_args()
     
     if len(args) < 1:
@@ -40,13 +45,17 @@ def _main():
         
     header_path = args[0]
 
-    tu_ = util.get_tu(header_path)
+    tu_ = get_tu(header_path, 
+                 config_path= options.config,
+                 cdb_path = options.cdb_path)
+    
+         
     if util.check_diagnostics(tu_.diagnostics):
         sys.exit(1)
     if len(args) == 1:
-        classes = hu.get_all_class_cursors(tu_)
+        classes = hu.get_all_class_cursors(tu_, header_path)
     else:
-        classes = hu.get_classes_with_names(tu_, args[1:])
+        classes = hu.get_classes_with_names(tu_, args[1:], header_path)
 
     tmp_classes = []
     for cls in classes:

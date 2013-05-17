@@ -7,6 +7,7 @@ import reshaper.class_serializer as cs
 import reshaper.util as util
 import os
 import unittest
+from reshaper.ast import get_tu, save_ast
 
 TEST_HEADER_FILE = os.path.join(os.path.dirname(__file__), './test_data/test.h')
 
@@ -14,7 +15,8 @@ TEST_HEADER_FILE = os.path.join(os.path.dirname(__file__), './test_data/test.h')
 class Test(unittest.TestCase):
     
     def setUp(self):
-        self.__tu = util.get_tu(TEST_HEADER_FILE, config_path = None)
+        save_ast(TEST_HEADER_FILE)
+        self.__tu = get_tu(TEST_HEADER_FILE, config_path = None)
         self.assertFalse(util.check_diagnostics(self.__tu.diagnostics))
     
     def test_generate_code(self):
