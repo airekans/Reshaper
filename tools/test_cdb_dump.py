@@ -16,7 +16,7 @@ gcc -x c++-header -c src/precompile.h -o precompile.h.gch -I./src/ -D_LINUX_ -Wa
     work_dir = "/path/to/src"
     expected_cdb = [{
         "directory": work_dir,
-        "command": "clang++ -x c++-header -c src/precompile.h -o precompile.h.gch"
+        "command": "clang++ -x c++-header -c -o precompile.h.gch"
             " -I./src/ -D_LINUX_ -Wall -Wno-sign-compare -Wno-unused -g"
             " -Wno-deprecated -Wno-reorder -Winvalid-pch",
         "file": "src/precompile.h"

@@ -8,14 +8,16 @@ from optparse import OptionParser
 
 
 def convert_file_to_cdb(in_fd, work_dir):
-    compile_command_regex = re.compile(r"^(?P<CC>gcc) .*-c (?P<file>\S+)")
+    compile_command_regex = \
+        re.compile(r"^(?P<CC>gcc)(?P<infix> .*-c )(?P<file>\S+) (?P<suffix>.*)$")
     cdb = []
     for line in in_fd:
         result = compile_command_regex.match(line)
         if result is not None:
             cdb.append({
                 "directory": work_dir,
-                "command": line.strip().replace('gcc ', 'clang++ '),
+                "command": ''.join(['clang++', result.group('infix'),
+                                    result.group('suffix')]),
                 "file": result.group("file")
             })
 
