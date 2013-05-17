@@ -23,6 +23,7 @@ def is_cursor_in_file_func(file_path):
     
     return is_cursor_in_file
 
+
 def get_declaration(cursor):
     if hasattr(cursor, "get_declaration"):
         return cursor.get_declaration()

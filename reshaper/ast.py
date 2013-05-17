@@ -376,16 +376,20 @@ def get_tu(source, all_warnings=False, config_path = '~/.reshaper.cfg',
             # pylint: disable-msg=E1103
             for ifile in include_files.split(','):
                 args += ['-include', ifile]
-    
+
+        if config_parser.has_option('Clang Options', 'precompile_header'):
+            precompile_header = config_parser.get('Clang Options', 'precompile_header')
+            args += ['-include-pch', precompile_header]
+
     if cdb_path:
-        cdb = CDB.fromDirectory(cdb_path)
-        cmds = cdb.getCompileCommands(os.path.join(cdb_path, source))
+        abs_cdb_path = os.path.abspath(cdb_path)
+        cdb = CDB.fromDirectory(abs_cdb_path)
+        cmds = cdb.getCompileCommands(os.path.join(abs_cdb_path, source))
         if cmds is None or len(cmds) != 1:
             raise Exception("cannot find the CDB command for %s" % source)
 
-        cmd_args = list(cmds[0].arguments)[1:]
-        cmd_args.remove(source) # remove the file name
-        args += cmd_args
+        filter_options = ['clang', 'clang++', '-MMD', '-MP']
+        args += [arg for arg in cmds[0].arguments if arg not in filter_options]
 
     logging.debug(' '.join(args))    
     
