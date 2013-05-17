@@ -55,7 +55,7 @@ def _main():
     if len(args) == 1:
         classes = hu.get_all_class_cursors(tu_, header_path)
     else:
-        classes = hu.get_classes_with_names(tu_, args[1:], header_path)
+        classes = hu.get_classes_with_names(tu_, args[1:])
 
     tmp_classes = []
     for cls in classes:

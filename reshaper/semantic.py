@@ -249,7 +249,11 @@ def get_class_callees(cls_cursor, callee_class):
         
     return method_names
 
+def is_header(fpath):
+    return fpath.endswith( ('.h', '.hh', '.hpp') ) 
 
-
-
-
+# def get_source_path_candidates(fpath):
+#     dir_name, fname = os.path.split(fpath)
+#     fname_wo_surfix, _ = os.path.splitext(fname)
+#     source_path = os.path.join(dir_name, fname_wo_surfix)
+    
