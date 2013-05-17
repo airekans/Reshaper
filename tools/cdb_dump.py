@@ -1,6 +1,10 @@
 #! /usr/bin/env python
 
-import json
+try:
+    import json
+except ImportError:
+    import simplejson as json
+    
 import sys
 import os
 import re
