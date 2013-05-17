@@ -46,9 +46,8 @@ def get_tu(source, all_warnings=False, config_path = '~/.reshaper.cfg',
         if cmds is None or len(cmds) != 1:
             raise Exception("cannot find the CDB command for %s" % source)
 
-        cmd_args = list(cmds[0].arguments)[1:]
-        cmd_args.remove(cmds[0]) # remove the file name
-        args += cmd_args
+        filter_options = ['clang', 'clang++', '-MMD', '-MP']
+        args += [arg for arg in cmds[0].arguments if arg not in filter_options]
 
     return TranslationUnit.from_source(source, args)
 
