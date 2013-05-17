@@ -2,8 +2,6 @@
 find_reference_util.py
 '''
 
-from clang.cindex import TranslationUnit
-from clang.cindex import Cursor
 from nose.tools import eq_
 from reshaper.util import get_cursor_with_location
 from reshaper.semantic import get_cursors_add_parent
@@ -39,10 +37,8 @@ def test_filter_cursurs_by_usr():
     '''test function filter_cursors_by_usr
     '''
     _tu = get_tu_from_text(filter_usr_test_input)
-    assert(isinstance(_tu, TranslationUnit))
     spelling = "TargetFunc"
     target_cursor = get_cursor_with_location(_tu, spelling, 4)
-    assert(isinstance(target_cursor, Cursor))
     target_usr = target_cursor.get_usr()
 
     candidate_curs = get_cursors_add_parent(_tu, spelling)

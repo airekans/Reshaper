@@ -6,15 +6,16 @@ Created on Apr 4, 2013
 import unittest
 import os
 import reshaper.header_util as hu
-from reshaper import util
 from clang.cindex import CursorKind
+from reshaper.ast import get_tu, save_ast
 
 class Test(unittest.TestCase):
     TEST_HEADER_FILE = os.path.join(os.path.dirname(__file__),
                                      'test_data','test.h')
     
     def setUp(self):
-        self.__tu_cursor = util.get_tu(Test.TEST_HEADER_FILE, config_path = None).cursor
+        save_ast(Test.TEST_HEADER_FILE)
+        self.__tu_cursor = get_tu(Test.TEST_HEADER_FILE, config_path = None).cursor
         assert(self.__tu_cursor)
     
 
@@ -40,7 +41,8 @@ class Test(unittest.TestCase):
         self.assertEqual(['m_p1', 'm_p2', 'm_p3'], pointer_vars)
         
     def test_get_all_class_decl_cursors(self):
-        cursors = hu.get_all_class_cursors(self.__tu_cursor)
+        cursors = hu.get_all_class_cursors(self.__tu_cursor, \
+                                           Test.TEST_HEADER_FILE)
         cursor_names = [c.spelling for c in cursors]
         self.assertEqual(['X', 'string', 'A', 'B', 'B1', 'C'], cursor_names)
     

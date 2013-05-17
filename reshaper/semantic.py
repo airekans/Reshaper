@@ -2,15 +2,19 @@
 """
 
 import os
-from clang.cindex import Cursor
+
 from clang.cindex import CursorKind
-from clang.cindex import TranslationUnit
 from clang.cindex import TypeKind
-from clang.cindex import Config
 from reshaper import util 
 
 _file_types = ('.cpp', '.c', '.cc')
-_conf = Config()
+
+
+def is_cursor(source):
+    return hasattr(source, "get_children")
+        
+def is_tu(source):
+    return hasattr(source, "cursor")
 
 def get_cursors_add_parent(source, spelling):
     '''Get Cursors through tu or cursor 
@@ -18,14 +22,14 @@ def get_cursors_add_parent(source, spelling):
     '''
     children = []
     cursors = []
-    if isinstance(source, Cursor):
+    if is_cursor(source):
         children = source.get_children()
     else:
         # Assume TU
         children = source.cursor.get_children()
 
     for cursor in children:
-        if isinstance(source, TranslationUnit):
+        if is_tu(source):
             cursor.parent = None
         else:
             cursor.parent = source
@@ -71,25 +75,21 @@ def scan_dir_parse_files(directory, parse_file):
 def get_caller(source):
     '''get calling function of source cursor
     '''
-    if not isinstance(source, Cursor) or \
+    if not is_cursor(source) or \
             source.parent is None or \
-            not isinstance(source.parent, Cursor):
+            not is_cursor(source.parent):
         return None
     elif source.parent.type.kind == TypeKind.FUNCTIONPROTO:
         return source.parent
     else:
         return get_caller(source.parent)
 
-def get_declaration_cursor(cursor):
-    '''get declaration cursor of input cursor
-    '''
-    return _conf.lib.clang_getCursorReferenced(cursor)
 
 def get_semantic_parent_of_decla_cursor(cursor):
     '''get semantic_parent of declaration cursor
     '''
-    decla_cursor = get_declaration_cursor(cursor)
-    if not isinstance(decla_cursor, Cursor) or \
+    decla_cursor = util.get_declaration(cursor)
+    if not is_cursor(decla_cursor) or \
             decla_cursor.semantic_parent is None:
         return None
     return decla_cursor.semantic_parent
@@ -223,7 +223,7 @@ def get_func_callees(fun_cursor, callee_class):
         [c for c in member_fun_calls
          if get_semantic_parent_of_decla_cursor(c).spelling == callee_class]
     target_member_funs = \
-        [get_declaration_cursor(c) for c in target_member_fun_calls]
+        [util.get_declaration(c) for c in target_member_fun_calls]
     method_names = [c.spelling for c in target_member_funs]
     return set(method_names)
 
@@ -248,4 +248,8 @@ def get_class_callees(cls_cursor, callee_class):
                 (cls_cursor.spelling, method.spelling)
         
     return method_names
+
+
+
+
 
