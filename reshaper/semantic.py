@@ -252,8 +252,17 @@ def get_class_callees(cls_cursor, callee_class):
 def is_header(fpath):
     return fpath.endswith( ('.h', '.hh', '.hpp') ) 
 
-# def get_source_path_candidates(fpath):
-#     dir_name, fname = os.path.split(fpath)
-#     fname_wo_surfix, _ = os.path.splitext(fname)
-#     source_path = os.path.join(dir_name, fname_wo_surfix)
+def get_source_path_candidates(fpath):
+    dir_name, fname = os.path.split(fpath)
+    fname_wo_surfix, _ = os.path.splitext(fname)
+    
+    sub_dir_candidates = ['', 'src']
+    surfix_candidates = ['.cc', '.cpp', '.c']
+    
+    
+    return [ os.path.join(dir_name, sub_dir, fname_wo_surfix+surfix) \
+             for sub_dir in sub_dir_candidates \
+             for surfix in surfix_candidates ]
+    
+    
     

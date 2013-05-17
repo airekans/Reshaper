@@ -392,4 +392,18 @@ class C
 
     check('B', 'A', ['foo', 'bar'])
     check('C', 'A', [])
+
+
+def test_get_source_path_candidates():
+    header = r'/home/XXX/YYY/ZZZ.h'
+    result = sem.get_source_path_candidates(header)
+    eq_(['/home/XXX/YYY/ZZZ.cc', \
+         '/home/XXX/YYY/ZZZ.cpp', \
+         '/home/XXX/YYY/ZZZ.c', \
+         '/home/XXX/YYY/src/ZZZ.cc', \
+         '/home/XXX/YYY/src/ZZZ.cpp', \
+         '/home/XXX/YYY/src/ZZZ.c'],
+         result)
+    
+
     
