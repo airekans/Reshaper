@@ -42,7 +42,7 @@ def get_tu(source, all_warnings=False, config_path = '~/.reshaper.cfg',
     if cdb_path:
         abs_cdb_path = os.path.abspath(cdb_path)
         cdb = CDB.fromDirectory(abs_cdb_path)
-        cmds = cdb.getCompileCommands(os.path.join(abs_cdb_path, source))
+        cmds = cdb.getCompileCommands(os.path.abspath(source))
         if cmds is None or len(cmds) != 1:
             raise Exception("cannot find the CDB command for %s" % source)
 
