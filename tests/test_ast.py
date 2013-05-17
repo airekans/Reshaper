@@ -57,9 +57,11 @@ def test_flyweightbase():
             FlyweightBase.__init__(self, obj_a)
             
     _a1 = ClassA('_a1')
+    _a11 = ClassA('_a1')
     _a2 =  ClassA('_a2')
     
     eq_(id(FlywightA1(_a1)), id(FlywightA1(_a1)))
+    eq_(id(FlywightA1(_a1)), id(FlywightA1(_a11)))
     assert(id(FlywightA1(_a1)) != id(FlywightA1(_a2)))
     assert(id(FlywightA1(_a1)) != id(FlywightA2(_a1)))
     
