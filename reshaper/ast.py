@@ -399,7 +399,7 @@ def get_tu(source, all_warnings=False, config_path = '~/.reshaper.cfg',
         cdb = CDB.fromDirectory(abs_cdb_path)
         
         if is_header(source):
-            cmds = _get_cdb_cmd_for_header(source, cdb, abs_cdb_path)
+            cmds = _get_cdb_cmd_for_header(cdb, abs_cdb_path, source)
         else:
             cmds = cdb.getCompileCommands(os.path.join(abs_cdb_path, source))
         
