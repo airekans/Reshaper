@@ -279,7 +279,8 @@ def get_class_definition(cursor):
     if cursor.kind.name == 'TYPE_REF':
         return get_class_definition(cursor.get_definition())
     
-    if cursor.kind.name == 'TYPEDEF_DECL':
+    if cursor.kind.name == 'TYPEDEF_DECL' or \
+           cursor.kind.name == 'FIELD_DECL' :
         for c in cursor.get_children():
             definition = get_class_definition(c)
             if definition:
@@ -287,12 +288,4 @@ def get_class_definition(cursor):
             
     return None
 
-def get_member_var_classes(cls_cursor):
-    ''' get all class cursors used by member-var of cls_cursor
-    ''' 
-    return []
 
-def get_used_cls_names(func_cursor):
-  ''' get names of the  classes  used by func_cursor
-  '''
-  pass
