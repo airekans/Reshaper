@@ -9,6 +9,7 @@ from reshaper.util import get_cursor_with_location, \
                           get_cursor_if, get_cursor
 from .util import get_tu_from_text
 
+
 parent_calling_func_test_input = """\
 void TargetFunc()
 {
@@ -404,6 +405,9 @@ def test_get_source_path_candidates():
          '/home/XXX/YYY/src/ZZZ.cpp', \
          '/home/XXX/YYY/src/ZZZ.c'],
          result)
-    
+ 
 
+
+    
+    
     

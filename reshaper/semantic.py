@@ -10,6 +10,8 @@ from reshaper import util
 _file_types = ('.cpp', '.c', '.cc')
 
 
+
+
 def is_cursor(source):
     return hasattr(source, "get_children")
         
@@ -264,5 +266,33 @@ def get_source_path_candidates(fpath):
              for sub_dir in sub_dir_candidates \
              for surfix in surfix_candidates ]
     
+def get_class_definition(cursor):
+    ''' given reference of a class, 
+    find the initial definition which is not a typedef
+    '''
+    if not cursor:
+        return None
     
+    if is_class_definition(cursor):
+        return cursor
     
+    if cursor.kind.name == 'TYPE_REF':
+        return get_class_definition(cursor.get_definition())
+    
+    if cursor.kind.name == 'TYPEDEF_DECL':
+        for c in cursor.get_children():
+            definition = get_class_definition(c)
+            if definition:
+                return definition
+            
+    return None
+
+def get_member_var_classes(cls_cursor):
+    ''' get all class cursors used by member-var of cls_cursor
+    ''' 
+    return []
+
+def get_used_cls_names(func_cursor):
+  ''' get names of the  classes  used by func_cursor
+  '''
+  pass

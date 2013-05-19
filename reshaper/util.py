@@ -24,6 +24,12 @@ def is_cursor_in_file_func(file_path):
     return is_cursor_in_file
 
 
+def is_name_matched(cursor, name):
+    if cursor.spelling:
+        return cursor.spelling == name
+    else:
+        return cursor.displayname == name
+
 def get_declaration(cursor):
     if hasattr(cursor, "get_declaration"):
         return cursor.get_declaration()
@@ -54,7 +60,7 @@ def get_cursor(source, spelling):
     If the cursor is not found, None is returned.
     """
 
-    return get_cursor_if(source, lambda c: c.spelling == spelling)
+    return get_cursor_if(source, partial(is_name_matched, name=spelling))
 
 def get_cursor_if(source, is_satisfied_fun, is_visit_subtree_fun = lambda _x, _y: True):
     """Obtain a cursor from a source object by a predicate function f.
