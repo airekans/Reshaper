@@ -5,6 +5,7 @@ import cPickle, pickle
 from clang.cindex import Config
 from clang.cindex import CompilationDatabase as CDB
 from reshaper.util import get_cursor_if, is_cursor_in_file_func
+import util
 import ConfigParser
 import logging, os
 from reshaper.semantic import get_source_path_candidates, is_header
@@ -298,6 +299,7 @@ class CursorLazyLoad(CursorCache):
 class DiagnosticCache(object):
     def __init__(self, diag):
         self.spelling =  diag.spelling
+        self.location = LocationCache(diag.location)
 
 
 class TUCache(object):
@@ -423,9 +425,12 @@ def save_ast(file_path, _dir=None , is_readable=False, \
     _tu = get_tu(file_path, is_from_cache_first = False,
                  cdb_path = cdb_path,
                  config_path = config_path)
+    
     if not _tu:
         print "unable to load %s" % file_path
         return False
+    
+    util.check_diagnostics(_tu.diagnostics)
         
     cache_path = get_ast_path(_dir, file_path)
         
