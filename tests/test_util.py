@@ -135,7 +135,7 @@ def test_walk_ast():
     
     namespace.node_count = 0
     walk_ast(_cursor_A, partial(count_level_node, expected_level = 1))
-    eq_(14, namespace.node_count)
+    eq_(15, namespace.node_count)
 
     namespace.node_count = 0
     walk_ast(_cursor_A, partial(count_level_node, expected_level = 2))

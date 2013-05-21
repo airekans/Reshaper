@@ -4,6 +4,7 @@ struct X{
 
 };
 
+
 namespace boost{
 	template<class X>
 	class shared_ptr

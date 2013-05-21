@@ -9,6 +9,7 @@ from reshaper.util import get_cursor_with_location, \
                           get_cursor_if, get_cursor
 from .util import get_tu_from_text
 
+
 parent_calling_func_test_input = """\
 void TargetFunc()
 {
@@ -392,4 +393,21 @@ class C
 
     check('B', 'A', ['foo', 'bar'])
     check('C', 'A', [])
+
+
+def test_get_source_path_candidates():
+    header = r'/home/XXX/YYY/ZZZ.h'
+    result = sem.get_source_path_candidates(header)
+    eq_(['/home/XXX/YYY/ZZZ.cc', \
+         '/home/XXX/YYY/ZZZ.cpp', \
+         '/home/XXX/YYY/ZZZ.c', \
+         '/home/XXX/YYY/src/ZZZ.cc', \
+         '/home/XXX/YYY/src/ZZZ.cpp', \
+         '/home/XXX/YYY/src/ZZZ.c'],
+         result)
+ 
+
+
+    
+    
     

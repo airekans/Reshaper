@@ -12,16 +12,16 @@ import sys
 from clang.cindex import TranslationUnit
 from reshaper.ast import get_tu
 
-def set_all_true_if_no_option(opts):
+def set_all_true_if_no_bool_option(opts):
     '''
     if no option set, take all options as true
     '''
-    has_option = False
+    has_bool_option = False
     for _, value in vars(opts).iteritems():
-        if value:
-            has_option = True
+        if value and isinstance(value, bool):
+            has_bool_option = True
     
-    if has_option:
+    if has_bool_option:
         return
     
     for attr, value in vars(opts).iteritems():
@@ -50,12 +50,12 @@ def _main():
                  cdb_path = options.cdb_path)
     
          
-    if util.check_diagnostics(tu_.diagnostics):
-        sys.exit(1)
+    util.check_diagnostics(tu_.diagnostics)
+    
     if len(args) == 1:
         classes = hu.get_all_class_cursors(tu_, header_path)
     else:
-        classes = hu.get_classes_with_names(tu_, args[1:], header_path)
+        classes = hu.get_classes_with_names(tu_, args[1:])
 
     tmp_classes = []
     for cls in classes:
@@ -66,7 +66,7 @@ def _main():
         
     classes = tmp_classes
         
-    set_all_true_if_no_option(options)
+    set_all_true_if_no_bool_option(options)
     
     def do_print(code, class_name, function_name):
         if not code:

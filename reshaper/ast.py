@@ -5,8 +5,10 @@ import cPickle, pickle
 from clang.cindex import Config
 from clang.cindex import CompilationDatabase as CDB
 from reshaper.util import get_cursor_if, is_cursor_in_file_func
+import util
 import ConfigParser
 import logging, os
+from reshaper.semantic import get_source_path_candidates, is_header
 
 
 _CONF = Config()
@@ -297,6 +299,7 @@ class CursorLazyLoad(CursorCache):
 class DiagnosticCache(object):
     def __init__(self, diag):
         self.spelling =  diag.spelling
+        self.location = LocationCache(diag.location)
 
 
 class TUCache(object):
@@ -330,6 +333,18 @@ def get_ast_path(dir_name, source):
 
 
 _source2tu = {}
+
+
+
+def _is_valid_cdb_cmds(cmds):
+    return  cmds and len(cmds) == 1
+
+def _get_cdb_cmd_for_header(cdb, cdb_path, header_path):
+    for source in get_source_path_candidates(header_path):
+        cmds = cdb.getCompileCommands(os.path.join(cdb_path, source))
+        if _is_valid_cdb_cmds(cmds):
+            return cmds
+    return
 
 def get_tu(source, all_warnings=False, config_path = '~/.reshaper.cfg', 
            cache_folder = '', is_from_cache_first = True,
@@ -384,8 +399,13 @@ def get_tu(source, all_warnings=False, config_path = '~/.reshaper.cfg',
     if cdb_path:
         abs_cdb_path = os.path.abspath(cdb_path)
         cdb = CDB.fromDirectory(abs_cdb_path)
-        cmds = cdb.getCompileCommands(os.path.join(abs_cdb_path, source))
-        if cmds is None or len(cmds) != 1:
+        
+        if is_header(source):
+            cmds = _get_cdb_cmd_for_header(cdb, abs_cdb_path, source)
+        else:
+            cmds = cdb.getCompileCommands(os.path.join(abs_cdb_path, source))
+        
+        if not _is_valid_cdb_cmds(cmds):
             raise Exception("cannot find the CDB command for %s" % source)
 
         filter_options = ['clang', 'clang++', '-MMD', '-MP']
@@ -405,9 +425,12 @@ def save_ast(file_path, _dir=None , is_readable=False, \
     _tu = get_tu(file_path, is_from_cache_first = False,
                  cdb_path = cdb_path,
                  config_path = config_path)
+    
     if not _tu:
         print "unable to load %s" % file_path
         return False
+    
+    util.check_diagnostics(_tu.diagnostics)
         
     cache_path = get_ast_path(_dir, file_path)
         
