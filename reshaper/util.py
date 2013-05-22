@@ -46,9 +46,10 @@ def check_diagnostics(diagnostics):
         print "Source file has the following errors(%d):" % error_num
         for diag in diagnostics:
             loc = diag.location
+            file_info = ''
             if loc.file:
-                print '%s:%s:%s:' % (loc.file.name, loc.line, loc.column)
-            print diag.spelling
+                file_info = '%s:%s:%s:' % (loc.file.name, loc.line, loc.column)
+            print file_info + diag.spelling
 
     return error_num > 0
 

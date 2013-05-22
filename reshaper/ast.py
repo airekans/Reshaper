@@ -4,8 +4,7 @@ from clang.cindex import  TranslationUnit
 import cPickle, pickle
 from clang.cindex import Config
 from clang.cindex import CompilationDatabase as CDB
-from reshaper.util import get_cursor_if, is_cursor_in_file_func
-import util
+from reshaper.util import get_cursor_if, is_cursor_in_file_func, check_diagnostics
 import ConfigParser
 import logging, os
 from reshaper.semantic import get_source_path_candidates, is_header
@@ -344,7 +343,7 @@ def _get_cdb_cmd_for_header(cdb, cdb_path, header_path):
         cmds = cdb.getCompileCommands(os.path.join(cdb_path, source))
         if _is_valid_cdb_cmds(cmds):
             return cmds
-    return
+    return None
 
 def get_tu(source, all_warnings=False, config_path = '~/.reshaper.cfg', 
            cache_folder = '', is_from_cache_first = True,
@@ -430,7 +429,7 @@ def save_ast(file_path, _dir=None , is_readable=False, \
         print "unable to load %s" % file_path
         return False
     
-    util.check_diagnostics(_tu.diagnostics)
+    check_diagnostics(_tu.diagnostics)
         
     cache_path = get_ast_path(_dir, file_path)
         
