@@ -338,7 +338,11 @@ _source2tu = {}
 def _is_valid_cdb_cmds(cmds):
     return  cmds and len(cmds) == 1
 
-def _get_cdb_cmd_for_header(cdb, cdb_path, header_path):
+def _get_cdb_cmd_for_header(cdb, cdb_path, header_path, ref_source):
+      
+    if ref_source:
+        return cdb.getCompileCommands(os.path.join(cdb_path, ref_source))
+    
     for source in get_source_path_candidates(header_path):
         cmds = cdb.getCompileCommands(os.path.join(cdb_path, source))
         if _is_valid_cdb_cmds(cmds):
@@ -347,7 +351,7 @@ def _get_cdb_cmd_for_header(cdb, cdb_path, header_path):
 
 def get_tu(source, all_warnings=False, config_path = '~/.reshaper.cfg', 
            cache_folder = '', is_from_cache_first = True,
-           cdb_path = None):
+           cdb_path = None, ref_source = None):
     """Obtain a translation unit from source and language.
 
     By default, the translation unit is created from source file "t.<ext>"
@@ -400,7 +404,7 @@ def get_tu(source, all_warnings=False, config_path = '~/.reshaper.cfg',
         cdb = CDB.fromDirectory(abs_cdb_path)
         
         if is_header(source):
-            cmds = _get_cdb_cmd_for_header(cdb, abs_cdb_path, source)
+            cmds = _get_cdb_cmd_for_header(cdb, abs_cdb_path, source, ref_source)
         else:
             cmds = cdb.getCompileCommands(os.path.join(abs_cdb_path, source))
         
@@ -420,10 +424,12 @@ def get_tu(source, all_warnings=False, config_path = '~/.reshaper.cfg',
     return cache_tu
 
 def save_ast(file_path, _dir=None , is_readable=False, \
-             config_path=None, cdb_path=None):
+             config_path=None, cdb_path=None, ref_source = None):
+    
     _tu = get_tu(file_path, is_from_cache_first = False,
                  cdb_path = cdb_path,
-                 config_path = config_path)
+                 config_path = config_path,
+                 ref_source = ref_source)
     
     if not _tu:
         print "unable to load %s" % file_path

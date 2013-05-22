@@ -3,8 +3,6 @@
 from reshaper.ast import save_ast
 from optparse import OptionParser
 from reshaper.option import setup_options
-import sys
-import os
 
 
 def main():
@@ -17,6 +15,12 @@ def main():
     option_parser.add_option("-r", "--readable", dest = "readable", \
                              action="store_true", \
                              help = "dump with readable format (slow)")
+    
+    option_parser.add_option("-s", "--ref_source", dest = "ref_source", \
+                             type="string", default='', \
+                             help = "reference source file (only used when input is a header file)")
+
+    
     (options, args) = option_parser.parse_args()
        
     if len(args) < 1:
@@ -26,7 +30,8 @@ def main():
         try:
             save_ast(file_path, options.dir, options.readable, \
                      config_path= options.config,
-                     cdb_path = options.cdb_path)
+                     cdb_path = options.cdb_path,
+                     ref_source = options.ref_source)
         except:
             print "Can't parse %s" % file_path 
         
