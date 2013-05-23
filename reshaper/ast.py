@@ -425,13 +425,12 @@ def get_tu(source, all_warnings=False, config_path = '~/.reshaper.cfg',
     return cache_tu
 
 def save_ast(file_path, _dir=None , is_readable=False, \
-             config_path=None, cdb_path=None, ref_source = None, include_pch = None):
+             config_path=None, cdb_path=None, ref_source = None):
     
     _tu = get_tu(file_path, is_from_cache_first = False,
                  cdb_path = cdb_path,
                  config_path = config_path,
-                 ref_source = ref_source,
-                 include_pch = include_pch)
+                 ref_source = ref_source)
     
     if not _tu:
         print "unable to load %s" % file_path
