@@ -351,7 +351,7 @@ def _get_cdb_cmd_for_header(cdb, cdb_path, header_path, ref_source):
 
 def get_tu(source, all_warnings=False, config_path = '~/.reshaper.cfg', 
            cache_folder = '', is_from_cache_first = True,
-           cdb_path = None, ref_source = None, include_pch = None):
+           cdb_path = None, ref_source = None):
     """Obtain a translation unit from source and language.
 
     By default, the translation unit is created from source file "t.<ext>"
@@ -414,9 +414,7 @@ def get_tu(source, all_warnings=False, config_path = '~/.reshaper.cfg',
         filter_options = ['clang', 'clang++', '-MMD', '-MP']
         args += [arg for arg in cmds[0].arguments if arg not in filter_options]
         
-    if include_pch and is_header(source):
-        args += ['-include-pch', include_pch]
-
+    
     logging.debug(' '.join(args))    
     
     _tu = TranslationUnit.from_source(source, args)
