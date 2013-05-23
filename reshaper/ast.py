@@ -439,6 +439,8 @@ def save_ast(file_path, _dir=None , is_readable=False, \
     check_diagnostics(_tu.diagnostics)
         
     cache_path = get_ast_path(_dir, file_path)
+    
+    print 'Saving ast of %s to %s' % (file_path, cache_path)
         
     if is_readable:
         _tu.text_dump(cache_path)
