@@ -351,7 +351,7 @@ def _get_cdb_cmd_for_header(cdb, cdb_path, header_path, ref_source):
 
 def get_tu(source, all_warnings=False, config_path = '~/.reshaper.cfg', 
            cache_folder = '', is_from_cache_first = True,
-           cdb_path = None, ref_source = None):
+           cdb_path = None, ref_source = None, include_pch = None):
     """Obtain a translation unit from source and language.
 
     By default, the translation unit is created from source file "t.<ext>"
@@ -413,6 +413,9 @@ def get_tu(source, all_warnings=False, config_path = '~/.reshaper.cfg',
 
         filter_options = ['clang', 'clang++', '-MMD', '-MP']
         args += [arg for arg in cmds[0].arguments if arg not in filter_options]
+        
+    if include_pch and is_header(source):
+        args += ['-include-pch', include_pch]
 
     logging.debug(' '.join(args))    
     
@@ -424,12 +427,13 @@ def get_tu(source, all_warnings=False, config_path = '~/.reshaper.cfg',
     return cache_tu
 
 def save_ast(file_path, _dir=None , is_readable=False, \
-             config_path=None, cdb_path=None, ref_source = None):
+             config_path=None, cdb_path=None, ref_source = None, include_pch = None):
     
     _tu = get_tu(file_path, is_from_cache_first = False,
                  cdb_path = cdb_path,
                  config_path = config_path,
-                 ref_source = ref_source)
+                 ref_source = ref_source,
+                 include_pch = include_pch)
     
     if not _tu:
         print "unable to load %s" % file_path

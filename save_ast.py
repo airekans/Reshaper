@@ -19,6 +19,10 @@ def main():
     option_parser.add_option("-s", "--ref_source", dest = "ref_source", \
                              type="string", default='', \
                              help = "reference source file (only used when input is a header file)")
+    
+    option_parser.add_option("-i", "--include-pch", dest = "include_pch", \
+                             type="string", default='', \
+                             help = "pre-compiled include header (only used when input is a header file)")
 
     
     (options, args) = option_parser.parse_args()
@@ -31,7 +35,8 @@ def main():
             save_ast(file_path, options.dir, options.readable, \
                      config_path= options.config,
                      cdb_path = options.cdb_path,
-                     ref_source = options.ref_source)
+                     ref_source = options.ref_source,
+                     include_pch = options.include_pch)
         except:
             print "Can't parse %s" % file_path 
         
