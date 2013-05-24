@@ -32,8 +32,9 @@ def main():
                      config_path= options.config,
                      cdb_path = options.cdb_path,
                      ref_source = options.ref_source)
-        except:
-            print "Can't parse %s" % file_path 
+        except Exception, e:
+            print "Can't parse %s:%s" % (file_path, e) 
+        
         
         
 if __name__ == '__main__':
