@@ -93,7 +93,4 @@ def get_member_var_classes(cls_cursor):
                                        cls_def_cursor))
     return member_with_def_classes
 
-def get_used_cls_names(func_cursor):
-  ''' get names of the  classes  used by func_cursor
-  '''
-  pass
+

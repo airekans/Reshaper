@@ -1,8 +1,22 @@
 
 struct X{
+	void m_func();
+	int m_i;
 };
 
-class Y{
+struct Y{
+	void m_func();
+	double m_f;
+};
+
+class Z{
+public:
+	void m_func();
+};
+
+class W
+{
+
 };
 
 namespace boost{
@@ -20,7 +34,7 @@ namespace std{
     template<class X>
     class auto_ptr
     {
-
+    	auto_ptr(const X*);
     };
 };
 
@@ -43,4 +57,7 @@ class A{
     int m_i;
     INT* m_pi;
     CHAR_PRT m_pc;
+
+    void m_func1();
+    void m_func2();
 };

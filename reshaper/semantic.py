@@ -197,6 +197,40 @@ def get_full_qualified_name(cursor):
     else:
         return out_str
 
+
+def get_memfunc_callee_cursors(fun_cursor):
+    """get the callees of fun_cursor, which are memfunc type.
+        
+    Arguments:
+    - `fun_cursor`: a function definition cursor
+    
+    Return:
+    all callee cursors in a dict with <hash, cursor> type
+    
+    """
+    
+    if fun_cursor is None or not fun_cursor.is_definition():
+        return {} 
+
+    # get all member function calls
+    def is_member_fun_call(c):
+        if c.kind != CursorKind.CALL_EXPR:
+            return False
+
+        for child in c.get_children():
+            return child.kind == CursorKind.MEMBER_REF_EXPR
+
+        return False
+        
+    # get all member function calls in the function
+    member_fun_calls = util.get_cursors_if(fun_cursor, is_member_fun_call)
+    
+    hash2cursor = {}
+    for cursor in member_fun_calls:
+        hash2cursor[cursor.hash] = cursor
+        
+    return hash2cursor
+
 def get_func_callees(fun_cursor, callee_class):
     """get the class callees of the function named fun_cursor.
     class callees means the class methods.
@@ -251,6 +285,26 @@ def get_class_callees(cls_cursor, callee_class):
         
     return method_names
 
+def get_all_callee_cursors(cls_cursor):
+    """ get the class callees' cursors from the class given as cls_cursor.
+    class callee means class methods.
+    """
+    all_methods = get_methods_from_class(cls_cursor)
+    cursor_dict = {}
+       
+    for method in all_methods:
+        method_def = method.get_definition()
+        if method_def is not None:
+            used_methods = get_memfunc_callee_cursors(method_def)
+            cursor_dict.update(used_methods)
+        else:
+            print "Cannot find definition of %s::%s" % \
+                (cls_cursor.spelling, method.spelling)
+        
+    return method_names
+
+    
+
 def is_header(fpath):
     return fpath.endswith( ('.h', '.hh', '.hpp') ) 
 
@@ -288,4 +342,7 @@ def get_class_definition(cursor):
             
     return None
 
-
+def get_used_cls_names(func_cursor):
+  ''' get names of the  classes  used by func_cursor
+  '''
+  pass
