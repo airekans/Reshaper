@@ -199,7 +199,9 @@ def get_full_qualified_name(cursor):
         return out_str
 
 
-def get_memfunc_callee_cursors(fun_cursor):
+def get_func_callees(fun_cursor, 
+                     keep_func = lambda c: True, 
+                     transform_func = lambda c: c):
     """get the callees of fun_cursor, which are memfunc type.
         
     Arguments:
@@ -229,11 +231,17 @@ def get_memfunc_callee_cursors(fun_cursor):
     hash2decl_cursor = {}
     for c in member_fun_calls:
         decl_cursor = util.get_declaration(c) 
-        hash2decl_cursor[c.hash] = decl_cursor
+        if keep_func(decl_cursor):
+            hash2decl_cursor[decl_cursor.hash] = transform_func(decl_cursor)
         
     return hash2decl_cursor
 
-def get_func_callees(fun_cursor, callee_class):
+
+def is_member_of(cursor, callee_class):
+    return get_semantic_parent_of_decla_cursor(cursor).spelling == \
+                                                  callee_class
+
+def get_func_callee_names(fun_cursor, callee_class):
     """get the class callees of the function named fun_cursor.
     class callees means the class methods.
     
@@ -241,17 +249,15 @@ def get_func_callees(fun_cursor, callee_class):
     - `fun_cursor`: function cursor
     - `callee_class`: name of the class
     """
-    
-    hash2decl_cursor = get_memfunc_callee_cursors(fun_cursor)
-        
-    target_member_funs = \
-        [c for c in hash2decl_cursor.values()
-         if get_semantic_parent_of_decla_cursor(c).spelling == callee_class]
-  
-    method_names = [c.spelling for c in target_member_funs]
-    return set(method_names)
+           
+    keep_func = lambda c: is_member_of(c, callee_class)
+                        
+    transform_func = lambda c: c.spelling
+                    
+    hash2method_names = get_func_callees(fun_cursor, keep_func, transform_func)
+    return set(hash2method_names.values())
 
-def get_class_callees(cls_cursor, callee_class):
+def get_class_callee_names(cls_cursor, callee_class):
     """ get the class callees from the class given as cls_cursor.
     class callee means class methods.
     
@@ -259,21 +265,19 @@ def get_class_callees(cls_cursor, callee_class):
     - `cls_cursor`: cursor of the class calling the class callees
     - `callee_class`: the name of the used class
     """
-    all_methods = get_methods_from_class(cls_cursor)
-
-    method_names = set()
-    for method in all_methods:
-        method_def = method.get_definition()
-        if method_def is not None:
-            used_methods = get_func_callees(method_def, callee_class)
-            method_names = method_names.union(used_methods)
-        else:
-            print "Cannot find definition of %s::%s" % \
-                (cls_cursor.spelling, method.spelling)
+    
+    keep_func = lambda c: is_member_of(c, callee_class)
+                        
+    transform_func = lambda c: c.spelling
+    
+    func_names = get_class_callees(cls_cursor, keep_func, 
+                                   transform_func)
         
-    return method_names
+    return set(func_names)
 
-def get_all_callee_cursors(cls_cursor):
+def get_class_callees(cls_cursor,  \
+                      keep_func = lambda c: True, 
+                      transform_func = lambda c: c):
     """ get the class callees' cursors from the class given as cls_cursor.
     class callee means class methods.
     """
@@ -283,13 +287,14 @@ def get_all_callee_cursors(cls_cursor):
     for method in all_methods:
         method_def = method.get_definition()
         if method_def is not None:
-            used_methods = get_memfunc_callee_cursors(method_def)
+            used_methods = get_func_callees(method_def, keep_func, \
+                                            transform_func)
             cursor_dict.update(used_methods)
         else:
             print "Cannot find definition of %s::%s" % \
                 (cls_cursor.spelling, method.spelling)
         
-    return cursor_dict.values
+    return cursor_dict.values()
 
     
 
