@@ -376,6 +376,8 @@ class C
     void fun1()
     {
         int data = m_a.m_data;
+        B b;
+        b.fun2();
     }
 
     A m_a;

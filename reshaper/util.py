@@ -105,6 +105,7 @@ def get_cursors(source, spelling):
 
     return get_cursors_if(source, lambda c: c.spelling == spelling)
     
+    
 def get_cursors_if(source, is_satisfied_fun,
                    is_visit_subtree_fun = lambda _x, _y: True,
                    transform_fun = lambda c: c):
@@ -123,10 +124,10 @@ def get_cursors_if(source, is_satisfied_fun,
     def visit(cursor, _):
         if is_satisfied_fun(cursor):
             cursors.append(transform_fun(cursor))
-          
+               
         semantic_parent = cursor.semantic_parent
         if(semantic_parent and is_satisfied_fun(semantic_parent)):
-            cursors.append(transform_fun(semantic_parent))
+            cursors.append(transform_fun(semantic_parent))  
         
         declaration = get_declaration(cursor)
         if(declaration and is_satisfied_fun(declaration)):
