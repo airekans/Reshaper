@@ -308,9 +308,11 @@ class TUCache(object):
         self.cursor.update_ref_cursors()
         self.diagnostics = [DiagnosticCache(diag) for diag in tu.diagnostics]
     
-    def text_dump(self, file_path):
+    def xml_dump(self, file_path):
         ''' dump with text format '''
-        pickle.dump(self, open(file_path,'wb'))
+        from gnosis.xml.pickle import XML_Pickler
+        o = XML_Pickler(self)
+        o.dump(open(file_path,'wb'))
         
     def dump(self,file_path):
         ''' dump with binary format, which is faster and uses less space'''
@@ -323,13 +325,13 @@ class TUCache(object):
     def get_parent(self):
         return None   
     
-def get_ast_path(dir_name, source):
-    if not dir_name:
+def get_ast_path(output_path, source, is_readable):
+    if output_path:
+        return output_path
+    elif is_readable:
+        return source + '.xml'
+    else:
         return source + '.ast'
-    
-    filename = os.path.basename(source)
-    return os.path.join(dir_name, filename + '.ast')
-
 
 _source2tu = {}
 
@@ -350,7 +352,7 @@ def _get_cdb_cmd_for_header(cdb, cdb_path, header_path, ref_source):
     return None
 
 def get_tu(source, all_warnings=False, config_path = '~/.reshaper.cfg', 
-           cache_folder = '', is_from_cache_first = True,
+           is_from_cache_first = True,
            cdb_path = None, ref_source = None):
     """Obtain a translation unit from source and language.
 
@@ -370,7 +372,7 @@ def get_tu(source, all_warnings=False, config_path = '~/.reshaper.cfg',
         return _source2tu[full_path]
     
     if is_from_cache_first:
-        cache_path = get_ast_path(cache_folder, source)
+        cache_path = get_ast_path(None, source, False)
         if os.path.isfile(cache_path):
             _tu =  TUCache.load(cache_path)
             _source2tu[full_path] = _tu
@@ -424,7 +426,7 @@ def get_tu(source, all_warnings=False, config_path = '~/.reshaper.cfg',
     
     return cache_tu
 
-def save_ast(file_path, _dir=None , is_readable=False, \
+def save_ast(file_path, output_path=None , is_readable=False, \
              config_path=None, cdb_path=None, ref_source = None):
     
     _tu = get_tu(file_path, is_from_cache_first = False,
@@ -438,12 +440,12 @@ def save_ast(file_path, _dir=None , is_readable=False, \
     
     check_diagnostics(_tu.diagnostics)
         
-    cache_path = get_ast_path(_dir, file_path)
+    cache_path = get_ast_path(output_path, file_path, is_readable)
     
     print 'Saving ast of %s to %s' % (file_path, cache_path)
         
     if is_readable:
-        _tu.text_dump(cache_path)
+        _tu.xml_dump(cache_path)
     else:
         _tu.dump(cache_path)
         

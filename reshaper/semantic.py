@@ -206,6 +206,8 @@ def get_func_callees(fun_cursor,
         
     Arguments:
     - `fun_cursor`: a function definition cursor
+    - keep_func: used to filter child cursors,
+    - transform_func: used to transform a result cursor 
     
     Return:
     all callee cursors in a dict with <hash, cursor> type
@@ -258,7 +260,7 @@ def get_func_callee_names(fun_cursor, callee_class):
     return set(hash2method_names.values())
 
 def get_class_callee_names(cls_cursor, callee_class):
-    """ get the class callees from the class given as cls_cursor.
+    """ get the names of class callees from the class given as cls_cursor.
     class callee means class methods.
     
     Arguments:
@@ -280,6 +282,8 @@ def get_class_callees(cls_cursor,  \
                       transform_func = lambda c: c):
     """ get the class callees' cursors from the class given as cls_cursor.
     class callee means class methods.
+    keep_func is used to filter child cursors,
+    transform_func is used to transform a result cursor 
     """
     all_methods = get_methods_from_class(cls_cursor)
     cursor_dict = {}
