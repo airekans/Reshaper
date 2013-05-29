@@ -14,7 +14,7 @@ void A::m_func2()
 }
 
 
-void A::m_func2(Z* z)
+void A::m_func3(Z* z)
 {
 	z->m_func();
 }

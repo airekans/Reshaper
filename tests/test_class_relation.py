@@ -9,11 +9,14 @@ from reshaper.util import get_cursor
 import reshaper.semantic as sem
 import reshaper.header_util as hu
 
-CLASS_RELATION_INPUT_FILE = os.path.join(os.path.dirname(__file__),
+CLASS_RELATION_INPUT_HEADER_FILE = os.path.join(os.path.dirname(__file__),
                                      'test_data','class_relation.h')    
+CLASS_RELATION_INPUT_SRC_FILE = os.path.join(os.path.dirname(__file__),
+                                     'test_data','class_relation.cpp') 
+
 class TestClassRelation(unittest.TestCase):  
     def setUp(self):
-        _tu = get_tu(CLASS_RELATION_INPUT_FILE)
+        _tu = get_tu(CLASS_RELATION_INPUT_HEADER_FILE)
         self._cls_cursor = get_cursor(_tu, 'A')
         assert(self._cls_cursor)
         
@@ -61,6 +64,13 @@ class TestClassRelation(unittest.TestCase):
             in zip(self._member2class_results, member_with_definitions):
             self.assertEqual(member_name, member_cursor.spelling)
             self.assertEqual(cls_name, cls_def_cursor.spelling)
+            
+    
+    def test_get_class_callee_class_names(self):
+        _tu = get_tu(CLASS_RELATION_INPUT_SRC_FILE)
+        cls_cursor = get_cursor(_tu, 'A')
+        names = sem.get_used_cls_names(cls_cursor)
+        self.assertEqual([], names) 
         
 
 if __name__ == '__main__':

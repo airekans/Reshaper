@@ -59,7 +59,7 @@ def get_methods_from_class(class_cursor, methods = None):
     member_method_cursors = \
         util.get_cursors_if(class_cursor,
                             lambda c: (c.kind == CursorKind.CXX_METHOD and
-                                  c.semantic_parent == class_cursor  and
+                                  c.semantic_parent.hash == class_cursor.hash  and
                                   (c.spelling in method_set
                                    if method_set is not None else True)))
     return member_method_cursors
@@ -339,7 +339,16 @@ def get_class_definition(cursor):
             
     return None
 
-def get_used_cls_names(func_cursor):
-  ''' get names of the  classes  used by func_cursor
-  '''
-  pass
+def get_used_cls_names(cls_cursor):
+    ''' get names of the  classes  used by func_cursor
+    '''
+      
+    callees = get_class_callees(cls_cursor)
+    
+    hash2cursor = {}
+    
+    for callee in callees:
+        callee_cls = get_semantic_parent_of_decla_cursor(callee)
+        hash2cursor.update({callee_cls.hash: callee_cls})
+    
+    return [cursor.spelling for cursor in hash2cursor.values()]
