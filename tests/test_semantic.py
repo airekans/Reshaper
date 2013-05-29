@@ -326,7 +326,7 @@ void fun4();
         fun_cursor = get_cursor_if(_tu,
                                    (lambda c: c.spelling == fun_name and
                                      c.is_definition()))
-        methods = sem.get_func_callees(fun_cursor, class_name)
+        methods = sem.get_func_callee_names(fun_cursor, class_name)
         eq_(expected_methods, methods)
 
     check("fun1", "A", ['foo'])
@@ -334,12 +334,12 @@ void fun4();
     check("fun3", "A", [])
 
     # check error conditions
-    eq_(set(), sem.get_func_callees(None, "A"))
+    eq_(set(), sem.get_func_callee_names(None, "A"))
 
     fun4_cursor = get_cursor(_tu, "fun4")
     assert(fun4_cursor is not None)
     assert(not fun4_cursor.is_definition())
-    eq_(set(), sem.get_func_callees(fun4_cursor, "A"))
+    eq_(set(), sem.get_func_callee_names(fun4_cursor, "A"))
     
 
 def test_get_class_usage_from_cls():
@@ -376,6 +376,8 @@ class C
     void fun1()
     {
         int data = m_a.m_data;
+        B b;
+        b.fun2();
     }
 
     A m_a;
@@ -388,7 +390,7 @@ class C
         cls_cursor = get_cursor_if(_tu,
                                    (lambda c: c.spelling == cls_name and
                                      c.is_definition()))
-        methods = sem.get_class_callees(cls_cursor, class_name)
+        methods = sem.get_class_callee_names(cls_cursor, class_name)
         eq_(expected_methods, methods)
 
     check('B', 'A', ['foo', 'bar'])

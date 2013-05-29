@@ -7,56 +7,100 @@ from reshaper.option import setup_options
 from optparse import OptionParser
 import sys
 from functools import partial
+from xml.sax.saxutils import escape
 
 
 
+SPACE = '    '
 
-def print_cursor(cursor, level, is_print_ref = False):
+class XML_Printer(object):
+    def __init__(self):
+        self._level = -1
+        self._stack = []
     
+    def print_tag(self, level, tag):
+        
+        if self._stack:
+            for _i in range(0, self._level-level+1):
+                end_tag = self._stack.pop()
+                print end_tag
+            
+        start_tag =  SPACE * level + '<%s>' % tag
+        print start_tag
+        end_tag   = SPACE * level + '</%s>' % tag
+        self._stack.append(end_tag)  
+               
+        self._level = level
+        
+    def print_attr(self, level, name, value):
+        print SPACE * (level+1) + '<%s>%s</%s>' % (name, value, name)
+        
+    def print_remaining_end_tags(self):
+        while self._stack:
+            end_tag = self._stack.pop()
+            print end_tag
+        
+
+_xml_printer = XML_Printer()        
+
+
+def print_tag(level, tag, is_xml):
+    if is_xml:
+        _xml_printer.print_tag(level, tag)
+    else:
+        print '****' * level + '%s:' % tag
+
+def print_attr(level, name, value, is_xml):
+    if is_xml:
+        value = escape(str(value))
+        _xml_printer.print_attr(level, name, value)
+    else:
+        print '****' * (level+1) + name + ':', value
+        
+
+def print_cursor(cursor, level, is_print_ref = False, is_xml = False):
     
-    prefix = "*****" * level
+    print_tag(level, 'cursor', is_xml)
     
+    print_func = lambda level, name, value: print_attr(level, name, value, is_xml) 
     
     if cursor is None:
-        print prefix, None
+        print_func(level, 'None', '') 
         return
  
-    print prefix + "spelling:", cursor.spelling
-    print prefix + "displayname:", cursor.displayname
-    print prefix + "kind:", cursor.kind.name
-    print prefix + "usr:", cursor.get_usr()
-    print prefix + "hash:", cursor.hash
+    print_func(level, "spelling", cursor.spelling)
+    print_func(level, "displayname", cursor.displayname)
+    print_func(level, "kind", cursor.kind.name)
+    print_func(level, "usr", cursor.get_usr())
+    print_func(level, "hash", cursor.hash)
     if cursor.location.file:
-        print prefix + "file: %s:%d:%d" % (cursor.location.file.name, \
+        print_func(level,  "file", "%s:%d:%d" % (cursor.location.file.name, \
                                            cursor.location.line, \
-                                           cursor.location.column)
+                                           cursor.location.column))
     
     if cursor.type is not None:
-        print prefix + "type kind:", cursor.type.kind.name
+        print_func(level, "type_kind", cursor.type.kind.name)
     
-    print prefix + "is_definition:", cursor.is_definition()
+    print_func(level, "is_definition", cursor.is_definition())
     
-    if is_print_ref:
-        print prefix + 'REFERENCE_BEGIN'
-        
+    if is_print_ref:   
         lexical_parent = cursor.lexical_parent
         semantic_parent = cursor.semantic_parent
         declaration = cursor.get_declaration()
         definition = cursor.get_definition()
     
-        print prefix + "semantic_parent:"
-        print_cursor(semantic_parent, level+1, False)
+        print_tag(level+1, 'semantic_parent', is_xml)
+        print_cursor(semantic_parent, level+2, False, is_xml)
         
-        print prefix + "lexical_parent:"
-        print_cursor(lexical_parent, level+1, False)
+        print_tag(level+1,  "lexical_parent", is_xml)
+        print_cursor(lexical_parent, level+2, False, is_xml)
         
-        print prefix +  "definition:"
-        print_cursor(definition, level+1, False)
+        print_tag(level+1,   "definition", is_xml)
+        print_cursor(definition, level+2, False, is_xml)
         
-        print prefix + "declaration:"
-        print_cursor(declaration, level+1, False)
+        print_tag(level+1, "declaration", is_xml)
+        print_cursor(declaration, level+2, False, is_xml)
         
-        print prefix + 'REFERENCE_END'
     
     
 
@@ -73,6 +117,10 @@ def main():
     option_parser.add_option("-r", "--reference", dest = "reference",
                              action="store_true",
                              help = "print info of referenced cursor")
+    
+    option_parser.add_option("-x", "--xml", dest = "xml",
+                             action="store_true",
+                             help = "print with xml format")
     
     (options, args) = option_parser.parse_args()
        
@@ -97,11 +145,17 @@ def main():
         error_num = len(_tu.diagnostics)
 
         check_diagnostics(_tu.diagnostics)
+        
+        
+        
 
         walk_ast(_tu,
-                  partial(print_cursor, is_print_ref =  options.reference),
+                  partial(print_cursor, is_print_ref =  options.reference,
+                                        is_xml = options.xml),
                   partial(can_visit_cursor_func, path = file_path))
-        
+
+        if options.xml:
+            _xml_printer.print_remaining_end_tags()
 
         
         
