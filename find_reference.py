@@ -59,10 +59,10 @@ def get_output_string(target_cursor, result_cursors):
 
     return output_string
 
-def output_to_file(target_cursor, curs, file_path):
+def output_to_file(target_cursor, curs, FILE_PATH):
     """output result to file
     """
-    file_handle = open(file_path, "w")
+    file_handle = open(FILE_PATH, "w")
     output_string = get_output_string(target_cursor, curs)
     file_handle.write(output_string)
     file_handle.close()

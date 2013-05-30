@@ -9,7 +9,7 @@ def is_same_file(path1, path2):
     return os.path.abspath(path1) == \
            os.path.abspath(path2)
 
-def is_cursor_in_file_func(file_path):
+def is_cursor_in_file_func(FILE_PATH):
     def is_cursor_in_file(cursor, _l = -1):
         if not cursor:
             return True
@@ -19,7 +19,7 @@ def is_cursor_in_file_func(file_path):
         if not cursor_file:
             return  True
         else:
-            return is_same_file(cursor_file.name, file_path)
+            return is_same_file(cursor_file.name, FILE_PATH)
     
     return is_cursor_in_file
 
