@@ -70,7 +70,10 @@ class TestClassRelation(unittest.TestCase):
         _tu = get_tu(CLASS_RELATION_INPUT_SRC_FILE)
         cls_cursor = get_cursor(_tu, 'A')
         names = sem.get_used_cls_names(cls_cursor)
-        self.assertEqual([], names) 
+        
+        expected_names = ['X', 'Z']
+        self.assertEqual(len(expected_names), len(names))
+        self.assertEqual(set(expected_names), set(names)) 
         
 
 if __name__ == '__main__':
