@@ -12,6 +12,8 @@ void A::m_func2()
 {
 	std::auto_ptr<Y> pY(new Y);
 	pY->m_f = 1.8;
+
+	m_func1();
 }
 
 

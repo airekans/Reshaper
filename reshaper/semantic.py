@@ -239,9 +239,9 @@ def get_func_callees(fun_cursor,
     return hash2decl_cursor
 
 
-def is_member_of(cursor, callee_class):
+def is_member_of(cursor, callee_class_name):
     return get_semantic_parent_of_decla_cursor(cursor).spelling == \
-                                                  callee_class
+                                                  callee_class_name
 
 def get_func_callee_names(fun_cursor, callee_class):
     """get the class callees of the function named fun_cursor.
@@ -287,11 +287,13 @@ def get_class_callees(cls_cursor,  \
     """
     all_methods = get_methods_from_class(cls_cursor)
     cursor_dict = {}
+    
+    keep_func_new = lambda c: keep_func(c) and not is_member_of(c, cls_cursor.spelling)  
        
     for method in all_methods:
         method_def = method.get_definition()
         if method_def is not None:
-            used_methods = get_func_callees(method_def, keep_func, \
+            used_methods = get_func_callees(method_def, keep_func_new, \
                                             transform_func)
             cursor_dict.update(used_methods)
         else:
