@@ -13,6 +13,7 @@ from reshaper.ast import get_tu
 class Test(unittest.TestCase):
     def setUp(self):
         self._dot_gen = DotGenertor()
+        self.maxDiff = None
 
     def test_empty_graph(self):
         dot = self._dot_gen.get_dot_str()
@@ -74,8 +75,59 @@ digraph
                                 'test_data','class_relation.cpp') 
         _tu = get_tu(src_path)
         
+        data_dir = os.path.join(os.path.dirname(__file__), 'test_data')
+        
         dot_str = gen_class_collaboration_graph(_tu, 'A')
-        print dot_str
+        
+        dot_str_filtered = gen_class_collaboration_graph(_tu, 'A', data_dir)
+        
+        dot_str_expected = \
+'''
+digraph 
+{
+  // INTERACTIVE_SVG=YES
+  edge [fontname="Helvetica",fontsize="10",labelfontname="Helvetica",labelfontsize="10"];
+  node [fontname="Helvetica",fontsize="10",shape=record];
+  Node1 [label="A",height=0.2,width=0.4,color="black", fillcolor="grey75", style="filled" fontcolor="black"];
+  Node2 [label="X",height=0.2,width=0.4,color="black", fillcolor="grey75", style="filled" fontcolor="black"];
+  Node1 -> Node2 [color="midnightblue",fontsize="10",style="dashed",label="m_x" ,fontname="Helvetica"];
+  Node1 -> Node2 [color="midnightblue",fontsize="10",style="dashed",label="m_x1" ,fontname="Helvetica"];
+  Node1 -> Node2 [color="midnightblue",fontsize="10",style="dashed",label="m_x2" ,fontname="Helvetica"];
+  Node3 [label="Y",height=0.2,width=0.4,color="black", fillcolor="grey75", style="filled" fontcolor="black"];
+  Node1 -> Node3 [color="midnightblue",fontsize="10",style="dashed",label="m_y1" ,fontname="Helvetica"];
+  Node1 -> Node3 [color="midnightblue",fontsize="10",style="dashed",label="m_y2" ,fontname="Helvetica"];
+  Node4 [label="Other",height=0.2,width=0.4,color="black", fillcolor="grey75", style="filled" fontcolor="black"];
+  Node1 -> Node4 [color="midnightblue",fontsize="10",style="dashed",label="m_other" ,fontname="Helvetica"];
+  Node1 -> Node4 [color="darkorchid3",fontsize="10",style="dashed",label="f" ,fontname="Helvetica"];
+  Node1 -> Node2 [color="darkorchid3",fontsize="10",style="dashed",label="m_funcx" ,fontname="Helvetica"];
+  Node5 [label="Z",height=0.2,width=0.4,color="black", fillcolor="grey75", style="filled" fontcolor="black"];
+  Node1 -> Node5 [color="darkorchid3",fontsize="10",style="dashed",label="m_funcz" ,fontname="Helvetica"];
+}'''
+        dot_str_filtered_expected = \
+'''
+digraph 
+{
+  // INTERACTIVE_SVG=YES
+  edge [fontname="Helvetica",fontsize="10",labelfontname="Helvetica",labelfontsize="10"];
+  node [fontname="Helvetica",fontsize="10",shape=record];
+  Node1 [label="A",height=0.2,width=0.4,color="black", fillcolor="grey75", style="filled" fontcolor="black"];
+  Node2 [label="X",height=0.2,width=0.4,color="black", fillcolor="grey75", style="filled" fontcolor="black"];
+  Node1 -> Node2 [color="midnightblue",fontsize="10",style="dashed",label="m_x" ,fontname="Helvetica"];
+  Node1 -> Node2 [color="midnightblue",fontsize="10",style="dashed",label="m_x1" ,fontname="Helvetica"];
+  Node1 -> Node2 [color="midnightblue",fontsize="10",style="dashed",label="m_x2" ,fontname="Helvetica"];
+  Node3 [label="Y",height=0.2,width=0.4,color="black", fillcolor="grey75", style="filled" fontcolor="black"];
+  Node1 -> Node3 [color="midnightblue",fontsize="10",style="dashed",label="m_y1" ,fontname="Helvetica"];
+  Node1 -> Node3 [color="midnightblue",fontsize="10",style="dashed",label="m_y2" ,fontname="Helvetica"];
+  Node1 -> Node2 [color="darkorchid3",fontsize="10",style="dashed",label="m_funcx" ,fontname="Helvetica"];
+  Node4 [label="Z",height=0.2,width=0.4,color="black", fillcolor="grey75", style="filled" fontcolor="black"];
+  Node1 -> Node4 [color="darkorchid3",fontsize="10",style="dashed",label="m_funcz" ,fontname="Helvetica"];
+}'''
+    
+        self.assertEqual(dot_str_expected, dot_str, dot_str)
+        self.assertEqual(dot_str_filtered_expected, dot_str_filtered)
+    
+        
+        
         
 if __name__ == "__main__":
     unittest.main()

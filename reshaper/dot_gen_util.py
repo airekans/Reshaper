@@ -95,16 +95,25 @@ digraph
         return head  + self._dot_str + tail
 
 
-def gen_class_collaboration_graph(_tu, class_names):
+
+def gen_class_collaboration_graph(_tu, class_names, source_dir= None):
     dot_gen = DotGenertor()
     cls_cursors = hu.get_classes_with_names(_tu, class_names)
+    
+    if source_dir:
+        keep_func = lambda c : sem.is_cursor_in_dir(c, source_dir)
+    else:
+        keep_func = lambda c: True
+
+    
     for cls_cursor in cls_cursors:
-        member_with_def_classes = hu.get_member_var_classes(cls_cursor)
+        member_with_def_classes = hu.get_member_var_classes(cls_cursor, 
+                                                            keep_func)
         for member_cursor, member_cls_cursor in member_with_def_classes:
             dot_gen.add_composite_class(cls_cursor.spelling, 
                                         member_cursor.spelling,
                                         member_cls_cursor.spelling)
-        callee_cursors = sem.get_class_callees(cls_cursor)
+        callee_cursors = sem.get_class_callees(cls_cursor, keep_func)
         for callee in callee_cursors:
             callee_cls_cursor = sem.get_semantic_parent_of_decla_cursor(callee)
             dot_gen.add_callee_class(cls_cursor.spelling, 

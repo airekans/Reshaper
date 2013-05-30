@@ -298,7 +298,14 @@ def get_class_callees(cls_cursor,  \
             print "Cannot find definition of %s::%s" % \
                 (cls_cursor.spelling, method.spelling)
         
-    return cursor_dict.values()
+    
+    def compare_name(c1,c2):
+        try:
+            return cmp(c1.spelling, c2.spelling)    
+        except:
+            return cmp(c1, c2)
+        
+    return sorted(cursor_dict.values(), compare_name)
 
     
 
@@ -352,3 +359,13 @@ def get_used_cls_names(cls_cursor):
         hash2cursor.update({callee_cls.hash: callee_cls})
     
     return [cursor.spelling for cursor in hash2cursor.values()]
+
+
+def is_cursor_in_dir(cursor, dir_path):
+    ''' return True is cursor's file is in dir_path'''
+    loc = cursor.location
+    if not loc.file:
+        return False
+    file_path = os.path.abspath(loc.file.name)
+    abs_dir = os.path.abspath(dir_path) + '/'
+    return file_path.startswith(abs_dir)

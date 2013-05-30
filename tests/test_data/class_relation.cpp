@@ -4,7 +4,8 @@
 void A::m_func1()
 {
 	X x;
-	x.m_func();
+	x.m_funcx();
+	m_other.f();
 }
 
 void A::m_func2()
@@ -16,5 +17,5 @@ void A::m_func2()
 
 void A::m_func3(Z* z)
 {
-	z->m_func();
+	z->m_funcz();
 }

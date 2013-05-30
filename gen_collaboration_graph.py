@@ -16,6 +16,10 @@ def main():
     option_parser.add_option("-f", "--file", dest = "file", \
                              type="string", default='', \
                              help = "input file path ")
+    option_parser.add_option("-d", "--dir", dest = "dir", \
+                             type="string", default='', \
+                             help = "only show classes defined in this dir")
+    
     setup_options(option_parser)
     (options, args) = option_parser.parse_args()
     
@@ -35,7 +39,7 @@ def main():
                        config_path = options.config,
                        cdb_path = options.cdb_path)
     
-    print gen_class_collaboration_graph(tu_source, class_names)
+    print gen_class_collaboration_graph(tu_source, class_names, options.dir)
 
 if __name__ == '__main__':
     main()

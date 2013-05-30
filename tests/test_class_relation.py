@@ -25,7 +25,8 @@ class TestClassRelation(unittest.TestCase):
                               ['m_x1', 'X'],
                               ['m_x2', 'X'],
                               ['m_y1', 'Y'],
-                              ['m_y2', 'Y']
+                              ['m_y2', 'Y'],
+                              ['m_other', 'Other']
                              ]
 
     
@@ -71,7 +72,7 @@ class TestClassRelation(unittest.TestCase):
         cls_cursor = get_cursor(_tu, 'A')
         names = sem.get_used_cls_names(cls_cursor)
         
-        expected_names = ['X', 'Z']
+        expected_names = ['X', 'Z', 'Other']
         self.assertEqual(len(expected_names), len(names))
         self.assertEqual(set(expected_names), set(names)) 
         

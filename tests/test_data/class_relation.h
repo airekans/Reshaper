@@ -1,17 +1,18 @@
+#include "../test_data1/header_in_other_folder.h"
 
 struct X{
-	void m_func();
+	void m_funcx();
 	int m_i;
 };
 
 struct Y{
-	void m_func();
+	void m_funcy();
 	double m_f;
 };
 
 class Z{
 public:
-	void m_func();
+	void m_funcz();
 };
 
 class W
@@ -57,6 +58,7 @@ class A{
     int m_i;
     INT* m_pi;
     CHAR_PRT m_pc;
+    Other m_other;
 
     void m_func1();
     void m_func2();

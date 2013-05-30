@@ -81,14 +81,14 @@ def get_classes_with_names(source, names):
     classes = get_all_class_cursors(source)
     return [cls for cls in classes if cls.spelling in names]
     
-def get_member_var_classes(cls_cursor):
+def get_member_var_classes(cls_cursor, keep_cls_func=lambda c: True):
     member_var_cursors = get_children_attrs(cls_cursor, 
                                             sem.is_non_static_var, 
                                             attr_getter=lambda c: c)
     member_with_def_classes = []
     for member_var in member_var_cursors:
         cls_def_cursor = sem.get_class_definition(member_var)
-        if cls_def_cursor:
+        if cls_def_cursor and keep_cls_func(cls_def_cursor):
             member_with_def_classes.append((member_var, \
                                        cls_def_cursor))
     return member_with_def_classes
