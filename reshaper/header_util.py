@@ -46,12 +46,12 @@ def get_non_static_pt_var_names(cursor):
     return get_children_attrs(cursor, keep_func)
 
     
-def get_class_cursor_in_file(source, class_name, FILE_PATH):
-    ''' get class/struct cursor with class_name and FILE_PATH'''
+def get_class_cursor_in_file(source, class_name, file_path):
+    ''' get class/struct cursor with class_name and file_path'''
     return util.get_cursor_if(source,
                               partial(sem.is_class_name_matched, \
                                       class_name = class_name),
-                              is_cursor_in_file_func(FILE_PATH))
+                              is_cursor_in_file_func(file_path))
  		
  	
 def get_all_class_cursors(source, header_path = None):
