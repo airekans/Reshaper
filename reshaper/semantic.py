@@ -276,11 +276,11 @@ def get_class_definition(cursor):
     if is_class_definition(cursor):
         return cursor
     
-    if cursor.kind.name == 'TYPE_REF':
+    if cursor.kind == CursorKind.TYPE_REF:
         return get_class_definition(cursor.get_definition())
     
-    if cursor.kind.name == 'TYPEDEF_DECL' or \
-           cursor.kind.name == 'FIELD_DECL' :
+    if cursor.kind == CursorKind.TYPEDEF_DECL or \
+           cursor.kind == CursorKind.FIELD_DECL :
         for c in cursor.get_children():
             definition = get_class_definition(c)
             if definition:

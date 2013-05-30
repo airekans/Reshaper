@@ -96,8 +96,7 @@ def main():
             
         error_num = len(_tu.diagnostics)
 
-        if check_diagnostics(_tu.diagnostics):
-            sys.exit(1)
+        check_diagnostics(_tu.diagnostics)
 
         walk_ast(_tu,
                   partial(print_cursor, is_print_ref =  options.reference),

@@ -40,7 +40,7 @@ def filter_cursors_by_usr(cursors, target_usr):
             key = (os.path.abspath(location.file.name), location.line, location.column)
             cursor_dict[key] = cursor
 
-    return ([cursor_dict[key] for key in sorted(cursor_dict.keys())])
+    return [cursor_dict[key] for key in sorted(cursor_dict.keys())]
 
 def get_cursors_with_name(file_name, name, ref_curs):
     """call back pass to semantic.scan_dir_parse_files 

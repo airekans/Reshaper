@@ -14,7 +14,7 @@ from reshaper.ast import get_tu
 
 def set_all_true_if_no_bool_option(opts):
     '''
-    if no option set, take all options as true
+    if no bool option set, take all bool options as true
     '''
     has_bool_option = False
     for _, value in vars(opts).iteritems():
