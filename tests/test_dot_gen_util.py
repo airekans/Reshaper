@@ -25,7 +25,7 @@ digraph
   edge [fontname="Helvetica",fontsize="10",labelfontname="Helvetica",labelfontsize="10"];
   node [fontname="Helvetica",fontsize="10",shape=record];
 }'''
-        self.assertMultiLineEqual(expected_dot, dot)
+        self.assertEqual(expected_dot, dot)
         
     def test_class_relation_graph(self):
         ''' test DotGenertor'''
