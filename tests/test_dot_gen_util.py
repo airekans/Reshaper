@@ -22,6 +22,7 @@ class Test(unittest.TestCase):
 digraph 
 {
   // INTERACTIVE_SVG=YES
+  rankdir = LR;
   edge [fontname="Helvetica",fontsize="10",labelfontname="Helvetica",labelfontsize="10"];
   node [fontname="Helvetica",fontsize="10",shape=record];
 }'''
@@ -47,6 +48,7 @@ digraph
 digraph 
 {
   // INTERACTIVE_SVG=YES
+  rankdir = LR;
   edge [fontname="Helvetica",fontsize="10",labelfontname="Helvetica",labelfontsize="10"];
   node [fontname="Helvetica",fontsize="10",shape=record];
   Node1 [label="A0",height=0.2,width=0.4,color="black", fillcolor="grey75", style="filled" fontcolor="black"];
@@ -88,6 +90,7 @@ digraph
 digraph 
 {
   // INTERACTIVE_SVG=YES
+  rankdir = LR;
   edge [fontname="Helvetica",fontsize="10",labelfontname="Helvetica",labelfontsize="10"];
   node [fontname="Helvetica",fontsize="10",shape=record];
   Node1 [label="A",height=0.2,width=0.4,color="black", fillcolor="grey75", style="filled" fontcolor="black"];
@@ -110,6 +113,7 @@ digraph
 digraph 
 {
   // INTERACTIVE_SVG=YES
+  rankdir = LR;
   edge [fontname="Helvetica",fontsize="10",labelfontname="Helvetica",labelfontsize="10"];
   node [fontname="Helvetica",fontsize="10",shape=record];
   Node1 [label="A",height=0.2,width=0.4,color="black", fillcolor="grey75", style="filled" fontcolor="black"];
@@ -129,6 +133,7 @@ digraph
 digraph 
 {
   // INTERACTIVE_SVG=YES
+  rankdir = LR;
   edge [fontname="Helvetica",fontsize="10",labelfontname="Helvetica",labelfontsize="10"];
   node [fontname="Helvetica",fontsize="10",shape=record];
   Node1 [label="A",height=0.2,width=0.4,color="black", fillcolor="grey75", style="filled" fontcolor="black"];

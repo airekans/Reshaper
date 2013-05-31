@@ -88,6 +88,7 @@ class DotGenertor(object):
 digraph 
 {
   // INTERACTIVE_SVG=YES
+  rankdir = LR;
   edge [fontname="Helvetica",fontsize="10",labelfontname="Helvetica",labelfontsize="10"];
   node [fontname="Helvetica",fontsize="10",shape=record];''' 
         
