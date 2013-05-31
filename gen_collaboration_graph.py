@@ -19,6 +19,9 @@ def main():
     option_parser.add_option("-d", "--dir", dest = "dir", \
                              type="string", default='', \
                              help = "only show classes defined in this dir")
+    option_parser.add_option("-h", "--hide_functions", dest = "hide_func", \
+                             action="store_true", \
+                             help = "hide function names")
     
     setup_options(option_parser)
     (options, args) = option_parser.parse_args()
@@ -39,7 +42,8 @@ def main():
                        config_path = options.config,
                        cdb_path = options.cdb_path)
     
-    print gen_class_collaboration_graph(tu_source, class_names, options.dir)
+    print gen_class_collaboration_graph(tu_source, class_names, 
+                                        options.dir, not options.hide_func)
 
 if __name__ == '__main__':
     main()

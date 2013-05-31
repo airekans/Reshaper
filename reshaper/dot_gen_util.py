@@ -96,7 +96,14 @@ digraph
 
 
 
-def gen_class_collaboration_graph(_tu, class_names, source_dir= None):
+def gen_class_collaboration_graph(_tu, class_names, source_dir= None, show_functions = True):
+    '''
+    generate class collaboration graph
+    _tu: input tu
+    class_names: input class names
+    source_dir: if set, will only show the classes that define in this folder
+    show_functions: if False, will not show function names
+    '''
     dot_gen = DotGenertor()
     cls_cursors = hu.get_classes_with_names(_tu, class_names)
     
@@ -107,18 +114,29 @@ def gen_class_collaboration_graph(_tu, class_names, source_dir= None):
 
     
     for cls_cursor in cls_cursors:
+        ref_cls_names = set([])        
         member_with_def_classes = hu.get_member_var_classes(cls_cursor, 
                                                             keep_func)
         for member_cursor, member_cls_cursor in member_with_def_classes:
+            member_cls_name = member_cls_cursor.spelling
+            ref_cls_names.add(member_cls_name)
             dot_gen.add_composite_class(cls_cursor.spelling, 
                                         member_cursor.spelling,
-                                        member_cls_cursor.spelling)
+                                        member_cls_name)
+            
         callee_cursors = sem.get_class_callees(cls_cursor, keep_func)
         for callee in callee_cursors:
             callee_cls_cursor = sem.get_semantic_parent_of_decla_cursor(callee)
-            dot_gen.add_callee_class(cls_cursor.spelling, 
-                                     callee.spelling, 
-                                     callee_cls_cursor.spelling)
+            callee_cls_name = callee_cls_cursor.spelling
+            if show_functions:
+                dot_gen.add_callee_class(cls_cursor.spelling, 
+                                         callee.spelling, 
+                                         callee_cls_name)
+            elif callee_cls_name not in ref_cls_names:
+                dot_gen.add_callee_class(cls_cursor.spelling, 
+                                         '<use>', 
+                                         callee_cls_name)
+                ref_cls_names.add(callee_cls_name)
             
     return dot_gen.get_dot_str()        
     
