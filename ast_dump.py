@@ -13,19 +13,23 @@ from xml.sax.saxutils import escape
 
 SPACE = '    '
 
-class XML_Printer(object):
+class XMLPrinter(object):
     def __init__(self):
         self._level = -1
         self._stack = []
     
-    def print_tag(self, level, tag):
+    def print_tag(self, level, tag, attr_label, attr):
         
         if self._stack:
             for _i in range(0, self._level-level+1):
                 end_tag = self._stack.pop()
                 print end_tag
+        
+        attr_str = ''
+        if attr_label:
+            attr_str = ' %s="%s"' % (attr_label, escape(attr))
             
-        start_tag =  SPACE * level + '<%s>' % tag
+        start_tag =  SPACE * level + '<%s%s>' % (tag, attr_str)
         print start_tag
         end_tag   = SPACE * level + '</%s>' % tag
         self._stack.append(end_tag)  
@@ -41,14 +45,17 @@ class XML_Printer(object):
             print end_tag
         
 
-_xml_printer = XML_Printer()        
+_xml_printer = XMLPrinter()        
 
 
-def print_tag(level, tag, is_xml):
+def print_tag(level, tag, is_xml, attr_label='', attr = ''):
     if is_xml:
-        _xml_printer.print_tag(level, tag)
+        _xml_printer.print_tag(level, tag, attr_label, attr)
     else:
-        print '****' * level + '%s:' % tag
+        attr_str = ''
+        if attr_label:
+            attr_str = ': %s=%s' % (attr_label, attr)
+        print '****' * level + '%s%s' % (tag, attr_str)
 
 def print_attr(level, name, value, is_xml):
     if is_xml:
@@ -60,16 +67,17 @@ def print_attr(level, name, value, is_xml):
 
 def print_cursor(cursor, level, is_print_ref = False, is_xml = False):
     
-    print_tag(level, 'cursor', is_xml)
+   
     
     print_func = lambda level, name, value: print_attr(level, name, value, is_xml) 
     
     if cursor is None:
-        print_func(level, 'None', '') 
+        print_tag(level,'cursor', is_xml) 
         return
+    else:
+        print_tag(level, 'cursor', is_xml, "displayname", cursor.displayname)
  
     print_func(level, "spelling", cursor.spelling)
-    print_func(level, "displayname", cursor.displayname)
     print_func(level, "kind", cursor.kind.name)
     print_func(level, "usr", cursor.get_usr())
     print_func(level, "hash", cursor.hash)
@@ -145,9 +153,6 @@ def main():
         error_num = len(_tu.diagnostics)
 
         check_diagnostics(_tu.diagnostics)
-        
-        
-        
 
         walk_ast(_tu,
                   partial(print_cursor, is_print_ref =  options.reference,
