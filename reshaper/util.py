@@ -1,34 +1,58 @@
 # This file provides common utility functions for the test suite.
-
-from clang.cindex import Cursor
-from clang.cindex import CursorKind
-from clang.cindex import TranslationUnit
-import ConfigParser
 import os
 from functools import partial
-from semantic import get_semantic_parent_of_decla_cursor
+from clang.cindex import CursorKind
+from clang.cindex import Config
+_CONF = Config()
 
-def get_tu(source, all_warnings=False):
-    """Obtain a translation unit from source and language.
+def is_same_file(path1, path2):
+    return os.path.abspath(path1) == \
+           os.path.abspath(path2)
 
-    By default, the translation unit is created from source file "t.<ext>"
-    where <ext> is the default file extension for the specified language. By
-    default it is C, so "t.c" is the default file name.
+def is_cursor_in_file_func(file_path):
+    def is_cursor_in_file(cursor, _l = -1):
+        if not cursor:
+            return True
+        if not cursor.location:
+            return True
+        cursor_file = cursor.location.file
+        if not cursor_file:
+            return  True
+        else:
+            return is_same_file(cursor_file.name, file_path)
+    
+    return is_cursor_in_file
 
-    all_warnings is a convenience argument to enable all compiler warnings.
-    """
-    args = ['-x', 'c++', '-std=c++11']
- 
-    if all_warnings:
-        args += ['-Wall', '-Wextra']
 
-    config_parser = ConfigParser.SafeConfigParser()
-    config_parser.read(['.reshaper.cfg', os.path.expanduser('~/.reshaper.cfg')])
-    if config_parser.has_option('Clang Options', 'include_paths'):
-        include_paths = config_parser.get('Clang Options', 'include_paths')
-        args += ['-I' + p for p in include_paths.split(',')]
+def is_name_matched(cursor, name):
+    if cursor.spelling:
+        return cursor.spelling == name
+    else:
+        return cursor.displayname == name
 
-    return TranslationUnit.from_source(source, args)
+def get_declaration(cursor):
+    if hasattr(cursor, "get_declaration"):
+        return cursor.get_declaration()
+    else:
+        return _CONF.lib.clang_getCursorReferenced(cursor)
+                
+
+def check_diagnostics(diagnostics):
+    '''check diagnostics,
+    if exists, print to stdout and return True
+    '''
+    error_num = len(diagnostics)
+    if error_num > 0:
+        print "Source file has the following errors(%d):" % error_num
+        for diag in diagnostics:
+            loc = diag.location
+            file_info = ''
+            if loc.file:
+                file_info = '%s:%s:%s:' % (loc.file.name, loc.line, loc.column)
+            print file_info + diag.spelling
+
+    return error_num > 0
+
 
 def get_cursor(source, spelling):
     """Obtain a cursor from a source object.
@@ -40,9 +64,9 @@ def get_cursor(source, spelling):
     If the cursor is not found, None is returned.
     """
 
-    return get_cursor_if(source, lambda c: c.spelling == spelling)
+    return get_cursor_if(source, partial(is_name_matched, name=spelling))
 
-def get_cursor_if(source, is_satisfied_fun):
+def get_cursor_if(source, is_satisfied_fun, is_visit_subtree_fun = lambda _x, _y: True):
     """Obtain a cursor from a source object by a predicate function f.
     If f(cursor) returns True, then the cursor is return.
     If no cursor is found, returns None.
@@ -63,7 +87,8 @@ def get_cursor_if(source, is_satisfied_fun):
             return False
 
     cursors = get_cursors_if(source, visit,
-                             lambda _c, _l: not is_get_result[0])
+                             lambda _c, _l: not is_get_result[0] and 
+                                            is_visit_subtree_fun(_c,_l))
 
     return cursors[0] if len(cursors) > 0 else None
     
@@ -98,26 +123,46 @@ def get_cursors_if(source, is_satisfied_fun,
     def visit(cursor, _):
         if is_satisfied_fun(cursor):
             cursors.append(transform_fun(cursor))
+          
+        semantic_parent = cursor.semantic_parent
+        if(semantic_parent and is_satisfied_fun(semantic_parent)):
+            cursors.append(transform_fun(semantic_parent))
+        
+        declaration = get_declaration(cursor)
+        if(declaration and is_satisfied_fun(declaration)):
+            cursors.append(transform_fun(declaration))
 
     walk_ast(source, visit, is_visit_subtree_fun)
 
-    return cursors
+    def unique(l):
+        if not l:
+            return l
+        
+        if hasattr(l[0], 'hash'):
+            hash_func = lambda c: c.hash
+        else:
+            hash_func = id
+            
+        seen = set()
+        return [c for c in l if hash_func(c) not in seen and 
+                                             not seen.add(hash_func(c))]
 
-def get_cursor_with_location(tu, spelling, line, column = None):
+    return unique(cursors)
+
+def get_cursor_with_location(_tu, spelling, line, column = None):
     '''Get specific cursor by line and column
     '''
-    def check_cursor_spelling_displayname(cursor, spelling):
-        if cursor.is_definition() and cursor.spelling == spelling:
-                return True
-        elif spelling in cursor.displayname:
-                return True
-        return False
+    def check_cursor_spelling_displayname(cursor):
+        return (cursor.is_definition() and cursor.spelling == spelling) or \
+            spelling in cursor.displayname
 
-    alternate_cursors = get_cursors_if(tu, partial(check_cursor_spelling_displayname, spelling = spelling))
+    alternate_cursors = get_cursors_if(_tu, check_cursor_spelling_displayname)
     for cursor in alternate_cursors:
+        # We cannot get useful information from CALL_EXPR, so skip it
         if cursor.kind == CursorKind.CALL_EXPR and \
                 len(list(cursor.get_children())) > 0:
             continue
+        
         if column is not None:
             if cursor.location.line == line and \
                     cursor.location.column == column:
@@ -126,6 +171,11 @@ def get_cursor_with_location(tu, spelling, line, column = None):
             if cursor.location.line == line:
                 return cursor
     return None
+
+
+ 
+
+
 
 def walk_ast(source, visitor, is_visit_subtree_fun = lambda _c, _l: True):
     """walk the ast with the specified functions by DFS
@@ -141,7 +191,7 @@ def walk_ast(source, visitor, is_visit_subtree_fun = lambda _c, _l: True):
 
     if source is None:
         return
-    elif isinstance(source, Cursor):
+    elif hasattr(source, "get_children"):
         cursor = source
     else: 
         # Assume TU
@@ -159,28 +209,11 @@ def walk_ast(source, visitor, is_visit_subtree_fun = lambda _c, _l: True):
 
     walk_ast_with_level(cursor, 0)
 
-def get_full_qualified_name(cursor):
-    '''use to get semantic_parent.spelling :: cursor.spelling or displayname 
-    infomation of the input cursors;
-    for example: TestUSR::test_decla(int), MyNameSpace::test_defin(double)
-    or test_function(TestUSR&)
-    '''
-    seman_parent = get_semantic_parent_of_decla_cursor(cursor)
-    out_str = cursor.displayname
-    if out_str == None:
-        out_str = cursor.spelling
 
-    if seman_parent is not None and \
-            (seman_parent.kind == CursorKind.NAMESPACE or\
-            seman_parent.kind == CursorKind.CLASS_DECL):
-        return "%s::%s" % (seman_parent.spelling, out_str)
-    else:
-        return out_str
-
-def get_function_signature(fun):
+def get_function_signature(fun_cursor):
     """get the signature of the function given as a cursor node in the AST.
     """
-    tokens = list(fun.get_tokens())
+    tokens = list(fun_cursor.get_tokens())
     if len(tokens) < 1:
         return ""
 
@@ -209,3 +242,4 @@ def get_function_signature(fun):
 
     return signature
 
+    

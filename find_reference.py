@@ -6,13 +6,11 @@ also can be output to a file specified by -o
 
 Usage : find_reference.py -f test.cpp -l 37 -d . -o sample.txt
 """
-
 import os, sys
-from clang.cindex import Cursor
 from clang.cindex import CursorKind
-from clang.cindex import TranslationUnit
 import reshaper.semantic as semantic_util
-from reshaper.util import get_tu
+from reshaper.util import check_diagnostics
+from reshaper.ast import get_tu
 from reshaper.util import get_cursor_with_location
 from reshaper.find_reference_util import get_usr_of_declaration_cursor
 from reshaper.find_reference_util import get_cursors_with_name
@@ -28,9 +26,8 @@ def get_output_string(target_cursor, result_cursors):
             (target_cursor.displayname, target_cursor.location.file.name, \
             target_cursor.location.line, target_cursor.location.column)
     for cur in result_cursors:
-        if not isinstance(cur, Cursor):
-            continue
-
+        assert semantic_util.is_cursor(cur)
+            
         output_string += "--------------------------------"
         output_string += "--------------------------------\n "
         output_string += "file : %s \n" % \
@@ -49,7 +46,7 @@ def get_output_string(target_cursor, result_cursors):
                 output_string += "global function\n"
 
         else:
-            cur_parent = semantic_util.get_calling_function(cur)
+            cur_parent = semantic_util.get_caller(cur)
             if cur_parent:
                 output_string += "Call function:"
                 out_str = cur_parent.displayname
@@ -76,10 +73,12 @@ def main():
     output_file = "referenceResult.txt"
     options = parse_find_reference_args(output_file)
     #get target reference info
-    tu_source = get_tu(os.path.abspath(options.filename))
-    assert(isinstance(tu_source, TranslationUnit))
+    tu_source = get_tu(os.path.abspath(options.filename),
+                       config_path = options.config,
+                       cdb_path = options.cdb_path)
+    assert(semantic_util.is_tu(tu_source))
 
-    if semantic_util.check_diagnostics(tu_source.diagnostics):
+    if check_diagnostics(tu_source.diagnostics):
         print "Warning : file %s, diagnostics occurs" % options.filename,
         print " parse result may be incorrect!"
 
@@ -87,19 +86,20 @@ def main():
             options.spelling, \
             options.line, options.column)
     if not target_cursor:
-        print "Error : Can't get source cursor", 
+        print "Error : Can't get source cursor" 
         print "please check file:%s, name:%s, line:%s, column:%s "\
                 % (options.filename, options.spelling,\
                 options.line, options.column)
         sys.exit(-1)
+
     reference_usr = get_usr_of_declaration_cursor(target_cursor)
     
     #parse input directory
     refer_curs = []
     semantic_util.scan_dir_parse_files(options.directory, \
             partial(get_cursors_with_name, \
-            name = options.spelling, \
-            ref_curs = refer_curs))
+                    name = options.spelling, \
+                    ref_curs = refer_curs))
     final_output = filter_cursors_by_usr(refer_curs, reference_usr)
 
     #output result

@@ -1,6 +1,7 @@
 #ifndef _CLASS_H_
 #define _CLASS_H_
 
+
 struct TestStruct  
 {
     int data;
@@ -34,6 +35,8 @@ public:
     {
 	
     }
+
+    int m_i;
 };
 
 
