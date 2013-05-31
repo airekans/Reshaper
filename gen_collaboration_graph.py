@@ -19,7 +19,7 @@ def main():
     option_parser.add_option("-d", "--dir", dest = "dir", \
                              type="string", default='', \
                              help = "only show classes defined in this dir")
-    option_parser.add_option("-h", "--hide_functions", dest = "hide_func", \
+    option_parser.add_option("-t", "--hide_functions", dest = "hide_func", \
                              action="store_true", \
                              help = "hide function names")
     
