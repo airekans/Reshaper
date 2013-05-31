@@ -4,13 +4,11 @@
 example: input  :C
          output  : A -> B -> C ; means A call B , B call C
 """
-
 import sys
-from clang.cindex import Cursor
-from clang.cindex import TranslationUnit
-from reshaper.util import get_tu
+from reshaper.ast import get_tu
+from reshaper.util import check_diagnostics
 from reshaper.util import get_cursor_with_location
-from reshaper.util import get_full_qualified_name
+from reshaper.semantic import get_full_qualified_name
 import reshaper.semantic as semantic_util
 from functools import partial
 from reshaper.find_reference_util import get_usr_of_declaration_cursor
@@ -43,7 +41,7 @@ def find_reference_update_output_contents(target_cursor, \
     target_info = get_full_qualified_name(target_cursor)
 
     for cursor in final_output:
-        calling_cursor = semantic_util.get_calling_function(cursor)
+        calling_cursor = semantic_util.get_caller(cursor)
         if calling_cursor is not None:
             calling_info = get_full_qualified_name(calling_cursor)
             output_contents.append("\"%s\" -> \"%s\";\n" % \
@@ -58,8 +56,8 @@ def handle_output_result(iuput_cursors, search_directory, \
     before (use global_usr_list to judge if a cursor is handled already)
     '''
     for cur in iuput_cursors:
-        assert(isinstance(cur, Cursor))
-        calling_cursor = semantic_util.get_calling_function(cur)
+        assert(semantic_util.is_cursor(cur))
+        calling_cursor = semantic_util.get_caller(cur)
         if calling_cursor is None:
             continue
         cur_usr = get_usr_of_declaration_cursor(calling_cursor)
@@ -91,9 +89,9 @@ def main():
     output_file = "findCallChainResult.txt"
     options = parse_find_reference_args(output_file)
     tu_source = get_tu(options.filename)
-    assert(isinstance(tu_source, TranslationUnit))
+    assert(semantic_util.is_tu(tu_source))
 
-    if semantic_util.check_diagnostics(tu_source.diagnostics):
+    if check_diagnostics(tu_source.diagnostics):
         print "Error"
         print
         sys.exit(-1)

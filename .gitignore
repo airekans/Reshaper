@@ -1,6 +1,9 @@
 *.py[cod]
 *~
 
+# Core dump files
+core.*
+
 # C extensions
 *.so
 
@@ -30,6 +33,9 @@ pip-log.txt
 .tox
 nosetests.xml
 htmlcov
+
+# merge cache
+*.orig
 
 # Translations
 *.mo

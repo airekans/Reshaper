@@ -2,8 +2,8 @@
 """
 
 
-from util import get_cursors_if
-from classprinter import ClassPrinter
+from reshaper.classprinter import ClassPrinter
+from reshaper.semantic import get_methods_from_class
 from clang.cindex import CursorKind
 
 
@@ -19,14 +19,11 @@ def extract_interface(class_cursor, methods = None, prefix = "I"):
     - `prefix`: the interface name prefix used to prepend to the class name
     """
 
-    member_method_cursors = \
-        get_cursors_if(class_cursor,
-                       lambda c: (c.kind == CursorKind.CXX_METHOD and
-                                  (c.spelling in methods
-                                   if methods is not None else True)))
+    member_method_cursors = get_methods_from_class(class_cursor, methods)
     
     # print out the interface class
     class_printer = ClassPrinter(prefix + class_cursor.spelling)
     class_printer.set_methods(member_method_cursors)
     return class_printer
+
     
