@@ -2,7 +2,7 @@
 
 from reshaper.ast import get_tu
 from reshaper.util import walk_ast, is_cursor_in_file_func
-from reshaper.util import check_diagnostics
+from reshaper.util import check_diagnostics, get_diagnostics_str
 from reshaper.option import setup_options
 from optparse import OptionParser
 import sys
@@ -71,11 +71,16 @@ def print_cursor(cursor, level, is_print_ref = False, is_xml = False):
     
     print_func = lambda level, name, value: print_attr(level, name, value, is_xml) 
     
+    if level == 0:
+        tag = 'tu'
+    else:
+        tag = 'cursor'
+    
     if cursor is None:
-        print_tag(level,'cursor', is_xml) 
+        print_tag(level, tag, is_xml) 
         return
     else:
-        print_tag(level, 'cursor', is_xml, "displayname", cursor.displayname)
+        print_tag(level, tag, is_xml, "displayname", cursor.displayname)
  
     print_func(level, "spelling", cursor.spelling)
     print_func(level, "kind", cursor.kind.name)
@@ -91,7 +96,7 @@ def print_cursor(cursor, level, is_print_ref = False, is_xml = False):
     
     print_func(level, "is_definition", cursor.is_definition())
     
-    if is_print_ref:   
+    if is_print_ref and level >0:   
         lexical_parent = cursor.lexical_parent
         semantic_parent = cursor.semantic_parent
         declaration = cursor.get_declaration()
@@ -143,6 +148,9 @@ def main():
             can_visit = can_visit and is_cursor_in_file_func(path)(cursor, level)
         return can_visit
         
+    
+    if options.xml: print '<root>'
+        
     for file_path in args:     
         _tu = get_tu(file_path, config_path= options.config,
                      cdb_path = options.cdb_path)
@@ -150,9 +158,14 @@ def main():
             print "unable to load %s" % file_path
             sys.exit(1)
             
-        error_num = len(_tu.diagnostics)
-
-        check_diagnostics(_tu.diagnostics)
+        if len(_tu.diagnostics):
+            if options.xml: 
+                print '<diagnostics>' 
+                print escape(get_diagnostics_str(_tu.diagnostics))
+                print '</diagnostics>'
+            else:
+                check_diagnostics(_tu.diagnostics)
+                
 
         walk_ast(_tu,
                   partial(print_cursor, is_print_ref =  options.reference,
@@ -162,7 +175,7 @@ def main():
         if options.xml:
             _xml_printer.print_remaining_end_tags()
 
-        
+    if options.xml: print '</root>'    
         
 if __name__ == '__main__':
     main()

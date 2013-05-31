@@ -35,7 +35,17 @@ def get_declaration(cursor):
         return cursor.get_declaration()
     else:
         return _CONF.lib.clang_getCursorReferenced(cursor)
-                
+
+
+def get_diagnostics_str(diagnostics):   
+    output = ''
+    for diag in diagnostics:
+        loc = diag.location
+        file_info = ''
+        if loc.file:
+            file_info = '%s:%s:%s:' % (loc.file.name, loc.line, loc.column)
+        output += file_info + diag.spelling + '/n' 
+    return output            
 
 def check_diagnostics(diagnostics):
     '''check diagnostics,
@@ -44,12 +54,7 @@ def check_diagnostics(diagnostics):
     error_num = len(diagnostics)
     if error_num > 0:
         print "Source file has the following errors(%d):" % error_num
-        for diag in diagnostics:
-            loc = diag.location
-            file_info = ''
-            if loc.file:
-                file_info = '%s:%s:%s:' % (loc.file.name, loc.line, loc.column)
-            print file_info + diag.spelling
+        print get_diagnostics_str(diagnostics)
 
     return error_num > 0
 
