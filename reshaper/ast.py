@@ -202,7 +202,6 @@ class CursorCache(object):
     
     def __getstate__(self):
         dic_copy = dict(self.__dict__)
-        del dic_copy['_tu_file_path']
         del dic_copy['_cursor'] 
         return dic_copy   
     

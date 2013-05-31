@@ -4,7 +4,7 @@ Created on May 19, 2013
 @author: liangzhao
 '''
 import os, unittest
-from reshaper.ast import get_tu
+from reshaper.ast import get_tu, save_ast
 from reshaper.util import get_cursor
 import reshaper.semantic as sem
 import reshaper.header_util as hu
@@ -68,6 +68,7 @@ class TestClassRelation(unittest.TestCase):
             
     
     def test_get_class_callee_class_names(self):
+        save_ast(CLASS_RELATION_INPUT_SRC_FILE)
         _tu = get_tu(CLASS_RELATION_INPUT_SRC_FILE)
         cls_cursor = get_cursor(_tu, 'A')
         names = sem.get_used_cls_names(cls_cursor)
