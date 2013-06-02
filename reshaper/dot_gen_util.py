@@ -5,7 +5,6 @@ Created on May 30, 2013
 '''
 
 from jinja2 import Template
-import header_util as hu 
 import semantic as sem
 
 NODE_TEMPLATE = \
@@ -106,7 +105,7 @@ def gen_class_collaboration_graph(_tu, class_names, source_dir= None, show_funct
     show_functions: if False, will not show function names
     '''
     dot_gen = DotGenertor()
-    cls_cursors = hu.get_classes_with_names(_tu, class_names)
+    cls_cursors = sem.get_classes_with_names(_tu, class_names)
     
     if source_dir:
         keep_func = lambda c : sem.is_cursor_in_dir(c, source_dir)
@@ -116,7 +115,7 @@ def gen_class_collaboration_graph(_tu, class_names, source_dir= None, show_funct
     
     for cls_cursor in cls_cursors:
         ref_cls_names = set([])        
-        member_with_def_classes = hu.get_member_var_classes(cls_cursor, 
+        member_with_def_classes = sem.get_member_var_classes(cls_cursor, 
                                                             keep_func)
         for member_cursor, member_cls_cursor in member_with_def_classes:
             member_cls_name = member_cls_cursor.spelling

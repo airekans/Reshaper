@@ -7,7 +7,6 @@ import os, unittest
 from reshaper.ast import get_tu, save_ast
 from reshaper.util import get_cursor
 import reshaper.semantic as sem
-import reshaper.header_util as hu
 
 CLASS_RELATION_INPUT_HEADER_FILE = os.path.join(os.path.dirname(__file__),
                                      'test_data','class_relation.h')    
@@ -56,7 +55,7 @@ class TestClassRelation(unittest.TestCase):
         self._check_non_class_member('m_pc')
               
     def test_get_member_var_classes(self):
-        member_with_definitions = hu.get_member_var_classes(\
+        member_with_definitions = sem.get_member_var_classes(\
                                         self._cls_cursor)
         self.assertEqual(len(self._member2class_results), \
                          len(member_with_definitions))
