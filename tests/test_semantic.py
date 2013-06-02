@@ -329,7 +329,7 @@ void fun4();
         methods = sem.get_func_callee_names(fun_cursor, class_name)
         eq_(expected_methods, methods)
 
-    check("fun1", "A", ['foo'])
+    check("fun1", "A", ['A', 'foo'])
     check("fun2", "A", ['foo', 'bar'])
     check("fun3", "A", [])
 
@@ -393,7 +393,7 @@ class C
         methods = sem.get_class_callee_names(cls_cursor, class_name)
         eq_(expected_methods, methods)
 
-    check('B', 'A', ['foo', 'bar'])
+    check('B', 'A', ['A', 'foo', 'bar'])
     check('C', 'A', [])
 
 

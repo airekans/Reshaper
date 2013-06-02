@@ -8,7 +8,7 @@ from optparse import OptionParser
 import sys
 from functools import partial
 from xml.sax.saxutils import escape
-
+from reshaper import util
 
 
 SPACE = '    '
@@ -99,7 +99,7 @@ def print_cursor(cursor, level, is_print_ref = False, is_xml = False):
     if is_print_ref and level >0:   
         lexical_parent = cursor.lexical_parent
         semantic_parent = cursor.semantic_parent
-        declaration = cursor.get_declaration()
+        declaration = util.get_declaration(cursor)
         definition = cursor.get_definition()
     
         print_tag(level+1, 'semantic_parent', is_xml)

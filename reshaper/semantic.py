@@ -61,7 +61,8 @@ def get_methods_from_class(class_cursor, methods = None):
     member_method_cursors = \
         util.get_cursors_if(class_cursor,
                             lambda c: (c.kind == CursorKind.CXX_METHOD and
-                                  c.semantic_parent.hash == class_cursor.hash  and
+                                  c.semantic_parent.get_usr() == \
+                                  class_cursor.get_usr()  and
                                   (c.spelling in method_set
                                    if method_set is not None else True)))
     return member_method_cursors
@@ -319,7 +320,10 @@ def get_class_callees(cls_cursor,  \
     
 
 def is_header(fpath):
-    return fpath.endswith( ('.h', '.hh', '.hpp') ) 
+    return fpath.endswith( ('.h', '.hh', '.hpp') )
+
+def is_source(fpah):
+    return  
 
 def get_source_path_candidates(fpath):
     dir_name, fname = os.path.split(fpath)
@@ -368,7 +372,8 @@ def get_used_cls_names(cls_cursor):
     
     for callee in callees:
         callee_cls = get_semantic_parent_of_decla_cursor(callee)
-        hash2cursor.update({callee_cls.hash: callee_cls})
+        if callee_cls:
+            hash2cursor.update({callee_cls.hash: callee_cls})
     
     return [cursor.spelling for cursor in hash2cursor.values()]
 

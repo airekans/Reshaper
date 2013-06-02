@@ -12,7 +12,6 @@ struct Y{
 };
 
 struct Y1: public Y{
-
 };
 
 class XY: public X, private Y

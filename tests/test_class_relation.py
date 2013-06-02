@@ -68,7 +68,7 @@ class TestClassRelation(unittest.TestCase):
     
     def test_get_class_callee_class_names(self):
         save_ast(CLASS_RELATION_INPUT_SRC_FILE)
-        _tu = get_tu(CLASS_RELATION_INPUT_SRC_FILE)
+        _tu = get_tu(CLASS_RELATION_INPUT_SRC_FILE, lookup_cache_file_first = True)
         cls_cursor = get_cursor(_tu, 'A')
         names = sem.get_used_cls_names(cls_cursor)
         
