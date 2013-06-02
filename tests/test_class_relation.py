@@ -76,6 +76,15 @@ class TestClassRelation(unittest.TestCase):
         self.assertEqual(len(expected_names), len(names))
         self.assertEqual(set(expected_names), set(names)) 
         
+    def test_get_base_cls_cursors(self):
+        _tu = get_tu(CLASS_RELATION_INPUT_HEADER_FILE)
+        cls_cursor = get_cursor(_tu, 'XY')
+        base_cursors = sem.get_base_cls_cursors(cls_cursor)
+        self.assertEqual(2, len(base_cursors))
+        expected_base_names = ['X', 'Y']
+        
+        for name, cursor in zip(expected_base_names, base_cursors):
+            self.assertEqual(name, cursor.spelling)
 
 if __name__ == '__main__':
     unittest.main()

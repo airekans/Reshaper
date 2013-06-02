@@ -332,7 +332,10 @@ def get_source_path_candidates(fpath):
     return [ os.path.join(dir_name, sub_dir, fname_wo_surfix+surfix) \
              for sub_dir in sub_dir_candidates \
              for surfix in surfix_candidates ]
-    
+
+def is_typeref(cursor):
+    return cursor.kind == CursorKind.TYPE_REF
+
 def get_class_definition(cursor):
     ''' given reference of a class, 
     find the initial definition which is not a typedef
@@ -343,7 +346,7 @@ def get_class_definition(cursor):
     if is_class_definition(cursor):
         return cursor
     
-    if cursor.kind == CursorKind.TYPE_REF:
+    if is_typeref(cursor) or is_base_sepcifier(cursor):
         return get_class_definition(cursor.get_definition())
     
     if cursor.kind == CursorKind.TYPEDEF_DECL or \
@@ -465,4 +468,12 @@ def get_member_var_classes(cls_cursor, keep_cls_func=lambda c: True):
             member_with_def_classes.append((member_var, \
                                        cls_def_cursor))
     return member_with_def_classes
+
+
+def is_base_sepcifier(cursor):
+    return cursor.kind == CursorKind.CXX_BASE_SPECIFIER
+
+def get_base_cls_cursors(cls_cursor):
+    return util.get_cursors_if(cls_cursor, is_base_sepcifier,
+                          transform_fun = get_class_definition)
 

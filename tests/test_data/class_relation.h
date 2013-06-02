@@ -15,6 +15,11 @@ struct Y1: public Y{
 
 };
 
+class XY: public X, private Y
+{
+
+};
+
 class Z{
 public:
 	void m_funcz();
@@ -48,7 +53,12 @@ typedef BT::shared_ptr<YY> YY_PTR;
 typedef int INT;
 typedef char* CHAR_PRT;
 
-class A{
+class A0{
+
+};
+
+class A: public A0
+{
     X m_x;
     X_PTR m_x1;
     std::auto_ptr<XX> m_x2;

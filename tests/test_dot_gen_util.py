@@ -19,14 +19,12 @@ class Test(unittest.TestCase):
         dot = self._dot_gen.get_dot_str()
         expected_dot = \
 '''
-digraph 
-{
-  // INTERACTIVE_SVG=YES
+digraph G {
   rankdir = LR;
   edge [fontname="Helvetica",fontsize="10",labelfontname="Helvetica",labelfontsize="10"];
   node [fontname="Helvetica",fontsize="10",shape=record];
 }'''
-        self.assertEqual(expected_dot, dot)
+        self.assertEqual(expected_dot, dot, dot)
         
     def test_class_relation_graph(self):
         ''' test DotGenertor'''
@@ -45,9 +43,7 @@ digraph
         
         expected_dot = \
 '''
-digraph 
-{
-  // INTERACTIVE_SVG=YES
+digraph G {
   rankdir = LR;
   edge [fontname="Helvetica",fontsize="10",labelfontname="Helvetica",labelfontsize="10"];
   node [fontname="Helvetica",fontsize="10",shape=record];
@@ -88,79 +84,79 @@ digraph
         
         dot_str_expected = \
 '''
-digraph 
-{
-  // INTERACTIVE_SVG=YES
+digraph G {
   rankdir = LR;
   edge [fontname="Helvetica",fontsize="10",labelfontname="Helvetica",labelfontsize="10"];
   node [fontname="Helvetica",fontsize="10",shape=record];
-  Node1 [label="A",height=0.2,width=0.4,color="black", fillcolor="grey75", style="filled" fontcolor="black"];
-  Node2 [label="X",height=0.2,width=0.4,color="black", fillcolor="grey75", style="filled" fontcolor="black"];
-  Node1 -> Node2 [color="midnightblue",fontsize="10",style="dashed",label="m_x" ,fontname="Helvetica"];
-  Node1 -> Node2 [color="midnightblue",fontsize="10",style="dashed",label="m_x1" ,fontname="Helvetica"];
-  Node1 -> Node2 [color="midnightblue",fontsize="10",style="dashed",label="m_x2" ,fontname="Helvetica"];
-  Node3 [label="Y",height=0.2,width=0.4,color="black", fillcolor="grey75", style="filled" fontcolor="black"];
-  Node1 -> Node3 [color="midnightblue",fontsize="10",style="dashed",label="m_y1" ,fontname="Helvetica"];
-  Node1 -> Node3 [color="midnightblue",fontsize="10",style="dashed",label="m_y2" ,fontname="Helvetica"];
-  Node4 [label="Other",height=0.2,width=0.4,color="black", fillcolor="grey75", style="filled" fontcolor="black"];
-  Node1 -> Node4 [color="midnightblue",fontsize="10",style="dashed",label="m_other" ,fontname="Helvetica"];
-  Node1 -> Node2 [color="darkorchid3",fontsize="10",style="dashed",label="X" ,fontname="Helvetica"];
-  Node5 [label="Y1",height=0.2,width=0.4,color="black", fillcolor="grey75", style="filled" fontcolor="black"];
-  Node1 -> Node5 [color="darkorchid3",fontsize="10",style="dashed",label="Y1" ,fontname="Helvetica"];
-  Node6 [label="auto_ptr",height=0.2,width=0.4,color="black", fillcolor="grey75", style="filled" fontcolor="black"];
-  Node1 -> Node6 [color="darkorchid3",fontsize="10",style="dashed",label="auto_ptr" ,fontname="Helvetica"];
-  Node1 -> Node4 [color="darkorchid3",fontsize="10",style="dashed",label="f" ,fontname="Helvetica"];
-  Node1 -> Node2 [color="darkorchid3",fontsize="10",style="dashed",label="m_funcx" ,fontname="Helvetica"];
-  Node7 [label="Z",height=0.2,width=0.4,color="black", fillcolor="grey75", style="filled" fontcolor="black"];
-  Node1 -> Node7 [color="darkorchid3",fontsize="10",style="dashed",label="m_funcz" ,fontname="Helvetica"];
+  Node1 [label="A0",height=0.2,width=0.4,color="black", fillcolor="grey75", style="filled" fontcolor="black"];
+  Node2 [label="A",height=0.2,width=0.4,color="black", fillcolor="grey75", style="filled" fontcolor="black"];
+  Node1 -> Node2 [dir="back", color="midnightblue",fontsize="10",style="solid",label="<inherit>",fontname="Helvetica"];  
+  Node3 [label="X",height=0.2,width=0.4,color="black", fillcolor="grey75", style="filled" fontcolor="black"];
+  Node2 -> Node3 [color="midnightblue",fontsize="10",style="dashed",label="m_x" ,fontname="Helvetica"];
+  Node2 -> Node3 [color="midnightblue",fontsize="10",style="dashed",label="m_x1" ,fontname="Helvetica"];
+  Node2 -> Node3 [color="midnightblue",fontsize="10",style="dashed",label="m_x2" ,fontname="Helvetica"];
+  Node4 [label="Y",height=0.2,width=0.4,color="black", fillcolor="grey75", style="filled" fontcolor="black"];
+  Node2 -> Node4 [color="midnightblue",fontsize="10",style="dashed",label="m_y1" ,fontname="Helvetica"];
+  Node2 -> Node4 [color="midnightblue",fontsize="10",style="dashed",label="m_y2" ,fontname="Helvetica"];
+  Node5 [label="Other",height=0.2,width=0.4,color="black", fillcolor="grey75", style="filled" fontcolor="black"];
+  Node2 -> Node5 [color="midnightblue",fontsize="10",style="dashed",label="m_other" ,fontname="Helvetica"];
+  Node2 -> Node3 [color="darkorchid3",fontsize="10",style="dashed",label="X" ,fontname="Helvetica"];
+  Node6 [label="Y1",height=0.2,width=0.4,color="black", fillcolor="grey75", style="filled" fontcolor="black"];
+  Node2 -> Node6 [color="darkorchid3",fontsize="10",style="dashed",label="Y1" ,fontname="Helvetica"];
+  Node7 [label="auto_ptr",height=0.2,width=0.4,color="black", fillcolor="grey75", style="filled" fontcolor="black"];
+  Node2 -> Node7 [color="darkorchid3",fontsize="10",style="dashed",label="auto_ptr" ,fontname="Helvetica"];
+  Node2 -> Node5 [color="darkorchid3",fontsize="10",style="dashed",label="f" ,fontname="Helvetica"];
+  Node2 -> Node3 [color="darkorchid3",fontsize="10",style="dashed",label="m_funcx" ,fontname="Helvetica"];
+  Node8 [label="Z",height=0.2,width=0.4,color="black", fillcolor="grey75", style="filled" fontcolor="black"];
+  Node2 -> Node8 [color="darkorchid3",fontsize="10",style="dashed",label="m_funcz" ,fontname="Helvetica"];
 }'''
         dot_str_filtered_expected = \
 '''
-digraph 
-{
-  // INTERACTIVE_SVG=YES
+digraph G {
   rankdir = LR;
   edge [fontname="Helvetica",fontsize="10",labelfontname="Helvetica",labelfontsize="10"];
   node [fontname="Helvetica",fontsize="10",shape=record];
-  Node1 [label="A",height=0.2,width=0.4,color="black", fillcolor="grey75", style="filled" fontcolor="black"];
-  Node2 [label="X",height=0.2,width=0.4,color="black", fillcolor="grey75", style="filled" fontcolor="black"];
-  Node1 -> Node2 [color="midnightblue",fontsize="10",style="dashed",label="m_x" ,fontname="Helvetica"];
-  Node1 -> Node2 [color="midnightblue",fontsize="10",style="dashed",label="m_x1" ,fontname="Helvetica"];
-  Node1 -> Node2 [color="midnightblue",fontsize="10",style="dashed",label="m_x2" ,fontname="Helvetica"];
-  Node3 [label="Y",height=0.2,width=0.4,color="black", fillcolor="grey75", style="filled" fontcolor="black"];
-  Node1 -> Node3 [color="midnightblue",fontsize="10",style="dashed",label="m_y1" ,fontname="Helvetica"];
-  Node1 -> Node3 [color="midnightblue",fontsize="10",style="dashed",label="m_y2" ,fontname="Helvetica"];
-  Node1 -> Node2 [color="darkorchid3",fontsize="10",style="dashed",label="X" ,fontname="Helvetica"];
-  Node4 [label="Y1",height=0.2,width=0.4,color="black", fillcolor="grey75", style="filled" fontcolor="black"];
-  Node1 -> Node4 [color="darkorchid3",fontsize="10",style="dashed",label="Y1" ,fontname="Helvetica"];
-  Node1 -> Node2 [color="darkorchid3",fontsize="10",style="dashed",label="m_funcx" ,fontname="Helvetica"];
-  Node5 [label="Z",height=0.2,width=0.4,color="black", fillcolor="grey75", style="filled" fontcolor="black"];
-  Node1 -> Node5 [color="darkorchid3",fontsize="10",style="dashed",label="m_funcz" ,fontname="Helvetica"];
+  Node1 [label="A0",height=0.2,width=0.4,color="black", fillcolor="grey75", style="filled" fontcolor="black"];
+  Node2 [label="A",height=0.2,width=0.4,color="black", fillcolor="grey75", style="filled" fontcolor="black"];
+  Node1 -> Node2 [dir="back", color="midnightblue",fontsize="10",style="solid",label="<inherit>",fontname="Helvetica"];  
+  Node3 [label="X",height=0.2,width=0.4,color="black", fillcolor="grey75", style="filled" fontcolor="black"];
+  Node2 -> Node3 [color="midnightblue",fontsize="10",style="dashed",label="m_x" ,fontname="Helvetica"];
+  Node2 -> Node3 [color="midnightblue",fontsize="10",style="dashed",label="m_x1" ,fontname="Helvetica"];
+  Node2 -> Node3 [color="midnightblue",fontsize="10",style="dashed",label="m_x2" ,fontname="Helvetica"];
+  Node4 [label="Y",height=0.2,width=0.4,color="black", fillcolor="grey75", style="filled" fontcolor="black"];
+  Node2 -> Node4 [color="midnightblue",fontsize="10",style="dashed",label="m_y1" ,fontname="Helvetica"];
+  Node2 -> Node4 [color="midnightblue",fontsize="10",style="dashed",label="m_y2" ,fontname="Helvetica"];
+  Node2 -> Node3 [color="darkorchid3",fontsize="10",style="dashed",label="X" ,fontname="Helvetica"];
+  Node5 [label="Y1",height=0.2,width=0.4,color="black", fillcolor="grey75", style="filled" fontcolor="black"];
+  Node2 -> Node5 [color="darkorchid3",fontsize="10",style="dashed",label="Y1" ,fontname="Helvetica"];
+  Node2 -> Node3 [color="darkorchid3",fontsize="10",style="dashed",label="m_funcx" ,fontname="Helvetica"];
+  Node6 [label="Z",height=0.2,width=0.4,color="black", fillcolor="grey75", style="filled" fontcolor="black"];
+  Node2 -> Node6 [color="darkorchid3",fontsize="10",style="dashed",label="m_funcz" ,fontname="Helvetica"];
 }'''
         dot_str_hide_functions_expected = \
 '''
-digraph 
-{
-  // INTERACTIVE_SVG=YES
+digraph G {
   rankdir = LR;
   edge [fontname="Helvetica",fontsize="10",labelfontname="Helvetica",labelfontsize="10"];
   node [fontname="Helvetica",fontsize="10",shape=record];
-  Node1 [label="A",height=0.2,width=0.4,color="black", fillcolor="grey75", style="filled" fontcolor="black"];
-  Node2 [label="X",height=0.2,width=0.4,color="black", fillcolor="grey75", style="filled" fontcolor="black"];
-  Node1 -> Node2 [color="midnightblue",fontsize="10",style="dashed",label="m_x" ,fontname="Helvetica"];
-  Node1 -> Node2 [color="midnightblue",fontsize="10",style="dashed",label="m_x1" ,fontname="Helvetica"];
-  Node1 -> Node2 [color="midnightblue",fontsize="10",style="dashed",label="m_x2" ,fontname="Helvetica"];
-  Node3 [label="Y",height=0.2,width=0.4,color="black", fillcolor="grey75", style="filled" fontcolor="black"];
-  Node1 -> Node3 [color="midnightblue",fontsize="10",style="dashed",label="m_y1" ,fontname="Helvetica"];
-  Node1 -> Node3 [color="midnightblue",fontsize="10",style="dashed",label="m_y2" ,fontname="Helvetica"];
-  Node4 [label="Other",height=0.2,width=0.4,color="black", fillcolor="grey75", style="filled" fontcolor="black"];
-  Node1 -> Node4 [color="midnightblue",fontsize="10",style="dashed",label="m_other" ,fontname="Helvetica"];
-  Node5 [label="Y1",height=0.2,width=0.4,color="black", fillcolor="grey75", style="filled" fontcolor="black"];
-  Node1 -> Node5 [color="darkorchid3",fontsize="10",style="dashed",label="<use>" ,fontname="Helvetica"];
-  Node6 [label="auto_ptr",height=0.2,width=0.4,color="black", fillcolor="grey75", style="filled" fontcolor="black"];
-  Node1 -> Node6 [color="darkorchid3",fontsize="10",style="dashed",label="<use>" ,fontname="Helvetica"];
-  Node7 [label="Z",height=0.2,width=0.4,color="black", fillcolor="grey75", style="filled" fontcolor="black"];
-  Node1 -> Node7 [color="darkorchid3",fontsize="10",style="dashed",label="<use>" ,fontname="Helvetica"];
+  Node1 [label="A0",height=0.2,width=0.4,color="black", fillcolor="grey75", style="filled" fontcolor="black"];
+  Node2 [label="A",height=0.2,width=0.4,color="black", fillcolor="grey75", style="filled" fontcolor="black"];
+  Node1 -> Node2 [dir="back", color="midnightblue",fontsize="10",style="solid",label="<inherit>",fontname="Helvetica"];  
+  Node3 [label="X",height=0.2,width=0.4,color="black", fillcolor="grey75", style="filled" fontcolor="black"];
+  Node2 -> Node3 [color="midnightblue",fontsize="10",style="dashed",label="m_x" ,fontname="Helvetica"];
+  Node2 -> Node3 [color="midnightblue",fontsize="10",style="dashed",label="m_x1" ,fontname="Helvetica"];
+  Node2 -> Node3 [color="midnightblue",fontsize="10",style="dashed",label="m_x2" ,fontname="Helvetica"];
+  Node4 [label="Y",height=0.2,width=0.4,color="black", fillcolor="grey75", style="filled" fontcolor="black"];
+  Node2 -> Node4 [color="midnightblue",fontsize="10",style="dashed",label="m_y1" ,fontname="Helvetica"];
+  Node2 -> Node4 [color="midnightblue",fontsize="10",style="dashed",label="m_y2" ,fontname="Helvetica"];
+  Node5 [label="Other",height=0.2,width=0.4,color="black", fillcolor="grey75", style="filled" fontcolor="black"];
+  Node2 -> Node5 [color="midnightblue",fontsize="10",style="dashed",label="m_other" ,fontname="Helvetica"];
+  Node6 [label="Y1",height=0.2,width=0.4,color="black", fillcolor="grey75", style="filled" fontcolor="black"];
+  Node2 -> Node6 [color="darkorchid3",fontsize="10",style="dashed",label="<use>" ,fontname="Helvetica"];
+  Node7 [label="auto_ptr",height=0.2,width=0.4,color="black", fillcolor="grey75", style="filled" fontcolor="black"];
+  Node2 -> Node7 [color="darkorchid3",fontsize="10",style="dashed",label="<use>" ,fontname="Helvetica"];
+  Node8 [label="Z",height=0.2,width=0.4,color="black", fillcolor="grey75", style="filled" fontcolor="black"];
+  Node2 -> Node8 [color="darkorchid3",fontsize="10",style="dashed",label="<use>" ,fontname="Helvetica"];
 }'''
         self.assertEqual(dot_str_expected, dot_str, dot_str)
         self.assertEqual(dot_str_filtered_expected, dot_str_filtered, 

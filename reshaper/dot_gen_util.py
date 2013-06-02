@@ -84,9 +84,7 @@ class DotGenertor(object):
         
         head = \
 '''
-digraph 
-{
-  // INTERACTIVE_SVG=YES
+digraph G {
   rankdir = LR;
   edge [fontname="Helvetica",fontsize="10",labelfontname="Helvetica",labelfontsize="10"];
   node [fontname="Helvetica",fontsize="10",shape=record];''' 
@@ -114,7 +112,12 @@ def gen_class_collaboration_graph(_tu, class_names, source_dir= None, show_funct
 
     
     for cls_cursor in cls_cursors:
-        ref_cls_names = set([])        
+        ref_cls_names = set([])  
+        
+        base_cursors = sem.get_base_cls_cursors(cls_cursor)
+        for base in base_cursors:
+            dot_gen.add_inherit_class(base.spelling, cls_cursor.spelling)
+              
         member_with_def_classes = sem.get_member_var_classes(cls_cursor, 
                                                             keep_func)
         for member_cursor, member_cls_cursor in member_with_def_classes:
