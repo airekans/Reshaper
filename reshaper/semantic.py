@@ -241,8 +241,12 @@ def get_func_callees(fun_cursor,
 
 
 def is_member_of(cursor, callee_class_name):
-    return get_semantic_parent_of_decla_cursor(cursor).spelling == \
-                                                  callee_class_name
+    
+    decl_sem_parent = get_semantic_parent_of_decla_cursor(cursor)
+    if not decl_sem_parent:
+        return False
+    
+    return decl_sem_parent.spelling == callee_class_name
 
 def get_func_callee_names(fun_cursor, callee_class):
     """get the class callees of the function named fun_cursor.
