@@ -73,7 +73,7 @@ class TestClassRelation(unittest.TestCase):
         cls_cursor = get_cursor(_tu, 'A')
         names = sem.get_used_cls_names(cls_cursor)
         
-        expected_names = ['X', 'Z', 'Other']
+        expected_names = ['X', 'Y1', 'Z', 'Other', 'auto_ptr']
         self.assertEqual(len(expected_names), len(names))
         self.assertEqual(set(expected_names), set(names)) 
         

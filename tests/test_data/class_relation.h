@@ -6,8 +6,13 @@ struct X{
 };
 
 struct Y{
+	virtual ~Y(){};
 	void m_funcy();
 	double m_f;
+};
+
+struct Y1: public Y{
+
 };
 
 class Z{
@@ -31,14 +36,7 @@ namespace boost{
 namespace BT=boost;
 
 
-namespace std{
-    template<class X>
-    class auto_ptr
-    {
-    public:
-    	auto_ptr(const X*);
-    };
-};
+
 
 
 using std::auto_ptr;

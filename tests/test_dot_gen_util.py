@@ -104,10 +104,15 @@ digraph
   Node1 -> Node3 [color="midnightblue",fontsize="10",style="dashed",label="m_y2" ,fontname="Helvetica"];
   Node4 [label="Other",height=0.2,width=0.4,color="black", fillcolor="grey75", style="filled" fontcolor="black"];
   Node1 -> Node4 [color="midnightblue",fontsize="10",style="dashed",label="m_other" ,fontname="Helvetica"];
+  Node1 -> Node2 [color="darkorchid3",fontsize="10",style="dashed",label="X" ,fontname="Helvetica"];
+  Node5 [label="Y1",height=0.2,width=0.4,color="black", fillcolor="grey75", style="filled" fontcolor="black"];
+  Node1 -> Node5 [color="darkorchid3",fontsize="10",style="dashed",label="Y1" ,fontname="Helvetica"];
+  Node6 [label="auto_ptr",height=0.2,width=0.4,color="black", fillcolor="grey75", style="filled" fontcolor="black"];
+  Node1 -> Node6 [color="darkorchid3",fontsize="10",style="dashed",label="auto_ptr" ,fontname="Helvetica"];
   Node1 -> Node4 [color="darkorchid3",fontsize="10",style="dashed",label="f" ,fontname="Helvetica"];
   Node1 -> Node2 [color="darkorchid3",fontsize="10",style="dashed",label="m_funcx" ,fontname="Helvetica"];
-  Node5 [label="Z",height=0.2,width=0.4,color="black", fillcolor="grey75", style="filled" fontcolor="black"];
-  Node1 -> Node5 [color="darkorchid3",fontsize="10",style="dashed",label="m_funcz" ,fontname="Helvetica"];
+  Node7 [label="Z",height=0.2,width=0.4,color="black", fillcolor="grey75", style="filled" fontcolor="black"];
+  Node1 -> Node7 [color="darkorchid3",fontsize="10",style="dashed",label="m_funcz" ,fontname="Helvetica"];
 }'''
         dot_str_filtered_expected = \
 '''
@@ -125,9 +130,12 @@ digraph
   Node3 [label="Y",height=0.2,width=0.4,color="black", fillcolor="grey75", style="filled" fontcolor="black"];
   Node1 -> Node3 [color="midnightblue",fontsize="10",style="dashed",label="m_y1" ,fontname="Helvetica"];
   Node1 -> Node3 [color="midnightblue",fontsize="10",style="dashed",label="m_y2" ,fontname="Helvetica"];
+  Node1 -> Node2 [color="darkorchid3",fontsize="10",style="dashed",label="X" ,fontname="Helvetica"];
+  Node4 [label="Y1",height=0.2,width=0.4,color="black", fillcolor="grey75", style="filled" fontcolor="black"];
+  Node1 -> Node4 [color="darkorchid3",fontsize="10",style="dashed",label="Y1" ,fontname="Helvetica"];
   Node1 -> Node2 [color="darkorchid3",fontsize="10",style="dashed",label="m_funcx" ,fontname="Helvetica"];
-  Node4 [label="Z",height=0.2,width=0.4,color="black", fillcolor="grey75", style="filled" fontcolor="black"];
-  Node1 -> Node4 [color="darkorchid3",fontsize="10",style="dashed",label="m_funcz" ,fontname="Helvetica"];
+  Node5 [label="Z",height=0.2,width=0.4,color="black", fillcolor="grey75", style="filled" fontcolor="black"];
+  Node1 -> Node5 [color="darkorchid3",fontsize="10",style="dashed",label="m_funcz" ,fontname="Helvetica"];
 }'''
         dot_str_hide_functions_expected = \
 '''
@@ -147,11 +155,16 @@ digraph
   Node1 -> Node3 [color="midnightblue",fontsize="10",style="dashed",label="m_y2" ,fontname="Helvetica"];
   Node4 [label="Other",height=0.2,width=0.4,color="black", fillcolor="grey75", style="filled" fontcolor="black"];
   Node1 -> Node4 [color="midnightblue",fontsize="10",style="dashed",label="m_other" ,fontname="Helvetica"];
-  Node5 [label="Z",height=0.2,width=0.4,color="black", fillcolor="grey75", style="filled" fontcolor="black"];
+  Node5 [label="Y1",height=0.2,width=0.4,color="black", fillcolor="grey75", style="filled" fontcolor="black"];
   Node1 -> Node5 [color="darkorchid3",fontsize="10",style="dashed",label="<use>" ,fontname="Helvetica"];
+  Node6 [label="auto_ptr",height=0.2,width=0.4,color="black", fillcolor="grey75", style="filled" fontcolor="black"];
+  Node1 -> Node6 [color="darkorchid3",fontsize="10",style="dashed",label="<use>" ,fontname="Helvetica"];
+  Node7 [label="Z",height=0.2,width=0.4,color="black", fillcolor="grey75", style="filled" fontcolor="black"];
+  Node1 -> Node7 [color="darkorchid3",fontsize="10",style="dashed",label="<use>" ,fontname="Helvetica"];
 }'''
         self.assertEqual(dot_str_expected, dot_str, dot_str)
-        self.assertEqual(dot_str_filtered_expected, dot_str_filtered)
+        self.assertEqual(dot_str_filtered_expected, dot_str_filtered, 
+                         dot_str_filtered)
         self.assertEqual(dot_str_hide_functions_expected, 
                          dot_str_hide_functions, dot_str_hide_functions)
         

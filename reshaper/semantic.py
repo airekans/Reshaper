@@ -221,11 +221,12 @@ def get_func_callees(fun_cursor,
     def is_member_fun_call(c):
         if c.kind != CursorKind.CALL_EXPR:
             return False
+        
+        decl_cur = util.get_declaration(c)
 
-        for child in c.get_children():
-            return child.kind == CursorKind.MEMBER_REF_EXPR
+        return decl_cur.kind == CursorKind.CXX_METHOD or \
+               decl_cur.kind == CursorKind.CONSTRUCTOR
 
-        return False
         
     # get all member function calls in the function
     member_fun_calls = util.get_cursors_if(fun_cursor, is_member_fun_call)
