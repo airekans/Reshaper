@@ -30,7 +30,7 @@ class FlyweightBase(object):
         
         key = '.'.join([cls.__name__, cls.get_key(obj)])
         if key not in FlyweightBase.key2objs:
-            FlyweightBase.key2objs[key] = super(FlyweightBase, cls).__new__(cls)         
+            FlyweightBase.key2objs[key] = super(FlyweightBase, cls).__new__(cls, *arg, **karg)         
         return FlyweightBase.key2objs[key]
     
     @classmethod
