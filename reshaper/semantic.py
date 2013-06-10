@@ -10,6 +10,8 @@ from reshaper import util
 _file_types = ('.cpp', '.c', '.cc')
 
 
+
+
 def is_cursor(source):
     return hasattr(source, "get_children")
         
@@ -249,7 +251,41 @@ def get_class_callees(cls_cursor, callee_class):
         
     return method_names
 
+def is_header(fpath):
+    return fpath.endswith( ('.h', '.hh', '.hpp') ) 
 
-
+def get_source_path_candidates(fpath):
+    dir_name, fname = os.path.split(fpath)
+    fname_wo_surfix, _ = os.path.splitext(fname)
+    
+    sub_dir_candidates = ['', 'src']
+    surfix_candidates = ['.cc', '.cpp', '.c']
+    
+    
+    return [ os.path.join(dir_name, sub_dir, fname_wo_surfix+surfix) \
+             for sub_dir in sub_dir_candidates \
+             for surfix in surfix_candidates ]
+    
+def get_class_definition(cursor):
+    ''' given reference of a class, 
+    find the initial definition which is not a typedef
+    '''
+    if not cursor:
+        return None
+    
+    if is_class_definition(cursor):
+        return cursor
+    
+    if cursor.kind == CursorKind.TYPE_REF:
+        return get_class_definition(cursor.get_definition())
+    
+    if cursor.kind == CursorKind.TYPEDEF_DECL or \
+           cursor.kind == CursorKind.FIELD_DECL :
+        for c in cursor.get_children():
+            definition = get_class_definition(c)
+            if definition:
+                return definition
+            
+    return None
 
 

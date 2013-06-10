@@ -35,6 +35,8 @@ public:
     {
 	
     }
+
+    int m_i;
 };
 
 

@@ -54,24 +54,46 @@ def get_class_cursor_in_file(source, class_name, file_path):
                               is_cursor_in_file_func(file_path))
  		
  	
-def get_all_class_cursors(source, header_path):
+def get_all_class_cursors(source, header_path = None):
     ''' get all cursors of class or struct type, defined in header_path'''
+    
+    if not header_path:
+        is_visit_subtree_fun = lambda _c, _l : True
+    else:
+        is_visit_subtree_fun = is_cursor_in_file_func(header_path)
+    
     return util.get_cursors_if(source, sem.is_class, \
-                                is_cursor_in_file_func(header_path))
+                                is_visit_subtree_fun)
  
 def get_all_class_names(source, header_path):
     ''' get names of all class or struct type'''
+    
     return util.get_cursors_if(source, sem.is_class, \
                                 is_cursor_in_file_func(header_path), \
                                 transform_fun = get_name)
 
-def get_classes_with_names(source, names, header_path):
+def get_classes_with_names(source, names):
     """ get classes with given names
 
     `names` : a list of class names
     """
 
-    classes = get_all_class_cursors(source, header_path)
+    classes = get_all_class_cursors(source)
     return [cls for cls in classes if cls.spelling in names]
     
+def get_member_var_classes(cls_cursor):
+    member_var_cursors = get_children_attrs(cls_cursor, 
+                                            sem.is_non_static_var, 
+                                            attr_getter=lambda c: c)
+    member_with_def_classes = []
+    for member_var in member_var_cursors:
+        cls_def_cursor = sem.get_class_definition(member_var)
+        if cls_def_cursor:
+            member_with_def_classes.append((member_var, \
+                                       cls_def_cursor))
+    return member_with_def_classes
 
+def get_used_cls_names(func_cursor):
+  ''' get names of the  classes  used by func_cursor
+  '''
+  pass
