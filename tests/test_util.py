@@ -127,13 +127,13 @@ def test_walk_ast():
 
     namespace.node_count = 0
     walk_ast(_cursor_A, partial(count_level_node, expected_level = 2))
-    eq_(19, namespace.node_count)
+    eq_(18, namespace.node_count)
 
     # test with is_visit_subtree_fun
     namespace.node_count = 0
     walk_ast(_cursor_A, partial(count_level_node, expected_level = 2),
              lambda _, level: level <= 2)
-    eq_(19, namespace.node_count)
+    eq_(18, namespace.node_count)
     
     namespace.node_count = 0
     walk_ast(_cursor_A, partial(count_level_node, expected_level = 2),

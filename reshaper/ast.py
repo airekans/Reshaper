@@ -4,11 +4,11 @@ from clang.cindex import  TranslationUnit
 import cPickle, pickle
 from clang.cindex import Config
 from clang.cindex import CompilationDatabase as CDB
-from reshaper.util import get_cursor_if, is_cursor_in_file_func, check_diagnostics
+from reshaper.util import is_cursor_in_file_func, check_diagnostics
 import ConfigParser
 import logging, os
 from reshaper.semantic import get_source_path_candidates, is_header
-from reshaper import util
+from reshaper import util, semantic as sem
 
 _CONF = Config()
 
@@ -115,10 +115,13 @@ class TokenCache(object):
 class CursorCache(object):
     ''' Cache for Cursor'''
     hash2cursor = {}
-    def __init__(self, cursor, tu_file_path):
+    def __init__(self, cursor, _tu, parent = None, \
+                 is_ignore_cursor_in_other_file = True):   
         
+        if not hasattr(_tu, 'cursor'):
+            _tu.cursor = self
         
-        self._tu_file_path = tu_file_path
+        self._tu = _tu
         self._cursor = cursor
          
         self.spelling = cursor.spelling 
@@ -133,78 +136,113 @@ class CursorCache(object):
         self._declaration = None
         self._semantic_parent =  None
         self._lexical_parent =  None
+        self._is_ref_updated = False
         
         self._tokens = [TokenCache(t) for t in cursor.get_tokens()]
 
         self._children = []
-        
-        self._cursor = cursor
+    
         self.location = LocationCache(cursor.location)
         self.kind = CursorKindCache(cursor.kind)
-        self._parent =  None
+        self._parent =  parent
         
         self.hash = cursor.hash
         CursorCache.hash2cursor[self.hash] = self
         
 
         for c in cursor.get_children():
-            child = self.create_cursor_cache(c)
+            child = self.create_cursor_cache(c, self, 
+                                             is_ignore_cursor_in_other_file)
             if not child:
                 continue
-            child.set_parent(self)
-            self._children.append(child)
+            
     
     def is_cursor_in_tu_file(self, cursor):
-        return is_cursor_in_file_func(self._tu_file_path)(cursor)  
+        return is_cursor_in_file_func(self._tu.path)(cursor)  
         
-    def create_cursor_cache(self, cursor):
+    def create_cursor_cache(self, cursor, parent, \
+                            is_ignore_cursor_in_other_file):
         '''is_ref_cursor means the cursor is
            declaration, definition, semantic_parent or lexical_parent '''         
         if not cursor:
             return None
         
+        
+        is_in_tu_file = self.is_cursor_in_tu_file(cursor)
+        
         key = cursor.hash
         if key in CursorCache.hash2cursor:
             return CursorCache.hash2cursor[key]
-#         elif not self.is_cursor_in_tu_file(cursor):
-#             if is_ref_cursor:
-#                 return CursorLazyLoad(cursor, self._tu_file_path)
-#             else:
-#                 return None
+        elif is_ignore_cursor_in_other_file and \
+            not is_in_tu_file:
+            return None
         else:
-            cc = CursorCache(cursor, self._tu_file_path) 
-            cc.update_ref_cursors()
+            cc = CursorCache(cursor, self._tu, parent, 
+                             is_ignore_cursor_in_other_file) 
+            if not is_in_tu_file and \
+                    parent == self._tu.cursor:
+                parent.prepend_child(cc)
+            else:
+                parent.append_child(cc)
+            
+#             if not is_in_tu_file and \
+#                 (sem.is_typeref(cursor) or sem.is_base_sepcifier(cursor)):
+#                 cc.update_ref_cursors(False)
+                
             return cc
     
-    def update_ref_cursors(self):
+    def update_ref_cursors(self, is_update_children = True) :
+        
+        if self._is_ref_updated:
+            return
+        
+        parent = self._tu.cursor
+        
+        is_ignore_cursor_in_other_file = False
+        
+        create_cur_func = lambda _c: self.create_cursor_cache(_c, parent, \
+                                            is_ignore_cursor_in_other_file)      
               
         _definition = self._cursor.get_definition()
-        self._definition = self.create_cursor_cache(_definition)
+        self._definition = create_cur_func(_definition)
          
         _declaration = util.get_declaration(self._cursor)
-        self._declaration = self.create_cursor_cache(_declaration)
+        self._declaration = create_cur_func(_declaration)
         
         _semantic_parent = self._cursor.semantic_parent 
-        self._semantic_parent = self.create_cursor_cache(_semantic_parent)
+        self._semantic_parent = create_cur_func(_semantic_parent)
         
         _lexical_parent =  self._cursor.lexical_parent
-        self._lexical_parent = self.create_cursor_cache(_lexical_parent)
+        self._lexical_parent = create_cur_func(_lexical_parent)
         
-        for c in self._children:
-            c.update_ref_cursors()
+        self._is_ref_updated = True
+        
+        if is_update_children:
+            for c in self._children:
+                c.update_ref_cursors()
         
     
     def __getstate__(self):
         dic_copy = dict(self.__dict__)
         del dic_copy['_cursor'] 
+        del dic_copy['_tu']
+        del dic_copy['_is_ref_updated']
         return dic_copy   
     
     def __setstate__(self, state):
         self.__dict__.update(state)
         self._cursor = None
+        self._tu = None
         
     def get_children(self):    
         return self._children
+    
+    def prepend_child(self, c):
+        
+        self._children.insert(0, c)
+        
+    def append_child(self, c):
+        self._children.append(c)
    
     def get_tokens(self): 
         return self._tokens
@@ -298,9 +336,17 @@ class DiagnosticCache(object):
 class TUCache(object):
     def __init__(self, tu, tu_path):
         CursorCache.hash2cursor.clear()
-        self.cursor = CursorCache(tu.cursor, tu_path)
-        self.cursor.update_ref_cursors()
+        self.path = tu_path
+        self.cursor = CursorCache(tu.cursor, self, None, 
+                                  True)
+        for _i in range(0, 2):
+            print _i
+            for c in self.cursor.get_children():
+                is_update_children = (_i==0)
+                c.update_ref_cursors(is_update_children)
+        
         self.diagnostics = [DiagnosticCache(diag) for diag in tu.diagnostics]
+        
     
     def xml_dump(self, file_path):
         ''' dump with text format '''
@@ -420,6 +466,9 @@ def get_tu(source, all_warnings=False, config_path = '~/.reshaper.cfg',
 def save_ast(file_path, output_path=None , is_readable=False, \
              config_path=None, cdb_path=None, ref_source = None):
     
+    cache_path = get_ast_path(output_path, file_path, is_readable)
+    print 'Saving ast of %s to %s' % (file_path, cache_path)
+    
     _tu = get_tu(file_path, lookup_cache_file_first = False,
                  cdb_path = cdb_path,
                  config_path = config_path,
@@ -432,10 +481,6 @@ def save_ast(file_path, output_path=None , is_readable=False, \
     check_diagnostics(_tu.diagnostics)
     
     cache_tu = TUCache(_tu, file_path)
-        
-    cache_path = get_ast_path(output_path, file_path, is_readable)
-    
-    print 'Saving ast of %s to %s' % (file_path, cache_path)
         
     if is_readable:
         cache_tu.xml_dump(cache_path)
