@@ -2,7 +2,7 @@
 '''
 from clang.cindex import  TranslationUnit
 import cPickle, pickle
-from clang.cindex import Config
+from clang.cindex import Config, CursorKind
 from clang.cindex import CompilationDatabase as CDB
 from reshaper.util import is_cursor_in_file_func, check_diagnostics
 import ConfigParser
@@ -124,6 +124,9 @@ class CursorCache(object):
         self._tu = _tu
         self._cursor = cursor
          
+        print cursor.displayname
+        
+         
         self.spelling = cursor.spelling 
         self.displayname = cursor.displayname
         self.usr = cursor.get_usr()
@@ -177,6 +180,10 @@ class CursorCache(object):
             not is_in_tu_file:
             return None
         else:
+            is_ignore_cursor_in_other_file = \
+                        is_ignore_cursor_in_other_file or \
+                            (cursor.kind == CursorKind.NAMESPACE) or \
+                              sem.is_function_definition(cursor)
             cc = CursorCache(cursor, self._tu, parent, 
                              is_ignore_cursor_in_other_file) 
             if not is_in_tu_file and \
@@ -216,6 +223,8 @@ class CursorCache(object):
         self._lexical_parent = create_cur_func(_lexical_parent)
         
         self._is_ref_updated = True
+        
+        is_update_children = is_update_children 
         
         if is_update_children:
             for c in self._children:
@@ -343,7 +352,7 @@ class TUCache(object):
             print _i
             for c in self.cursor.get_children():
                 is_update_children = (_i==0)
-                c.update_ref_cursors(is_update_children)
+                c.update_ref_cursors()
         
         self.diagnostics = [DiagnosticCache(diag) for diag in tu.diagnostics]
         
@@ -418,7 +427,7 @@ def get_tu(source, all_warnings=False, config_path = '~/.reshaper.cfg',
             _source2tu[full_path] = _tu
             return _tu
         
-    args = ['-x', 'c++', '-std=c++11']
+    args = ['-x', 'c++']
  
     if all_warnings:
         args += ['-Wall', '-Wextra']
