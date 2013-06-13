@@ -5,7 +5,7 @@ Created on May 30, 2013
 '''
 
 from jinja2 import Template
-import reshaper.semantic as sem
+import semantic as sem, util
 
 NODE_TEMPLATE = \
 '''
@@ -33,7 +33,7 @@ class DotGenertor(object):
         self._label2node = {}
         self._dot_str = ''
         
-    def _add_node(self, label):
+    def add_node(self, label):
         if label in self._label2node:
             return
         
@@ -46,8 +46,8 @@ class DotGenertor(object):
         self._dot_str += template.render(label=label, node = node)  
     
     def add_inherit_class(self, base_cls_name, child_cls_name):
-        self._add_node(base_cls_name)
-        self._add_node(child_cls_name)
+        self.add_node(base_cls_name)
+        self.add_node(child_cls_name)
         
         template = Template(INHERIT_TEMPLATE)
         base_node = self._label2node[base_cls_name]
@@ -57,8 +57,8 @@ class DotGenertor(object):
                                          base=base_node)
         
     def add_composite_class(self, cls_name, member_name, member_cls_name):
-        self._add_node(cls_name)
-        self._add_node(member_cls_name)
+        self.add_node(cls_name)
+        self.add_node(member_cls_name)
         
         template = Template(COMPOSITE_TEMPLATE)
         cls_node = self._label2node[cls_name]
@@ -69,8 +69,8 @@ class DotGenertor(object):
                                          member=member_name)
     
     def add_callee_class(self, cls_name, callee_name, callee_cls_name):
-        self._add_node(cls_name)
-        self._add_node(callee_cls_name)
+        self.add_node(cls_name)
+        self.add_node(callee_cls_name)
         
         template = Template(CALLEE_TEMPLATE)
         cls_node = self._label2node[cls_name]
@@ -93,6 +93,31 @@ digraph G {
         return head  + self._dot_str + tail
 
 
+
+def gen_class_internal_relation_graph(_tu, class_name):
+    dot_gen = DotGenertor()
+    cls_cursor = sem.get_classes_with_names(_tu, [class_name])[0]
+    all_methods = sem.get_methods_from_class(cls_cursor)
+    
+    for method_cursor in all_methods:
+        method_def = method_cursor.get_definition()
+        if method_def is not None:
+            cursors = util.get_cursors_if(method_def, \
+                                         lambda c: c != method_def and \
+                                         sem.is_member_of(c, cls_cursor.spelling))
+            hash2cursor = {}
+            for cursor in cursors:
+                decl_cusor = util.get_declaration(cursor)
+                if decl_cusor == method_def or decl_cusor.hash in hash2cursor:
+                    continue
+                dot_gen.add_callee_class(method_def.displayname, '', 
+                                         decl_cusor.displayname)
+                hash2cursor[decl_cusor.hash] = decl_cusor
+                
+            if not cursors:
+                dot_gen.add_node(method_def.displayname)
+                
+    return dot_gen.get_dot_str()
 
 def gen_class_collaboration_graph(_tu, class_names, source_dir= None, show_functions = True):
     '''

@@ -243,6 +243,7 @@ def get_func_callees(fun_cursor,
     return hash2decl_cursor
 
 
+#FIXME: is_member_of may have bugs, should not match with spelling
 def is_member_of(cursor, callee_class_name):
     
     decl_sem_parent = get_semantic_parent_of_decla_cursor(cursor)
@@ -295,6 +296,7 @@ def get_class_callees(cls_cursor,  \
     """
     all_methods = get_methods_from_class(cls_cursor)
     cursor_dict = {}
+    
     
     keep_func_new = lambda c: keep_func(c) and not is_member_of(c, cls_cursor.spelling)  
        
