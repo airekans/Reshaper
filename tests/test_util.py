@@ -7,7 +7,6 @@ import os
 from functools import partial
 from nose.tools import eq_, with_setup
 
-
 INPUT_DIR = os.path.join(os.path.dirname(__file__), 'test_data')
 _tu = None
 _cursor_A = None
@@ -15,7 +14,6 @@ _cursor_A = None
 def setup():
     global _tu
     source = os.path.join(INPUT_DIR, 'class.cpp')
-    save_ast(source)
     
     _tu = get_tu(source, config_path = None)
     assert(_tu is not None)
@@ -127,13 +125,13 @@ def test_walk_ast():
 
     namespace.node_count = 0
     walk_ast(_cursor_A, partial(count_level_node, expected_level = 2))
-    eq_(18, namespace.node_count)
+    eq_(19, namespace.node_count)
 
     # test with is_visit_subtree_fun
     namespace.node_count = 0
     walk_ast(_cursor_A, partial(count_level_node, expected_level = 2),
              lambda _, level: level <= 2)
-    eq_(18, namespace.node_count)
+    eq_(19, namespace.node_count)
     
     namespace.node_count = 0
     walk_ast(_cursor_A, partial(count_level_node, expected_level = 2),

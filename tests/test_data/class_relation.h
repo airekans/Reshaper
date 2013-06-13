@@ -71,4 +71,6 @@ class A: public A0
     void m_func1();
     void m_func2();
     void m_func3(Z* z);
+
+    static int m_si;
 };

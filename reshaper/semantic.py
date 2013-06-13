@@ -117,7 +117,7 @@ def is_pointer(cursor):
     
     return is_smart_ptr(cursor)
     
-def is_non_static_var(cursor):
+def is_cls_non_static_member_var(cursor):
     ''' is non-static member var'''
     return cursor.kind == CursorKind.FIELD_DECL
 
@@ -409,13 +409,13 @@ def get_children_attrs(cursor, keep_func,
     
 def get_non_static_var_names(cursor):
     ''' get names of non-static members''' 
-    return get_children_attrs(cursor, is_non_static_var) 
+    return get_children_attrs(cursor, is_cls_non_static_member_var) 
 
 
 def get_non_static_nonpt_var_names(cursor):  
     '''get names of all member variables \
     of non-pointer type from a class cursor'''
-    keep_func = lambda c: is_non_static_var(c) and not is_pointer(c)
+    keep_func = lambda c: is_cls_non_static_member_var(c) and not is_pointer(c)
     return get_children_attrs(cursor, keep_func)
    
 
@@ -423,7 +423,7 @@ def get_non_static_pt_var_names(cursor):
     '''get names of all pointers type member variables\
     from a class cursor
     '''
-    keep_func = lambda c: is_non_static_var(c) and is_pointer(c)
+    keep_func = lambda c: is_cls_non_static_member_var(c) and is_pointer(c)
     return get_children_attrs(cursor, keep_func)
 
     
@@ -464,7 +464,7 @@ def get_classes_with_names(source, names):
     
 def get_member_var_classes(cls_cursor, keep_cls_func=lambda c: True):
     member_var_cursors = get_children_attrs(cls_cursor, 
-                                            is_non_static_var, 
+                                            is_cls_non_static_member_var, 
                                             attr_getter=lambda c: c)
     member_with_def_classes = []
     for member_var in member_var_cursors:

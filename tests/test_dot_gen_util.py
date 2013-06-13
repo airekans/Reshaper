@@ -5,7 +5,8 @@ Created on May 30, 2013
 '''
 import unittest, os
 from reshaper.dot_gen_util import DotGenertor, gen_class_collaboration_graph
-from reshaper.ast import get_tu, save_ast
+from reshaper.ast import get_tu
+
 
 #the test result string is long, so ignore this warning
 #pylint: disable-msg=C0301
@@ -71,7 +72,6 @@ digraph G {
         ''' test gen_class_collaboration_graph'''
         src_path = os.path.join(os.path.dirname(__file__),
                                 'test_data','class_relation.cpp') 
-        save_ast(src_path)
         _tu = get_tu(src_path)
         
         data_dir = os.path.join(os.path.dirname(__file__), 'test_data')

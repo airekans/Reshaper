@@ -5,7 +5,7 @@ Created on May 30, 2013
 '''
 
 from jinja2 import Template
-import semantic as sem
+import reshaper.semantic as sem
 
 NODE_TEMPLATE = \
 '''
