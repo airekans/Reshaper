@@ -110,14 +110,14 @@ def gen_class_internal_relation_graph(_tu, class_name):
                 decl_cusor = util.get_declaration(cursor)
                 if decl_cusor == method_def or \
                     decl_cusor.hash in hash2cursor or \
-                     not decl_cusor.displayname:
+                     not decl_cusor.spelling:
                     continue
-                dot_gen.add_callee_class(method_def.displayname, '', 
-                                         decl_cusor.displayname)
+                dot_gen.add_callee_class(method_def.spelling, '', 
+                                         decl_cusor.spelling)
                 hash2cursor[decl_cusor.hash] = decl_cusor
                 
             if not cursors:
-                dot_gen.add_node(method_def.displayname)
+                dot_gen.add_node(method_def.spelling)
                 
     return dot_gen.get_dot_str()
 
