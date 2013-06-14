@@ -6,7 +6,7 @@ Created on Apr 7, 2013
 
 from reshaper import class_serializer as cs
 from optparse import OptionParser 
-from reshaper import header_util as hu, util
+from reshaper import semantic as sem, util
 from reshaper.option import setup_options
 import sys
 from clang.cindex import TranslationUnit
@@ -53,9 +53,9 @@ def _main():
     util.check_diagnostics(tu_.diagnostics)
     
     if len(args) == 1:
-        classes = hu.get_all_class_cursors(tu_, header_path)
+        classes = sem.get_all_class_cursors(tu_, header_path)
     else:
-        classes = hu.get_classes_with_names(tu_, args[1:])
+        classes = sem.get_classes_with_names(tu_, args[1:])
 
     tmp_classes = []
     for cls in classes:

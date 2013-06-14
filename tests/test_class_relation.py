@@ -4,16 +4,18 @@ Created on May 19, 2013
 @author: liangzhao
 '''
 import os, unittest
-from reshaper.ast import get_tu
+from reshaper.ast import get_tu, save_ast
 from reshaper.util import get_cursor
 import reshaper.semantic as sem
-import reshaper.header_util as hu
 
-CLASS_RELATION_INPUT_FILE = os.path.join(os.path.dirname(__file__),
+CLASS_RELATION_INPUT_HEADER_FILE = os.path.join(os.path.dirname(__file__),
                                      'test_data','class_relation.h')    
+CLASS_RELATION_INPUT_SRC_FILE = os.path.join(os.path.dirname(__file__),
+                                     'test_data','class_relation.cpp') 
+
 class TestClassRelation(unittest.TestCase):  
     def setUp(self):
-        _tu = get_tu(CLASS_RELATION_INPUT_FILE)
+        _tu = get_tu(CLASS_RELATION_INPUT_HEADER_FILE)
         self._cls_cursor = get_cursor(_tu, 'A')
         assert(self._cls_cursor)
         
@@ -22,7 +24,8 @@ class TestClassRelation(unittest.TestCase):
                               ['m_x1', 'X'],
                               ['m_x2', 'X'],
                               ['m_y1', 'Y'],
-                              ['m_y2', 'Y']
+                              ['m_y2', 'Y'],
+                              ['m_other', 'Other']
                              ]
 
     
@@ -52,7 +55,7 @@ class TestClassRelation(unittest.TestCase):
         self._check_non_class_member('m_pc')
               
     def test_get_member_var_classes(self):
-        member_with_definitions = hu.get_member_var_classes(\
+        member_with_definitions = sem.get_member_var_classes(\
                                         self._cls_cursor)
         self.assertEqual(len(self._member2class_results), \
                          len(member_with_definitions))
@@ -61,7 +64,27 @@ class TestClassRelation(unittest.TestCase):
             in zip(self._member2class_results, member_with_definitions):
             self.assertEqual(member_name, member_cursor.spelling)
             self.assertEqual(cls_name, cls_def_cursor.spelling)
+            
+    
+    def test_get_class_callee_class_names(self):
+        save_ast(CLASS_RELATION_INPUT_SRC_FILE)
+        _tu = get_tu(CLASS_RELATION_INPUT_SRC_FILE, lookup_cache_file_first = True)
+        cls_cursor = get_cursor(_tu, 'A')
+        names = sem.get_used_cls_names(cls_cursor)
         
+        expected_names = ['X', 'Y1', 'Z', 'Other', 'auto_ptr']
+        self.assertEqual(len(expected_names), len(names))
+        self.assertEqual(set(expected_names), set(names)) 
+        
+    def test_get_base_cls_cursors(self):
+        _tu = get_tu(CLASS_RELATION_INPUT_HEADER_FILE)
+        cls_cursor = get_cursor(_tu, 'XY')
+        base_cursors = sem.get_base_cls_cursors(cls_cursor)
+        self.assertEqual(2, len(base_cursors))
+        expected_base_names = ['X', 'Y']
+        
+        for name, cursor in zip(expected_base_names, base_cursors):
+            self.assertEqual(name, cursor.spelling)
 
 if __name__ == '__main__':
     unittest.main()
