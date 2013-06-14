@@ -108,7 +108,9 @@ def gen_class_internal_relation_graph(_tu, class_name):
             hash2cursor = {}
             for cursor in cursors:
                 decl_cusor = util.get_declaration(cursor)
-                if decl_cusor == method_def or decl_cusor.hash in hash2cursor:
+                if decl_cusor == method_def or \
+                    decl_cusor.hash in hash2cursor or \
+                     not decl_cusor.displayname:
                     continue
                 dot_gen.add_callee_class(method_def.displayname, '', 
                                          decl_cusor.displayname)
