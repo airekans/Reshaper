@@ -7,7 +7,7 @@ from optparse import OptionParser
 import os
 from reshaper.option import setup_options
 from reshaper.ast import get_tu
-from reshaper.dot_gen_util import gen_class_collaboration_graph
+import reshaper.dot_gen_util as dgu
 
 def main():
     ''' main '''
@@ -22,6 +22,9 @@ def main():
     option_parser.add_option("-s", "--show_functions", dest = "show_func", \
                              action="store_true", \
                              help = "show function names")
+    option_parser.add_option("-i", "--internal", dest = "internal", \
+                             action="store_true", \
+                             help = "generate internal relationship graph")
     
     setup_options(option_parser)
     (options, args) = option_parser.parse_args()
@@ -42,7 +45,11 @@ def main():
                        config_path = options.config,
                        cdb_path = options.cdb_path)
     
-    print gen_class_collaboration_graph(tu_source, class_names, 
+    if options.internal:
+        for class_name in class_names:
+            print dgu.gen_class_internal_relation_graph(tu_source, class_name)
+    else:
+        print dgu.gen_class_collaboration_graph(tu_source, class_names, 
                                         options.dir, options.show_func)
 
 if __name__ == '__main__':
