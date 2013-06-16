@@ -46,11 +46,21 @@ def main():
                        cdb_path = options.cdb_path)
     
     if options.internal:
-        for class_name in class_names:
-            print dgu.gen_class_internal_relation_graph(tu_source, class_name)
+        dot_str = dgu.gen_class_internal_relation_graph(tu_source, class_names[0])
     else:
-        print dgu.gen_class_collaboration_graph(tu_source, class_names, 
+        dot_str = dgu.gen_class_collaboration_graph(tu_source, class_names, 
                                         options.dir, options.show_func)
+        
+    source_wo_ext = os.path.splitext(file_path)[0]     
+    dot_file = source_wo_ext + '.dot'
+    image_file = source_wo_ext + '.png'
+
+    print 'Generating dot file %s' % dot_file
+    with open(dot_file,'w') as f:
+        f.writelines(dot_str)
+    
+    print  'Generating image file %s' % image_file   
+    os.system('dot -Tpng -o %s %s' % (image_file, dot_file))
 
 if __name__ == '__main__':
     main()
