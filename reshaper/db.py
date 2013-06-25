@@ -1,16 +1,17 @@
-from sqlalchemy import (create_engine, Column, ForeignKey)
+from sqlalchemy import create_engine, Column, ForeignKey
 from sqlalchemy import Integer, String, Boolean
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.orm import relationship, backref
 from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm.collections import attribute_mapped_collection
 import weakref
 
-engine = create_engine('sqlite://', echo=True)
-# engine = create_engine('sqlite://', echo=True)
-Base = declarative_base()
+
+_engine = create_engine('sqlite:///test.db', echo=True)
+_Base = declarative_base()
 
 
-class Cursor(Base):
+class Cursor(_Base):
     " Cursor DB representation  "
     
     __tablename__ = 'cursor'
@@ -25,10 +26,43 @@ class Cursor(Base):
     type = relationship('Type',
                         backref = backref('instances', order_by = id))
 
-    def __init__(self):
-        pass
+    parent_id = Column(Integer, ForeignKey(id))
+    children = relationship("Cursor",
 
-class Type(Base):
+                        # cascade deletions
+                        cascade="all",
+
+                        # many to one + adjacency list - remote_side
+                        # is required to reference the 'remote'
+                        # column in the join condition.
+                        backref=backref("parent", remote_side=id),
+
+                        # children will be represented as a dictionary
+                        # on the "name" attribute.
+                        collection_class=attribute_mapped_collection('name'),
+                    )
+
+    def __init__(self, spelling, displayname, usr, is_definition):
+        self.spelling = spelling
+        self.displayname = displayname
+        self.usr = usr
+        self.is_definition = is_definition
+
+    @classmethod
+    def from_clang_cursor(cls, cursor):
+        """ Static method to create a cursor from libclang's cursor
+        
+        Arguments:
+        - `cursor`:
+        """
+
+        return cls(cursor.spelling, cursor.displayname,
+                   cursor.get_usr(), cursor.is_definition())
+
+        
+        
+
+class Type(_Base):
     "Type DB represention"
 
     __tablename__ = 'type'
@@ -39,60 +73,28 @@ class Type(Base):
 
     def __init__(self):
         pass
+
+
+_Base.metadata.create_all(_engine) 
+
+_Session = sessionmaker(bind=_engine)
+_session = _Session()
+
+
+def build_db_tree(cursor):
+
+    def build_db_cursor(cursor, parent):
+        db_cursor = Cursor.from_clang_cursor(cursor)
+        db_cursor.parent = parent
+
+        _session.add(db_cursor)
+        _session.commit()
+
+        for child in cursor.get_children():
+            build_db_cursor(child, db_cursor)
+
+        _session.expire(db_cursor)
     
-
-def main():
-    " main entry point  "
+    build_db_cursor(cursor, None)
     
-    Base.metadata.create_all(engine) 
-
-    Session = sessionmaker(bind=engine)
-    session = Session()
-
-
-    # cursor = Cursor(spelling="abc", displayname="abc", is_definition=True)
-    # type_obj = Type(is_const_qualified=False)
-
-    # cursor.type = type_obj
-
-    # session.add(cursor)
-    # session.commit()
-
-    cursor1 = None
-    for cursor in session.query(Cursor).order_by(Cursor.id):
-        print cursor.type
-        cursor1 = cursor
-
-    print "query User.type"
-    print
-
-    type_ref = weakref.ref(cursor1.type)
-
-    print "weakref", type_ref()
-
-    session.expire(cursor1)
-
-    print "after expire"
-    print "weakref", type_ref()
-
-
-    print cursor.type
-    
-
-# def build_db_tree(cursor, parent):
-#     db_cursor = db.Cursor(cursor)
-#     db_cursor.parent = parent
-
-#     session.add(db_cursor)
-
-#     for child in cursor.get_children():
-#         build_db_tree(child, db_cursor)
-
-#     session.expire(db_cursor)
-    
-    
-if __name__ == '__main__':
-    main()
-
-
 

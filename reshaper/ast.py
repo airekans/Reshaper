@@ -418,10 +418,10 @@ def get_tu(source, all_warnings=False, config_path = '~/.reshaper.cfg',
     
     _tu = TranslationUnit.from_source(source, args)
     
-    cache_tu = TUCache(_tu, source)
-    _source2tu[full_path] = cache_tu
+    # cache_tu = TUCache(_tu, source)
+    # _source2tu[full_path] = cache_tu
     
-    return cache_tu
+    return _tu
 
 def save_ast(file_path, _dir=None , is_readable=False, \
              config_path=None, cdb_path=None, ref_source = None):
