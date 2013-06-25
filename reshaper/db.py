@@ -81,6 +81,7 @@ _Session = sessionmaker(bind=_engine)
 _session = _Session()
 
 
+_weak_refs = []
 def build_db_tree(cursor):
 
     def build_db_cursor(cursor, parent):
@@ -89,6 +90,8 @@ def build_db_tree(cursor):
 
         _session.add(db_cursor)
         _session.commit()
+
+        _weak_refs.append(weakref.ref(db_cursor))
 
         for child in cursor.get_children():
             build_db_cursor(child, db_cursor)
