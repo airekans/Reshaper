@@ -9,6 +9,7 @@ if __name__ == '__main__':
         print ""
 
     db.build_db_cursor_kind()
+    db.build_db_type_kind()
     
     tu = get_tu(sys.argv[1], is_from_cache_first = False)
     db.build_db_tree(tu.cursor)

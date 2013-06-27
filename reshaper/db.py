@@ -4,6 +4,7 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.orm import relationship, backref
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm.collections import attribute_mapped_collection
+from sqlalchemy.orm.exc import MultipleResultsFound, NoResultFound
 import weakref
 import clang.cindex
 
@@ -117,11 +118,88 @@ class Type(_Base):
     __tablename__ = 'type'
     
     id = Column(Integer, primary_key = True)
+
+    element_count = Column(Integer, nullable = True)
+    spelling = Column(String, nullable = False)
     
     is_const_qualified = Column(Boolean, nullable = False)
+    is_volatile_qualified = Column(Boolean, nullable = False)
+    is_restrict_qualified = Column(Boolean, nullable = False)
+    is_function_variadic = Column(Boolean, nullable = False)
+    is_pod = Column(Boolean, nullable = False)
 
-    def __init__(self):
-        pass
+    pointee_id = Column(Integer, ForeignKey(id))
+    pointee = relationship("Type",
+
+                        # cascade deletions
+                        cascade="all",
+
+                        # many to one + adjacency list - remote_side
+                        # is required to reference the 'remote'
+                        # column in the join condition.
+                        backref=backref("pointer", remote_side=id))
+
+    kind_id = Column(Integer, ForeignKey("type_kind.id"))
+    kind = relationship('TypeKind',
+                        backref = backref('types', order_by = id))
+
+
+    def __init__(self, cursor_type):
+        if cursor_type.kind == clang.cindex.TypeKind.CONSTANTARRAY or \
+           cursor_type.kind == clang.cindex.TypeKind.VECTOR:
+            self.element_count = cursor_type.element_count
+        self.spelling = cursor_type.spelling
+        self.is_const_qualified = cursor_type.is_const_qualified()
+        self.is_volatile_qualified = cursor_type.is_volatile_qualified()
+        self.is_restrict_qualified = cursor_type.is_restrict_qualified()
+        if cursor_type.kind == clang.cindex.TypeKind.FUNCTIONPROTO:
+            self.is_function_variadic = cursor_type.is_function_variadic()
+        else:
+            self.is_function_variadic = False
+        self.is_pod = cursor_type.is_pod()
+
+    @staticmethod
+    def from_clang_type(cursor_type):
+        try:
+            _type = _session.query(Type).join(TypeKind).\
+                filter(TypeKind.name == cursor_type.kind.name).\
+                filter(Type.spelling == cursor_type.spelling).\
+                filter(Type.is_const_qualified ==
+                       cursor_type.is_const_qualified()).one()
+        except MultipleResultsFound, e:
+            print e
+            raise
+        except NoResultFound: # The type has not been stored in DB.
+            _type = Type(cursor_type)
+            _type.kind = TypeKind.from_clang_type_kind(cursor_type.kind)
+
+        return _type
+        
+
+class TypeKind(_Base):
+
+    __tablename__ = "type_kind"
+    
+    id = Column(Integer, primary_key = True)
+    
+    name = Column(String, nullable = False)
+    spelling = Column(String, nullable = False)
+
+    def __init__(self, type_kind):
+        self.name = type_kind.name
+        self.spelling = type_kind.spelling
+
+    @staticmethod
+    def from_clang_type_kind(type_kind):
+        """ Get the DB TypeKind from clang's TypeKind
+        
+        Arguments:
+        - `type_kind`:
+        """
+
+        query = _session.query(TypeKind).filter(TypeKind.name == type_kind.name)
+        return query.first()
+        
 
 
 _Base.metadata.create_all(_engine) 
@@ -137,6 +215,9 @@ def build_db_tree(cursor):
         db_cursor.parent = parent
         db_cursor.left = left
         db_cursor.kind = CursorKind.from_clang_cursor_kind(cursor.kind)
+        if cursor.type is not None and \
+           cursor.type.kind != clang.cindex.TypeKind.INVALID:
+            db_cursor.type = Type.from_clang_type(cursor.type)
 
         child_left = left
         for child in cursor.get_children():
@@ -157,5 +238,12 @@ def build_db_cursor_kind():
 
     _session.add_all([CursorKind(kind) for kind in all_kinds])
     _session.commit()
-        
+
+def build_db_type_kind():
+    all_kinds = [clang.cindex.TypeKind.from_id(_i) for _i in xrange(30)]
+    all_kinds += [clang.cindex.TypeKind.from_id(_i)
+                  for _i in xrange(100, 114)]
+
+    _session.add_all([TypeKind(kind) for kind in all_kinds])
+    _session.commit()
 
