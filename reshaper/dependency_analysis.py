@@ -85,4 +85,7 @@ class DependencyAnalyzer(object):
         
         return calculate_set_dist(dep1, dep2)
     
+class ClsMemberCorrelationAnalyzer(object):
+    pass    
+    
     
