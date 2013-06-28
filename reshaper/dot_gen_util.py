@@ -33,7 +33,7 @@ class DotGenertor(object):
         self._label2node = {}
         self._dot_str = ''
         
-    def add_node(self, label):
+    def add_denpendency(self, label):
         if label in self._label2node:
             return
         
@@ -46,8 +46,8 @@ class DotGenertor(object):
         self._dot_str += template.render(label=label, node = node)  
     
     def add_inherit_class(self, base_cls_name, child_cls_name):
-        self.add_node(base_cls_name)
-        self.add_node(child_cls_name)
+        self.add_denpendency(base_cls_name)
+        self.add_denpendency(child_cls_name)
         
         template = Template(INHERIT_TEMPLATE)
         base_node = self._label2node[base_cls_name]
@@ -57,8 +57,8 @@ class DotGenertor(object):
                                          base=base_node)
         
     def add_composite_class(self, cls_name, member_name, member_cls_name):
-        self.add_node(cls_name)
-        self.add_node(member_cls_name)
+        self.add_denpendency(cls_name)
+        self.add_denpendency(member_cls_name)
         
         template = Template(COMPOSITE_TEMPLATE)
         cls_node = self._label2node[cls_name]
@@ -69,8 +69,8 @@ class DotGenertor(object):
                                          member=member_name)
     
     def add_callee_class(self, cls_name, callee_name, callee_cls_name):
-        self.add_node(cls_name)
-        self.add_node(callee_cls_name)
+        self.add_denpendency(cls_name)
+        self.add_denpendency(callee_cls_name)
         
         template = Template(CALLEE_TEMPLATE)
         cls_node = self._label2node[cls_name]
@@ -130,7 +130,7 @@ def gen_class_internal_relation_graph(_tu, class_name):
                                  callee_decl_cursor.spelling)
     
     on_no_callee_cursor = lambda method_def_cursor: \
-                            dot_gen.add_node(method_def_cursor.spelling)
+                            dot_gen.add_denpendency(method_def_cursor.spelling)
                         
     walk_all_methods_def(_tu, class_name, walk_func, on_no_callee_cursor)
                 

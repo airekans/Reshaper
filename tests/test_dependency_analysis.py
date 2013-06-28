@@ -32,7 +32,7 @@ class Test(unittest.TestCase):
         self.assertLess(dist2, 1)
         
     def test_cluster(self):
-        cluster = da.DependencyCluster()
+        analyzer = da.DependencyAnalyzer()
         test_data = ['a', 'a1',
                      'a', 'b1',
                      'a', 'c1',
@@ -41,16 +41,19 @@ class Test(unittest.TestCase):
                      'e', 'e1',
                      'e', 'f1',
                      'c1', 'c2',
-                     'e1', 'e2'
+                     'e1', 'e2',
+                     'e1', 'f2',
+                     'c1', 'e1',
+                     'c1', 'b'
                     ]
                
         for (node, depended) in zip(test_data[0::2], test_data[1::2]):
-            cluster.add_node(node, depended)
+            analyzer.add_denpendency(node, depended)
             
-        self.assertEqual(set(['a1','b1','c1','a']), cluster.get_depended_by('a'))
-        self.assertEqual(set(['a','b']), cluster.get_depending_on('c1'))
-            
-        print cluster.cluster(1)
+        self.assertEqual(set(['a1','b1','c1','a']), analyzer.get_depended_by('a'))
+        self.assertEqual(set(['a','b']), analyzer.get_depending_on('c1'))
+        self.assertEqual(set(['a','b','e','c1','e1']), analyzer.get_all_dependings('e2'))
+        self.assertEqual(set(['a','b','e','c1','e1']), analyzer.get_all_dependings('f2'))
         
 
 

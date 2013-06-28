@@ -4,7 +4,6 @@ Created on Jun 24, 2013
 @author: liangzhao
 '''
 
-from cluster import HierarchicalClustering
 
 def calculate_set_dist(set1, set2):
     if(len(set1)+ len(set2) ==0):
@@ -14,7 +13,7 @@ def calculate_set_dist(set1, set2):
     return 1 - len(intersect)*2.0/(len(set1)+len(set2))
 
 
-class DependencyCluster(object):
+class DependencyAnalyzer(object):
     '''
     dependency graph
     '''
@@ -25,7 +24,6 @@ class DependencyCluster(object):
         '''
         self.depended_dict = {}
         self.depending_dict = {}
-        self.all_nodes = set([])
         
     def __add_value(self, key, val, dict):
         
@@ -34,15 +32,13 @@ class DependencyCluster(object):
         except KeyError:
             dict[key] = set([val])  
     
-    def add_node(self, node, depeneded_node): 
+    def add_denpendency(self, node, depeneded_node): 
         '''
         add node
         '''
         self.__add_value(node, depeneded_node, self.depended_dict)  
         self.__add_value(node, node, self.depended_dict)  
         self.__add_value(depeneded_node, node, self.depending_dict) 
-        self.all_nodes.add(node)
-        self.all_nodes.add(depeneded_node) 
         
     def get_depended_by(self, node):
         '''
@@ -64,33 +60,24 @@ class DependencyCluster(object):
             return set([])
         
     
-    
-    def calculate_dist(self, node1, node2):
+    def get_all_dependings(self, node):
+        ''' 
+        get all nodes directly or indirectly depend on node
         '''
-        calculate distance of two nodes
-        '''
-        db1 = self.get_depended_by(node1)
-        db2 = self.get_depended_by(node2)
-        db_dist = calculate_set_dist(db1, db2)
+        all_dependings = set([node])
         
-        do1 = self.get_depending_on(node1)
-        do2 = self.get_depending_on(node2)
-        do_dist = calculate_set_dist(do1, do2)
-        
-        dist = db_dist + do_dist
-        print node1, node2, dist
-        
-        return dist
-         
-        
-    def cluster(self, threashold):  
-        all_nodes = list(self.all_nodes)
-        cl = HierarchicalClustering(all_nodes, self.calculate_dist)
-        return cl.getlevel(threashold)  
+        def _get_dependings(node, all_dependings):
+            for depending in self.get_depending_on(node):
+                if depending in all_dependings:
+                    continue
+                else:
+                    all_dependings.add(depending)
+                    _get_dependings(depending, all_dependings)
     
+        _get_dependings(node, all_dependings)
+        all_dependings.remove(node)
     
-    
-    
+        return all_dependings
     
     
     
