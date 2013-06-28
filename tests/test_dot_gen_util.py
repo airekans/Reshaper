@@ -172,7 +172,25 @@ digraph G {
         _tu = get_tu(src_path)
         
         dot_str = dgu.gen_class_internal_relation_graph(_tu, 'A')    
-        print dot_str 
+        
+        expected_dot_str = \
+'''
+digraph G {
+  rankdir = LR;
+  edge [fontname="Helvetica",fontsize="10",labelfontname="Helvetica",labelfontsize="10"];
+  node [fontname="Helvetica",fontsize="10",shape=record];
+  Node1 [label="m_func1",height=0.2,width=0.4,color="black", fillcolor="grey75", style="filled" fontcolor="black"];
+  Node2 [label="m_other",height=0.2,width=0.4,color="black", fillcolor="grey75", style="filled" fontcolor="black"];
+  Node1 -> Node2 [color="darkorchid3",fontsize="10",style="dashed",label="" ,fontname="Helvetica"];
+  Node3 [label="m_pc",height=0.2,width=0.4,color="black", fillcolor="grey75", style="filled" fontcolor="black"];
+  Node1 -> Node3 [color="darkorchid3",fontsize="10",style="dashed",label="" ,fontname="Helvetica"];
+  Node4 [label="m_func2",height=0.2,width=0.4,color="black", fillcolor="grey75", style="filled" fontcolor="black"];
+  Node4 -> Node1 [color="darkorchid3",fontsize="10",style="dashed",label="" ,fontname="Helvetica"];
+  Node5 [label="m_func3",height=0.2,width=0.4,color="black", fillcolor="grey75", style="filled" fontcolor="black"];
+  Node6 [label="m_si",height=0.2,width=0.4,color="black", fillcolor="grey75", style="filled" fontcolor="black"];
+  Node5 -> Node6 [color="darkorchid3",fontsize="10",style="dashed",label="" ,fontname="Helvetica"];
+}'''        
+        self.assertEqual(expected_dot_str, dot_str) 
         
         
 if __name__ == "__main__":

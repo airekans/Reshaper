@@ -93,10 +93,13 @@ digraph G {
         return head  + self._dot_str + tail
 
 
-
-def gen_class_internal_relation_graph(_tu, class_name):
-    dot_gen = DotGenertor()
-    cls_cursor = sem.get_classes_with_names(_tu, [class_name])[0]
+def walk_all_methods_def(_tu, class_name, func, on_no_callee):
+    '''
+    walk definition of all methods of class_name in _tu with func,
+    signature of func is func(method_def_cursor, callee_decl_cursor),
+    when a method has no callee, will pass it to on_no_callee 
+    '''
+    cls_cursor = sem.get_classes_with_names(_tu, class_name)[0]
     all_methods = sem.get_methods_from_class(cls_cursor)
     
     for method_cursor in all_methods:
@@ -105,19 +108,31 @@ def gen_class_internal_relation_graph(_tu, class_name):
             cursors = util.get_cursors_if(method_def, \
                                          lambda c: c != method_def and \
                                          sem.is_member_of(c, cls_cursor.spelling))
-            hash2cursor = {}
+            found_hash = set([]) 
             for cursor in cursors:
                 decl_cusor = util.get_declaration(cursor)
                 if decl_cusor == method_def or \
-                    decl_cusor.hash in hash2cursor or \
+                    decl_cusor.hash in found_hash or \
                      not decl_cusor.spelling:
                     continue
-                dot_gen.add_callee_class(method_def.spelling, '', 
-                                         decl_cusor.spelling)
-                hash2cursor[decl_cusor.hash] = decl_cusor
+                func(method_def, decl_cusor)
+                found_hash.add(decl_cusor.hash)
                 
             if not cursors:
-                dot_gen.add_node(method_def.spelling)
+                on_no_callee()
+
+
+def gen_class_internal_relation_graph(_tu, class_name):
+    dot_gen = DotGenertor()
+    
+    def walk_func(method_def_cursor, callee_decl_cursor):
+        dot_gen.add_callee_class(method_def_cursor.spelling, '', 
+                                 callee_decl_cursor.spelling)
+    
+    on_no_callee_cursor = lambda method_def_cursor: \
+                            dot_gen.add_node(method_def_cursor.spelling)
+                        
+    walk_all_methods_def(_tu, class_name, walk_func, on_no_callee_cursor)
                 
     return dot_gen.get_dot_str()
 
