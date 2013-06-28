@@ -79,6 +79,10 @@ class DependencyAnalyzer(object):
     
         return all_dependings
     
-    
+    def calculate_distance(self, node1, node2):
+        dep1 = self.get_all_dependings(node1)
+        dep2 = self.get_all_dependings(node2)
+        
+        return calculate_set_dist(dep1, dep2)
     
     

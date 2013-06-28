@@ -44,18 +44,29 @@ class Test(unittest.TestCase):
                      'e1', 'e2',
                      'e1', 'f2',
                      'c1', 'e1',
-                     'c1', 'b'
+                     'c1', 'b',
+                     'g1','g2'
+                     'g1','c2'
                     ]
                
         for (node, depended) in zip(test_data[0::2], test_data[1::2]):
             analyzer.add_denpendency(node, depended)
             
-        self.assertEqual(set(['a1','b1','c1','a']), analyzer.get_depended_by('a'))
-        self.assertEqual(set(['a','b']), analyzer.get_depending_on('c1'))
-        self.assertEqual(set(['a','b','e','c1','e1']), analyzer.get_all_dependings('e2'))
-        self.assertEqual(set(['a','b','e','c1','e1']), analyzer.get_all_dependings('f2'))
+        self.assertEqual(set(['a1','b1','c1','a']), 
+                         analyzer.get_depended_by('a'))
+        self.assertEqual(set(['a','b']), 
+                         analyzer.get_depending_on('c1'))
+        self.assertEqual(set(['a','b','e','c1','e1']), 
+                         analyzer.get_all_dependings('e2'))
+        self.assertEqual(set(['a','b','e','c1','e1']), 
+                         analyzer.get_all_dependings('f2'))
         
-
+        self.assertEqual(0, analyzer.calculate_distance('e2', 'f2'))
+        self.assertEqual(1, analyzer.calculate_distance('g2', 'f2'))
+        
+        dist = analyzer.calculate_distance('c2', 'f2')
+        self.assertLess(0, dist)
+        self.assertLess(dist, 0.5)
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']
