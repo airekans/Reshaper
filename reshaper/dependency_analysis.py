@@ -4,6 +4,7 @@ Created on Jun 24, 2013
 @author: liangzhao
 '''
 
+import reshaper.dot_parser as dp
 
 def calculate_set_dist(set1, set2):
     if(len(set1)+ len(set2) ==0):
@@ -85,7 +86,42 @@ class DependencyAnalyzer(object):
         
         return calculate_set_dist(dep1, dep2)
     
+    def get_depended_leafs(self):
+        '''
+        get all leaf nodes that are depended by some nodes, 
+        but do not depending on any other nodes
+        '''
+        return [node for node in self.depending_dict \
+                     if node not in self.depended_dict] 
+    
 class ClsMemberCorrelationAnalyzer(object):
-    pass    
     
+    def __init__(self):
+        self._analyzer = DependencyAnalyzer()
     
+    def load_dot_file(self, filepath):
+        f = open(filepath,'r')
+        if not f:
+            raise Exception('Failed to load %s' % filepath)
+            
+        name2label = {}
+        for line in f:
+            (name, label) = dp.parse_node_line(line)
+            if name:
+                name2label[name] = label
+                continue
+            
+            (nodename1, nodename2) = dp.parse_edge_line(line)
+            if nodename1:
+                node1 = name2label[nodename1]
+                node2 = name2label[nodename2]
+                self._analyzer.add_denpendency(node1, node2)
+            
+            
+    def get_analyzer(self):
+        return self._analyzer  
+            
+          
+            
+            
+            

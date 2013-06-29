@@ -3,7 +3,7 @@ Created on Jun 24, 2013
 
 @author: liangzhao
 '''
-import unittest
+import unittest, os
 import reshaper.dependency_analysis as da
 
 class Test(unittest.TestCase):
@@ -45,7 +45,7 @@ class Test(unittest.TestCase):
                      'e1', 'f2',
                      'c1', 'e1',
                      'c1', 'b',
-                     'g1','g2'
+                     'g1', 'g2',
                      'g1','c2'
                     ]
                
@@ -64,9 +64,29 @@ class Test(unittest.TestCase):
         self.assertEqual(0, analyzer.calculate_distance('e2', 'f2'))
         self.assertEqual(1, analyzer.calculate_distance('g2', 'f2'))
         
-        dist = analyzer.calculate_distance('c2', 'f2')
-        self.assertLess(0, dist)
-        self.assertLess(dist, 0.5)
+        self.assertAlmostEqual(0.333333333, analyzer.calculate_distance('c2', 'f2'))
+        
+        self.assertEqual(set(['f1', 'f2', 'g2', 'a1', 'b1', 'c2', 'e2']), 
+                         set(analyzer.get_depended_leafs()))
+       
+    
+    def test_ClsMemberCorrelationAnalyzer(self):  
+        TEST_FILE = os.path.join(os.path.dirname(__file__),
+                                     'test_data','layergroupmodel.gv')
+        
+        cmca = da.ClsMemberCorrelationAnalyzer()
+        cmca.load_dot_file(TEST_FILE)
+        analyzer = cmca.get_analyzer()
+        self.assertEqual(set(['CleanUpData', 'OnGDSEvent', 'ProcessGDSText', 'CleanDefText', 'IsDefctModel', 'Close']), 
+                         analyzer.get_all_dependings('m_defect'))
+        self.assertAlmostEqual(0.38461538, 
+                         analyzer.calculate_distance('m_defect', 'm_selectedDefectID'))
+        
+        self.assertAlmostEqual(0.5, 
+                         analyzer.calculate_distance('m_defect', 'm_defText'))
+        self.assertEqual(1.0, 
+                         analyzer.calculate_distance('m_defect', 'm_fetchCellPolygonLevel'))
+        
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']
