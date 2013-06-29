@@ -61,10 +61,11 @@ class Test(unittest.TestCase):
         self.assertEqual(set(['a','b','e','c1','e1']), 
                          analyzer.get_all_dependings('f2'))
         
-        self.assertEqual(0, analyzer.calculate_distance('e2', 'f2'))
-        self.assertEqual(1, analyzer.calculate_distance('g2', 'f2'))
+        self.assertEqual(1, analyzer.calculate_correlation('e2', 'f2'))
+        self.assertEqual(0, analyzer.calculate_correlation('g2', 'f2'))
         
-        self.assertAlmostEqual(0.333333333, analyzer.calculate_distance('c2', 'f2'))
+        self.assertAlmostEqual(0.666666667, 
+                               analyzer.calculate_correlation('c2', 'f2'))
         
         self.assertEqual(set(['f1', 'f2', 'g2', 'a1', 'b1', 'c2', 'e2']), 
                          set(analyzer.get_depended_leafs()))
@@ -79,13 +80,13 @@ class Test(unittest.TestCase):
         analyzer = cmca.get_analyzer()
         self.assertEqual(set(['CleanUpData', 'OnGDSEvent', 'ProcessGDSText', 'CleanDefText', 'IsDefctModel', 'Close']), 
                          analyzer.get_all_dependings('m_defect'))
-        self.assertAlmostEqual(0.38461538, 
-                         analyzer.calculate_distance('m_defect', 'm_selectedDefectID'))
+        self.assertAlmostEqual(0.615384615, 
+                         analyzer.calculate_correlation('m_defect', 'm_selectedDefectID'))
         
         self.assertAlmostEqual(0.5, 
-                         analyzer.calculate_distance('m_defect', 'm_defText'))
-        self.assertEqual(1.0, 
-                         analyzer.calculate_distance('m_defect', 'm_fetchCellPolygonLevel'))
+                         analyzer.calculate_correlation('m_defect', 'm_defText'))
+        self.assertEqual(0, 
+                         analyzer.calculate_correlation('m_defect', 'm_fetchCellPolygonLevel'))
         
 
 if __name__ == "__main__":

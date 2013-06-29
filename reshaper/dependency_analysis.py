@@ -6,13 +6,15 @@ Created on Jun 24, 2013
 
 import reshaper.dot_parser as dp
 
-def calculate_set_dist(set1, set2):
+def calculate_set_correlation(set1, set2):
     if(len(set1)+ len(set2) ==0):
-        return 0
+        return 1
     
     intersect = set1.intersection(set2)
-    return 1 - len(intersect)*2.0/(len(set1)+len(set2))
+    return len(intersect)*2.0/(len(set1)+len(set2))
 
+def calculate_set_dist(set1, set2):
+    return 1 - calculate_set_correlation(set1, set2)
 
 class DependencyAnalyzer(object):
     '''
@@ -80,11 +82,11 @@ class DependencyAnalyzer(object):
     
         return all_dependings
     
-    def calculate_distance(self, node1, node2):
+    def calculate_correlation(self, node1, node2):
         dep1 = self.get_all_dependings(node1)
         dep2 = self.get_all_dependings(node2)
         
-        return calculate_set_dist(dep1, dep2)
+        return calculate_set_correlation(dep1, dep2)
     
     def get_depended_leafs(self):
         '''
@@ -93,6 +95,9 @@ class DependencyAnalyzer(object):
         '''
         return [node for node in self.depending_dict \
                      if node not in self.depended_dict] 
+        
+    def calculate_all_correlation(self, node):
+        pass
     
 class ClsMemberCorrelationAnalyzer(object):
     
