@@ -129,15 +129,18 @@ class Type(_Base):
     is_pod = Column(Boolean, nullable = False)
 
     pointee_id = Column(Integer, ForeignKey(id))
-    pointee = relationship("Type",
+    pointer = relationship("Type",
 
                         # cascade deletions
                         cascade="all",
+                        
+                        # One-to-One
+                        uselist=False,
 
                         # many to one + adjacency list - remote_side
                         # is required to reference the 'remote'
                         # column in the join condition.
-                        backref=backref("pointer", remote_side=id))
+                        backref=backref("pointee", remote_side=id))
 
     kind_id = Column(Integer, ForeignKey("type_kind.id"))
     kind = relationship('TypeKind',
@@ -173,6 +176,10 @@ class Type(_Base):
             _type = Type(cursor_type)
             _type.kind = TypeKind.from_clang_type_kind(cursor_type.kind)
 
+        # take care for the BLOCKPOINTER
+        if cursor_type.kind == clang.cindex.TypeKind.POINTER:
+            _type.pointee = Type.from_clang_type(cursor_type.get_pointee())
+            
         return _type
         
 
