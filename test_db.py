@@ -12,6 +12,7 @@ if __name__ == '__main__':
     db.build_db_type_kind()
     
     tu = get_tu(sys.argv[1], is_from_cache_first = False)
+    db.build_db_file(tu)
     db.build_db_tree(tu.cursor)
 
     ipdb.set_trace()

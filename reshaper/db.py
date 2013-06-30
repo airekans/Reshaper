@@ -38,14 +38,16 @@ class File(_Base):
     name = Column(String, nullable = True)
     time = Column(Integer, nullable = False)
 
-    # include_table = Table('include', _Base.metadata,
-    #                           Column('including_id', Integer,
-    #                                  ForeignKey('file.id')),
-    #                           Column('included_id', Integer,
-    #                                  ForeignKey('file.id')))
-    includes = relationship(FileInclusion,
+    include_table = Table('include', _Base.metadata,
+                              Column('including_id', Integer,
+                                     ForeignKey('file.id')),
+                              Column('included_id', Integer,
+                                     ForeignKey('file.id')))
+    includes = relationship("File",
+                            secondary = include_table,
                             backref = "included_by",
-                            primaryjoin = id == FileInclusion.including_id)
+                            primaryjoin = id == include_table.c.including_id,
+                            secondaryjoin = id == include_table.c.included_id)
     
 
     
@@ -340,28 +342,32 @@ def build_db_tree(cursor):
     _tu = cursor.translation_unit
 
     def build_db_cursor(cursor, parent, left):
-        db_cursor = Cursor(cursor)
-        db_cursor.parent = parent
-        db_cursor.left = left
-        db_cursor.kind = CursorKind.from_clang_cursor_kind(cursor.kind)
-        if cursor.type is not None and \
-           cursor.type.kind != clang.cindex.TypeKind.INVALID:
-            db_cursor.type = Type.from_clang_type(cursor.type)
+        db_cursor = None
+        if cursor.kind != clang.cindex.CursorKind.TRANSLATION_UNIT:
+            db_cursor = Cursor(cursor)
+            db_cursor.parent = parent
+            db_cursor.left = left
+            db_cursor.kind = CursorKind.from_clang_cursor_kind(cursor.kind)
+            if cursor.type is not None and \
+               cursor.type.kind != clang.cindex.TypeKind.INVALID:
+                db_cursor.type = Type.from_clang_type(cursor.type)
 
-        if cursor.location.file:
-            db_cursor.file = File.from_clang_tu(_tu, cursor.location.file.name)
-        
-
+            if cursor.location.file:
+                db_cursor.file = File.from_clang_tu(_tu, cursor.location.file.name)
+            
+                
         child_left = left
         for child in cursor.get_children():
             child_left = build_db_cursor(child, db_cursor, child_left + 1)
 
         right = child_left + 1
-        db_cursor.right = right
+        if db_cursor:
+            db_cursor.right = right
+
+            _session.add(db_cursor)
+            _session.commit()
+            _session.expire(db_cursor)
         
-        _session.add(db_cursor)
-        _session.commit()
-        _session.expire(db_cursor)
         return right
 
     build_db_cursor(cursor, None, 0)
