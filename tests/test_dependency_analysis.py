@@ -64,11 +64,15 @@ class Test(unittest.TestCase):
         self.assertEqual(1, analyzer.calculate_correlation('e2', 'f2'))
         self.assertEqual(0, analyzer.calculate_correlation('g2', 'f2'))
         
-        self.assertAlmostEqual(0.666666667, 
+        self.assertAlmostEqual(0.2857142857, 
                                analyzer.calculate_correlation('c2', 'f2'))
         
         self.assertEqual(set(['f1', 'f2', 'g2', 'a1', 'b1', 'c2', 'e2']), 
                          set(analyzer.get_depended_leafs()))
+        
+        self.assertAlmostEqual([('c2', 0.8571428571428571),
+                                ('b1', 0.5)], 
+                               analyzer.calculate_all_correlation('a1'))
        
     
     def test_ClsMemberCorrelationAnalyzer(self):  
@@ -80,15 +84,27 @@ class Test(unittest.TestCase):
         analyzer = cmca.get_analyzer()
         self.assertEqual(set(['CleanUpData', 'OnGDSEvent', 'ProcessGDSText', 'CleanDefText', 'IsDefctModel', 'Close']), 
                          analyzer.get_all_dependings('m_defect'))
-        self.assertAlmostEqual(0.615384615, 
+        self.assertAlmostEqual(0.5, 
                          analyzer.calculate_correlation('m_defect', 'm_selectedDefectID'))
         
-        self.assertAlmostEqual(0.5, 
+        self.assertAlmostEqual(0.44444444, 
                          analyzer.calculate_correlation('m_defect', 'm_defText'))
         self.assertEqual(0, 
                          analyzer.calculate_correlation('m_defect', 'm_fetchCellPolygonLevel'))
         
-
+        
+        
+    def test_ClsMemberCorrelationAnalyzer1(self):  
+        TEST_FILE = os.path.join(os.path.dirname(__file__),
+                                     'test_data','layergroupmodel.gv ')
+        
+        cmca = da.ClsMemberCorrelationAnalyzer()
+        cmca.load_dot_file(TEST_FILE)
+        analyzer = cmca.get_analyzer()
+        analyzer.print_all_leaf_relation()
+        
+        
+        
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']
     unittest.main()
