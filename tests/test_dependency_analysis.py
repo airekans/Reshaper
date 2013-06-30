@@ -52,7 +52,7 @@ class Test(unittest.TestCase):
         for (node, depended) in zip(test_data[0::2], test_data[1::2]):
             analyzer.add_denpendency(node, depended)
             
-        self.assertEqual(set(['a1','b1','c1','a']), 
+        self.assertEqual(set(['a1','b1','c1']), 
                          analyzer.get_depended_by('a'))
         self.assertEqual(set(['a','b']), 
                          analyzer.get_depending_on('c1'))
@@ -73,8 +73,25 @@ class Test(unittest.TestCase):
         self.assertAlmostEqual([('c2', 0.8571428571428571),
                                 ('b1', 0.5)], 
                                analyzer.calculate_all_correlation('a1'))
-       
+        
+        expected_leafs = set(['f2', 'a1', 'b1', 'c2', 'e2'])
+        self.assertEqual(expected_leafs, 
+                         analyzer.get_depended_leafs_by('a'))
+        
+        self.assertEqual(1, 
+                         analyzer.calc_depeneded_correlation('a',
+                                                    expected_leafs))
+        
+        expected_leafs.add('g2')
+        self.assertEqual(1, 
+                         analyzer.calc_depeneded_correlation('a',
+                                                    expected_leafs))
     
+        expected_leafs.remove('f2')
+        self.assertEqual(0.8, 
+                         analyzer.calc_depeneded_correlation('a',
+                                                    expected_leafs))
+        
     def test_ClsMemberCorrelationAnalyzer(self):  
         TEST_FILE = os.path.join(os.path.dirname(__file__),
                                      'test_data','layergroupmodel.gv')
@@ -92,16 +109,30 @@ class Test(unittest.TestCase):
         self.assertEqual(0, 
                          analyzer.calculate_correlation('m_defect', 'm_fetchCellPolygonLevel'))
         
-        
-        
-    def test_ClsMemberCorrelationAnalyzer1(self):  
-        TEST_FILE = os.path.join(os.path.dirname(__file__),
-                                     'test_data','layergroupmodel.gv ')
-        
-        cmca = da.ClsMemberCorrelationAnalyzer()
-        cmca.load_dot_file(TEST_FILE)
-        analyzer = cmca.get_analyzer()
-        analyzer.print_all_leaf_relation()
+        member_group = set(['m_pGDSMask_Setting',
+                            'm_defPrepared',
+                            'm_defLayer',
+                            'm_def',
+                            'm_defText',
+                            'm_defmarker_filter',
+                            'm_subjobid',
+                            'm_defect',
+                            'm_selectedDefectID'
+                            ])
+        for (depending, correlation) in \
+                analyzer.calc_all_depended_correlation(member_group, 0.4):
+            print (depending, correlation) 
+            
+        print analyzer.get_depended_leafs_by('CleanDefs')
+            
+#     def test_ClsMemberCorrelationAnalyzer1(self):  
+#         TEST_FILE = os.path.join(os.path.dirname(__file__),
+#                                      'test_data','layergroupmodel.gv ')
+#         
+#         cmca = da.ClsMemberCorrelationAnalyzer()
+#         cmca.load_dot_file(TEST_FILE)
+#         analyzer = cmca.get_analyzer()
+#         analyzer.print_all_leaf_relation()
         
         
         
