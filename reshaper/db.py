@@ -2,14 +2,107 @@ from sqlalchemy import create_engine, Column, ForeignKey
 from sqlalchemy import Integer, String, Boolean
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.orm import relationship, backref
+from sqlalchemy.orm import composite
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm.collections import attribute_mapped_collection
 from sqlalchemy.orm.exc import MultipleResultsFound, NoResultFound
+from sqlalchemy.schema import Table
 import weakref
 import clang.cindex
 
 _engine = create_engine('sqlite:///test.db', echo=False)
 _Base = declarative_base()
+
+
+class FileInclusion(_Base):
+
+    __tablename__ = 'file_inclusion'
+    
+    including_id = Column('including_id', Integer,
+                          ForeignKey('file.id'),
+                          primary_key=True)
+    included_id = Column('included_id', Integer,
+                         ForeignKey('file.id'),
+                         primary_key=True)
+
+
+
+class File(_Base):
+    """ DB representation for c++ files.
+    """
+
+    __tablename__ = 'file'
+
+    id = Column(Integer, primary_key = True)
+    
+    name = Column(String, nullable = True)
+    time = Column(Integer, nullable = False)
+
+    # include_table = Table('include', _Base.metadata,
+    #                           Column('including_id', Integer,
+    #                                  ForeignKey('file.id')),
+    #                           Column('included_id', Integer,
+    #                                  ForeignKey('file.id')))
+    includes = relationship(FileInclusion,
+                            backref = "included_by",
+                            primaryjoin = id == FileInclusion.including_id)
+    
+
+    
+    def __init__(self, clang_file):
+        """
+        
+        Arguments:
+        - `clang_file`:
+        """
+        self.name = clang_file.name
+        self.time = clang_file.time
+    
+    @staticmethod
+    def from_clang_tu(tu, name):
+        clang_file = tu.get_file(name)
+        try:
+            _file = _session.query(File).\
+                filter(File.name == clang_file.name).one()
+        except MultipleResultsFound, e:
+            print e
+            raise
+        except NoResultFound: # The type has not been stored in DB.
+            _file = File(clang_file)
+            _file.includes = []
+            for include in tu.get_includes():
+                if include.source.name == _file.name:
+                    _file.includes.append(
+                        File.from_clang_tu(tu, include.include.name))
+        
+        return _file
+
+class SourceLocation(object):
+    """ DB representation of clang SourceLocation
+    """
+    
+    def __init__(self, line, column, offset):
+        """
+        
+        Arguments:
+        - `line`:
+        - `column`:
+        - `offset`:
+        """
+        self.line = line
+        self.column = column
+        self.offset = offset
+        
+    def __composite_values__(self):
+        return self.line, self.column, self.offset
+
+    def __eq__(self, other):
+        return self.line == other.line and \
+            self.column == other.column and \
+            self.offset == other.offset
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
 
 
 class Cursor(_Base):
@@ -35,7 +128,24 @@ class Cursor(_Base):
     
     kind_id = Column(Integer, ForeignKey('cursor_kind.id'))
     kind = relationship('CursorKind', backref = backref('cursors', order_by = id))
-    
+
+    file_id = Column(Integer, ForeignKey('file.id'))
+    file = relationship("File")
+
+    # location
+    line_start = Column(Integer, nullable = False)
+    column_start = Column(Integer, nullable = False)
+    offset_start = Column(Integer, nullable = False)
+
+    line_end = Column(Integer, nullable = False)
+    column_end = Column(Integer, nullable = False)
+    offset_end = Column(Integer, nullable = False)
+
+    location_start = composite(SourceLocation, line_start, column_start,
+                               offset_start)
+    location_end = composite(SourceLocation, line_end, column_end,
+                             offset_end)
+
     # adjacent_list attributes
     parent_id = Column(Integer, ForeignKey(id))
     children = relationship("Cursor",
@@ -59,6 +169,16 @@ class Cursor(_Base):
         self.usr = cursor.get_usr()
         self.is_definition = cursor.is_definition()
         self.is_static_method = cursor.is_static_method()
+
+        location_start = cursor.extent.start
+        location_end = cursor.extent.end
+        self.location_start = SourceLocation(location_start.line,
+                                             location_start.column,
+                                             location_start.offset)
+        self.location_end = SourceLocation(location_end.line,
+                                           location_end.column,
+                                           location_end.offset)
+        
 
     @classmethod
     def from_clang_cursor(cls, cursor):
@@ -217,6 +337,8 @@ _session = _Session()
 
 def build_db_tree(cursor):
 
+    _tu = cursor.translation_unit
+
     def build_db_cursor(cursor, parent, left):
         db_cursor = Cursor(cursor)
         db_cursor.parent = parent
@@ -225,6 +347,10 @@ def build_db_tree(cursor):
         if cursor.type is not None and \
            cursor.type.kind != clang.cindex.TypeKind.INVALID:
             db_cursor.type = Type.from_clang_type(cursor.type)
+
+        if cursor.location.file:
+            db_cursor.file = File.from_clang_tu(_tu, cursor.location.file.name)
+        
 
         child_left = left
         for child in cursor.get_children():
@@ -254,3 +380,11 @@ def build_db_type_kind():
     _session.add_all([TypeKind(kind) for kind in all_kinds])
     _session.commit()
 
+def build_db_file(tu):
+    all_files = []
+    for include in tu.get_includes():
+        all_files.append(File.from_clang_tu(tu, include.source.name))
+
+    _session.add_all(all_files)
+    _session.commit()
+    
