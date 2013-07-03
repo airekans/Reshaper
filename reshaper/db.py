@@ -356,11 +356,11 @@ def build_db_tree(cursor):
                 db_cursor.file = File.from_clang_tu(_tu, cursor.location.file.name)
             
                 
-        child_left = left
+        child_left = left + 1
         for child in cursor.get_children():
-            child_left = build_db_cursor(child, db_cursor, child_left + 1)
+            child_left = build_db_cursor(child, db_cursor, child_left) + 1
 
-        right = child_left + 1
+        right = child_left
         if db_cursor:
             db_cursor.right = right
 
@@ -370,7 +370,12 @@ def build_db_tree(cursor):
         
         return right
 
-    build_db_cursor(cursor, None, 0)
+    left = 0
+    if cursor.kind == clang.cindex.CursorKind.TRANSLATION_UNIT:
+        for child in cursor.get_children():
+            left = build_db_cursor(child, None, left) + 1
+    else:
+        build_db_cursor(cursor, None, left)
 
 def build_db_cursor_kind():
     all_kinds = clang.cindex.CursorKind.get_all_kinds()
