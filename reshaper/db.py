@@ -161,7 +161,7 @@ class Cursor(_Base):
                         backref=backref("parent", remote_side=id))
 
     # nested set attributes
-    left = Column("left", Integer, nullable=False)
+    left = Column("left", Integer, nullable=True)
     right = Column("right", Integer, nullable=True)
 
 
@@ -171,6 +171,14 @@ class Cursor(_Base):
         self.usr = cursor.get_usr()
         self.is_definition = cursor.is_definition()
         self.is_static_method = cursor.is_static_method()
+        self.kind = CursorKind.from_clang_cursor_kind(cursor.kind)
+        if cursor.type is not None and \
+           cursor.type.kind != clang.cindex.TypeKind.INVALID:
+            self.type = Type.from_clang_type(cursor.type)
+            
+        if cursor.location.file:
+            self.file = File.from_clang_tu(cursor.translation_unit,
+                                           cursor.location.file.name)
 
         location_start = cursor.extent.start
         location_end = cursor.extent.end
@@ -182,16 +190,33 @@ class Cursor(_Base):
                                            location_end.offset)
         
 
-    @classmethod
-    def from_clang_cursor(cls, cursor):
+    @staticmethod
+    def from_clang_definition(cursor):
+        # if the cursor itself is a definition, then find out all the declaration cursors
+        # that refer to it.
+        # if the cursor is a declaration, then get the definition cursor
+        pass
+        
+        
+    @staticmethod
+    def from_clang_cursor(cursor):
         """ Static method to create a cursor from libclang's cursor
         
         Arguments:
         - `cursor`:
         """
 
-        return cls(cursor.spelling, cursor.displayname,
-                   cursor.get_usr(), cursor.is_definition())
+        try:
+            _cursor = _session.query(Cursor).join(File).\
+                filter(Cursor.usr == cursor.get_usr()).\
+                filter(File.name == cursor.location.file).one()
+        except MultipleResultsFound, e:
+            print e
+            raise
+        except NoResultFound: # The cursor has not been stored in DB.
+            _cursor = Cursor(cursor)
+
+        return _cursor
 
         
 class CursorKind(_Base):
@@ -347,7 +372,6 @@ def build_db_tree(cursor):
             db_cursor = Cursor(cursor)
             db_cursor.parent = parent
             db_cursor.left = left
-            db_cursor.kind = CursorKind.from_clang_cursor_kind(cursor.kind)
             if cursor.type is not None and \
                cursor.type.kind != clang.cindex.TypeKind.INVALID:
                 db_cursor.type = Type.from_clang_type(cursor.type)
