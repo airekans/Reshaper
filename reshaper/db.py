@@ -154,31 +154,31 @@ class Cursor(_Base):
 
                         # cascade deletions
                         cascade="all",
-
+                        foreign_keys=[parent_id],
                         # many to one + adjacency list - remote_side
                         # is required to reference the 'remote'
                         # column in the join condition.
                         backref=backref("parent", remote_side=id))
 
+    # definition
+    definition_id = Column(Integer, ForeignKey(id))
+    declarations = relationship("Cursor",
+                                # cascade deletions
+                                cascade="all",
+                                foreign_keys=[definition_id],
+                                backref=backref("definition", remote_side=id))
+
     # nested set attributes
-    left = Column("left", Integer, nullable=True)
+    left = Column("left", Integer, nullable=False)
     right = Column("right", Integer, nullable=True)
 
-
+    
     def __init__(self, cursor):
         self.spelling = cursor.spelling
         self.displayname = cursor.displayname
         self.usr = cursor.get_usr()
         self.is_definition = cursor.is_definition()
         self.is_static_method = cursor.is_static_method()
-        self.kind = CursorKind.from_clang_cursor_kind(cursor.kind)
-        if cursor.type is not None and \
-           cursor.type.kind != clang.cindex.TypeKind.INVALID:
-            self.type = Type.from_clang_type(cursor.type)
-            
-        if cursor.location.file:
-            self.file = File.from_clang_tu(cursor.translation_unit,
-                                           cursor.location.file.name)
 
         location_start = cursor.extent.start
         location_end = cursor.extent.end
@@ -191,12 +191,46 @@ class Cursor(_Base):
         
 
     @staticmethod
-    def from_clang_definition(cursor):
+    def from_clang_declaration(cursor):
         # if the cursor itself is a definition, then find out all the declaration cursors
         # that refer to it.
         # if the cursor is a declaration, then get the definition cursor
-        pass
+
+        assert cursor.is_definition()
+        if cursor.get_usr() == "": # builtin definitions
+            return None
         
+        try:
+            _cursor = _session.query(Cursor).\
+                filter(Cursor.usr == cursor.get_usr()).\
+                filter(Cursor.is_definition == True).one()
+        except MultipleResultsFound, e:
+            print "usr", cursor.get_usr()
+            print ""
+            print e
+            raise
+        except NoResultFound: # The cursor has not been stored in DB.
+            _cursor = None
+
+        return _cursor
+
+    @staticmethod
+    def from_definition(cursor):
+        assert cursor.is_definition
+        try:
+            _cursors = _session.query(Cursor).\
+                filter(Cursor.usr == cursor.usr).\
+                filter(Cursor.is_definition == False).all()
+        except MultipleResultsFound, e:
+            print e
+            raise
+        except NoResultFound: # The cursor has not been stored in DB.
+            _cursors = []
+
+        for _cursor in _cursors:
+            _cursor.definition = cursor
+
+        _session.add_all(_cursors)
         
     @staticmethod
     def from_clang_cursor(cursor):
@@ -208,8 +242,7 @@ class Cursor(_Base):
 
         try:
             _cursor = _session.query(Cursor).join(File).\
-                filter(Cursor.usr == cursor.get_usr()).\
-                filter(File.name == cursor.location.file).one()
+                filter(Cursor.usr == cursor.get_usr()).one()
         except MultipleResultsFound, e:
             print e
             raise
@@ -367,30 +400,35 @@ def build_db_tree(cursor):
     _tu = cursor.translation_unit
 
     def build_db_cursor(cursor, parent, left):
-        db_cursor = None
-        if cursor.kind != clang.cindex.CursorKind.TRANSLATION_UNIT:
-            db_cursor = Cursor(cursor)
-            db_cursor.parent = parent
-            db_cursor.left = left
-            if cursor.type is not None and \
-               cursor.type.kind != clang.cindex.TypeKind.INVALID:
-                db_cursor.type = Type.from_clang_type(cursor.type)
+        db_cursor = Cursor(cursor)
+        db_cursor.parent = parent
+        db_cursor.left = left
+        db_cursor.kind = CursorKind.from_clang_cursor_kind(cursor.kind)
+        if cursor.type is not None and \
+           cursor.type.kind != clang.cindex.TypeKind.INVALID:
+            db_cursor.type = Type.from_clang_type(cursor.type)
 
-            if cursor.location.file:
-                db_cursor.file = File.from_clang_tu(_tu, cursor.location.file.name)
-            
+        if cursor.location.file:
+            db_cursor.file = File.from_clang_tu(_tu, cursor.location.file.name)
+
+        def_cursor = cursor.get_definition()
+        if def_cursor is not None:
+            if cursor.is_definition():
+                Cursor.from_definition(db_cursor)
+            else:
+                db_cursor.definition = \
+                    Cursor.from_clang_declaration(def_cursor)
                 
         child_left = left + 1
         for child in cursor.get_children():
             child_left = build_db_cursor(child, db_cursor, child_left) + 1
 
         right = child_left
-        if db_cursor:
-            db_cursor.right = right
+        db_cursor.right = right
 
-            _session.add(db_cursor)
-            _session.commit()
-            _session.expire(db_cursor)
+        _session.add(db_cursor)
+        _session.commit()
+        _session.expire(db_cursor)
         
         return right
 
