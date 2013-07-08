@@ -124,6 +124,7 @@ class Cursor(_Base):
 
     type_id = Column(Integer, ForeignKey('type.id'))
     type = relationship('Type',
+                        foreign_keys=[type_id],
                         backref = backref('instances', order_by = id))
 
     is_static_method = Column(Boolean, nullable = False)
@@ -326,6 +327,12 @@ class Type(_Base):
     kind = relationship('TypeKind',
                         backref = backref('types', order_by = id))
 
+    declaration_id = Column(Integer,
+                            ForeignKey("cursor.id", use_alter=True,
+                                       name="type_decl"))
+    declaration = relationship(Cursor, foreign_keys=[declaration_id],
+                               post_update=True)
+    
 
     def __init__(self, cursor_type):
         if cursor_type.kind == clang.cindex.TypeKind.CONSTANTARRAY or \
@@ -341,6 +348,11 @@ class Type(_Base):
             self.is_function_variadic = False
         self.is_pod = cursor_type.is_pod()
 
+    @staticmethod
+    def is_valid_clang_type(cursor_type):
+        return cursor_type is not None and \
+            cursor_type.kind != clang.cindex.TypeKind.INVALID
+        
     @staticmethod
     def from_clang_type(cursor_type):
         try:
@@ -404,8 +416,7 @@ def build_db_tree(cursor):
         db_cursor.parent = parent
         db_cursor.left = left
         db_cursor.kind = CursorKind.from_clang_cursor_kind(cursor.kind)
-        if cursor.type is not None and \
-           cursor.type.kind != clang.cindex.TypeKind.INVALID:
+        if Type.is_valid_clang_type(cursor.type):
             db_cursor.type = Type.from_clang_type(cursor.type)
 
         if cursor.location.file:
@@ -428,6 +439,14 @@ def build_db_tree(cursor):
 
         _session.add(db_cursor)
         _session.commit()
+
+        if Type.is_valid_clang_type(cursor.type) and \
+                (db_cursor.type.declaration is None or
+                 db_cursor.is_definition):
+            db_cursor.type.declaration = db_cursor
+            _session.add(db_cursor.type)
+            _session.commit()
+
         _session.expire(db_cursor)
         
         return right
