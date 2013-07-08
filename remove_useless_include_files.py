@@ -1,5 +1,10 @@
 #!/usr/bin/env python
 
+"""remove_useless_include_files.py 
+tools used to remove useless include files,
+should make sure that the length of include files 
+cannot be over 100 lines
+"""
 import os, sys, re
 from optparse import OptionParser
 from functools import partial
@@ -7,10 +12,13 @@ from clang.cindex import TranslationUnit
 from reshaper.ast import get_tu
 from reshaper.util import walk_ast, get_declaration
 from reshaper.semantic import scan_dir_parse_files
+from reshaper.find_reference_util import compare_file_name
 
 def parse_options():
+    """options for remove useless include files
+    """
     option_parser = OptionParser(usage = "\
-            %prog [options] FILENAME")
+            %prog [options] FILENAME or DERECTORY")
 
     option_parser.add_option("-f", "--filename", dest = "filename", \
             type = "string", help = "filename to get useless include list")
@@ -21,34 +29,9 @@ def parse_options():
 
     return option_parser.parse_args()
 
-def compare_file_name(cursor, level, base_filename):
-    if cursor.location.file is not None:
-       cursor_filename = cursor.location.file.name
-
-       basename_withoutext_file = os.path.splitext(os.path.basename(base_filename))[0]
-       basename_withoutext_cursor = os.path.splitext(os.path.basename(cursor_filename))[0]
-       return basename_withoutext_file == basename_withoutext_cursor
-    return True
-
-def get_lib_name(filename):
-    abs_file_name = os.path.abspath(filename)
-    if "SQL" in abs_file_name:
-        return "SQL"
-
-    if "/lib" in abs_file_name:
-        return 
-    
-    dir_name = os.path.dirname(abs_file_name)
-    if dir_name is None:
-        return None
-
-    if os.path.basename(dir_name) == "src":
-        dir_name = os.path.dirname(dir_name)
-
-    split_text = dir_name.split("/lib")
-
-
 def get_useful_header_file(cursor, level, header_list):
+    """walk ast to get useful header files
+    """
     if cursor is None:
         return
     decla_cursor = get_declaration(cursor)
@@ -60,10 +43,14 @@ def get_useful_header_file(cursor, level, header_list):
         header_list.append(os.path.abspath(include_name))
 
 def handler_file(filename, cdb_path):
+    """handler filename to remove useless include files
+    """
     useless_list = get_useless_include_list(filename, cdb_path)
     remove_useless_list(filename, useless_list)
 
 def get_useless_include_list(filename, cdb_path):
+    """get useless include list for filename
+    """
     file_name = os.path.abspath(filename)
 
     if cdb_path is None:
@@ -96,6 +83,8 @@ def get_useless_include_list(filename, cdb_path):
     return useless_include_list
 
 def remove_useless_list(filename, include_list):
+    """remove useless include files in filename
+    """
     #checkout
     os.system("p4 edit %s" % filename)
 
@@ -134,6 +123,8 @@ def remove_useless_list(filename, include_list):
     os.rename(tmp_file_name, file_name)
 
 def main():
+    """main function
+    """
     options, args = parse_options()
 
     if options.filename is None and options.directory is None:

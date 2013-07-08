@@ -422,3 +422,16 @@ def get_declaration_location_str(cursor):
            decl_cursor.location.column)
     return location_str
 
+def compare_file_name(cursor, level, base_filename):
+    """compare if cursor is in base_filename or in its .h file;
+    if cursor.location.file is not None, it will return True
+    """
+    if cursor is None or cursor.location is None \
+            or cursor.location.file is None:
+        return True
+
+    cursor_filename = cursor.location.file.name
+    base_file_withoutext = os.path.splitext(os.path.basename(base_filename))[0]
+    cursor_file_withoutext = os.path.splitext(os.path.basename(cursor_filename))[0]
+    return base_file_withoutext == cursor_file_withoutext
+
