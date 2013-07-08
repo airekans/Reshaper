@@ -7,9 +7,9 @@ from nose.tools import eq_
 from reshaper.util import get_cursor_with_location
 from reshaper.semantic import get_cursors_add_parent
 from reshaper.find_reference_util import filter_cursors_by_usr, \
-        get_usr_if_caller, class_info, classes_info,\
-        call_info, walk_ast_add_caller,\
-        get_usr_of_declaration_cursor, get_declaration_location_str
+        get_usr_if_caller, ClassInfo, FileClassInfo,\
+        CallInfo, walk_ast_add_caller, get_usr_of_declaration_cursor,\
+        get_declaration_location_str
 from .util import get_tu_from_text
 from functools import partial
 
@@ -132,14 +132,14 @@ def test_get_declaration_location_usr():
     location_cursor2 = get_declaration_location_str(cursor2)
     location_none = get_declaration_location_str(none_cursor)
     eq_("t.cpp-1-6", location_cursor1)
-    eq_("t.cpp-2-6", get_declaration_location_str(cursor2))
+    eq_("t.cpp-2-6", location_cursor2)
     assert(location_none is None)
 
 
 def test_caller_callee_str_caller():
-    '''test call_info caller
+    '''test CallInfo caller
     '''
-    test_str = call_info("")
+    test_str = CallInfo("")
     caller1 = "testfile-14-10"
     caller2 = "testfile-24-10"
 
@@ -161,9 +161,9 @@ def test_caller_callee_str_caller():
     eq_(test_str.get_caller(), "")
 
 def test_caller_callee_str_callee():
-    '''test call_info callee
+    '''test CallInfo callee
     '''
-    test_str = call_info("")
+    test_str = CallInfo("")
     callee1 = "testfile-34-10"
     callee2 = "testfile-44-10"
 
@@ -188,25 +188,25 @@ def test_classes_info():
     '''test classes info from tu
     '''
     text_tu = get_tu_from_text(class_info_from_file_test)
-    classes_info_test = classes_info(filename = None, tu = text_tu)
+    classes_info_test = FileClassInfo(filename = None, source_tu = text_tu)
     class_names = classes_info_test.get_class_list()
     eq_(len(class_names), 3)
 
     TestClass1_info = classes_info_test.get_class_info_with_name("TestClass1")
     TestClass2_info = classes_info_test.get_class_info_with_name("TestClass2")
     TestStruct_info = classes_info_test.get_class_info_with_name("TestStruct")
-    assert(isinstance(TestClass1_info, class_info))
-    assert(isinstance(TestClass2_info, class_info))
-    assert(isinstance(TestStruct_info , class_info))
+    assert(isinstance(TestClass1_info, ClassInfo))
+    assert(isinstance(TestClass2_info, ClassInfo))
+    assert(isinstance(TestStruct_info , ClassInfo))
 
 
 def test_class_info():
-    '''test class class_info
+    '''test class ClassInfo
     '''
     text_tu = get_tu_from_text(class_info_test)
     class_cursor = get_cursor_with_location(text_tu, "TestClass", 1)
     eq_(class_cursor.kind, CursorKind.CLASS_DECL)
-    testclass_mem_info = class_info(class_cursor)
+    testclass_mem_info = ClassInfo(class_cursor)
 
     mem_list = testclass_mem_info.get_mem_list()
     eq_(len(mem_list), 4)
@@ -287,8 +287,8 @@ def walk_ast_add_caller_visitor(cursor, caller_usr, location, call_info_dict):
     if location in call_info_dict.keys():
         caller_info = call_info_dict[location]
 
-    cursor_info_obj = call_info(cursor_info)
-    caller_info_obj = call_info(caller_info)
+    cursor_info_obj = CallInfo(cursor_info)
+    caller_info_obj = CallInfo(caller_info)
 
     cursor_info_obj.add_caller(caller_usr)
     caller_info_obj.add_callee(decl_usr)
@@ -322,7 +322,7 @@ def test_walk_ast_add_caller():
     with_caller_num = 0
     with_callee_and_caller_num = 0
     for key in call_info_dict.keys():
-        call_infor = call_info(call_info_dict[key])
+        call_infor = CallInfo(call_info_dict[key])
         caller_str = call_infor.get_caller()
         callee_str = call_infor.get_callee()
         if not caller_str == "":

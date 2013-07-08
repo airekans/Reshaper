@@ -11,9 +11,10 @@ from optparse import OptionParser
 from functools import partial
 import reshaper.option
 
-_class_mem_cursorkind = ("CONSTRUCTOR", "DESTRUCTOR", "CXX_METHOD", "FIELD_DECL")
+_class_mem_cursorkind = \
+        ("CONSTRUCTOR", "DESTRUCTOR", "CXX_METHOD", "FIELD_DECL")
 
-class class_info(object):
+class ClassInfo(object):
     """get class info include member and functions
     from class cursor 
     """
@@ -48,7 +49,7 @@ class class_info(object):
                         """
                         if not cursor or not cursor.kind or \
                                 not cursor.kind == CursorKind.FIELD_DECL:
-                                    return None
+                            return None
 
                         tokens_str = ""
                         for token in cursor.get_tokens():
@@ -61,7 +62,7 @@ class class_info(object):
                     mem_dict[cursor.get_usr()] = get_mem_tokens(cursor)
                 else:
                     mem_fun_dict[cursor.get_usr()] = cursor.displayname
-        walk_ast(self._cursor, partial(walk_ast_cursor_fun,\
+        walk_ast(self._cursor, partial(walk_ast_cursor_fun, \
                 mem_dict = self._mem_dict, mem_fun_dict = self._mem_fun_dict))
 
 
@@ -103,18 +104,18 @@ class class_info(object):
         return self._mem_fun_dict
 
 
-class classes_info(object):
-    """parse file or tu to get class_info object
+class FileClassInfo(object):
+    """parse file or tu to get ClassInfo object
     for all classes and structs
     """
-    def __init__(self, filename, cdb_path = None, is_tu = False, tu = None):
+    def __init__(self, filename, cdb_path = None, source_tu = None):
         """1) should make sure that filename exists 
            2) you can also pass tu object to it
         """
-        if tu is not None:
-            self._file_tu = tu
+        if source_tu is not None:
+            self._file_tu = source_tu
         else:
-            self._file_tu = get_tu(os.path.abspath(filename),\
+            self._file_tu = get_tu(os.path.abspath(filename), \
                     cdb_path = cdb_path)
             if self._file_tu is None:
                 return
@@ -123,7 +124,7 @@ class classes_info(object):
         self._class_to_info_dict = {}
         for cursor in class_cursors:
             self._class_to_info_dict[cursor.displayname]  = \
-                    class_info(cursor)
+                    ClassInfo(cursor)
 
     def _get_class_cursors(self):
         """get class and struct cursors in tu
@@ -140,7 +141,7 @@ class classes_info(object):
 
     def get_class_with_inf_dict(self):
         """return classes info format with
-        {class_name, class_info}
+        {class_name, ClassInfo}
         """
         return self._class_to_info_dict
 
@@ -159,7 +160,7 @@ class classes_info(object):
         """
         return self._class_to_info_dict[name]
         
-class call_info(object):
+class CallInfo(object):
     """serialize and deserialize for 
     caller and caller str.
        Format is as follows:
@@ -253,13 +254,15 @@ class call_info(object):
                     % (self._callees_str, self._inter_split, callee_str)
 
     def clear(self):
+        """clear callees_str and callers_str
+        """
         self._callees_str = ""
         self._callers_str = ""
 
     def get_callers_callees_str(self):
         """return callers and callees str
         """
-        return "caller%s%s%scallee%s%s" %\
+        return "caller%s%s%scallee%s%s" % \
                 (self._key_value_split, self._callers_str, \
                 self._caller_callee_split, self._key_value_split, \
                 self._callees_str)
@@ -292,7 +295,8 @@ def filter_cursors_by_usr(cursors, target_usr):
         #its declaration USR is different from USR 
         if cursor_usr == target_usr:
             location = cursor.location
-            key = (os.path.abspath(location.file.name), location.line, location.column)
+            key = (os.path.abspath(location.file.name), \
+                    location.line, location.column)
             cursor_dict[key] = cursor
 
     return [cursor_dict[key] for key in sorted(cursor_dict.keys())]
@@ -327,7 +331,8 @@ def parse_find_reference_args(default_output_filename):
         option_parser.error("please input file to search")
     
     if not os.path.isfile(options.filename):
-        option_parser.error("file %s is not exists, please check it!" % options.filename)
+        option_parser.error("file %s is not exists, please check it!"\
+                % options.filename)
 
     if options.spelling is None:
         option_parser.error("please input reference spelling")
@@ -353,7 +358,8 @@ def parse_find_reference_args(default_output_filename):
 
     return options
 
-def walk_ast_add_caller(source, visitor, is_visit_subtree_fun = lambda _c : True):
+def walk_ast_add_caller(source, visitor, \
+        is_visit_subtree_fun = lambda _c : True):
     """walk ast and add caller info (usr, location)
     to visitor func
     """
@@ -365,6 +371,8 @@ def walk_ast_add_caller(source, visitor, is_visit_subtree_fun = lambda _c : True
         cursor = source.cursor
 
     def walk_ast_and_add_caller(cursor, usr, location):
+        """internal use
+        """
         if not is_visit_subtree_fun(cursor):
             return
 
@@ -407,7 +415,7 @@ def get_declaration_location_str(cursor):
     decl_cursor = get_declaration(cursor)
     if decl_cursor is None or decl_cursor.location is None\
             or decl_cursor.location.file is None:
-                return None
+        return None
 
     location_str = "%s-%s-%s" % \
            (decl_cursor.location.file.name, decl_cursor.location.line,\
