@@ -9,7 +9,7 @@ from reshaper.semantic import get_cursors_add_parent
 from reshaper.find_reference_util import filter_cursors_by_usr, \
         get_usr_if_caller, ClassInfo, FileClassInfo,\
         CallInfo, walk_ast_add_caller, get_usr_of_declaration_cursor,\
-        get_declaration_location_str
+        get_declaration_location_str, compare_file_name
 from .util import get_tu_from_text
 from functools import partial
 
@@ -334,4 +334,19 @@ def test_walk_ast_add_caller():
     eq_(2, with_callee_num)
     eq_(7, with_caller_num)
     eq_(1, with_callee_and_caller_num)
+
+def test_compare_file_name():
+    """test compare_file_name
+    """
+    base_filename = "base.cpp"
+    cursor = None
+    assert(compare_file_name(cursor, 0, base_filename))
+
+    text_tu = get_tu_from_text(filter_usr_test_input)
+    class_decl_cursor = get_cursor_with_location(text_tu, "TestClass", 1)
+    assert(not compare_file_name(class_decl_cursor, 0, base_filename))
+
+    cxx_method_cursor = get_cursor_with_location(text_tu, "TargetFunc", 4)
+    cxx_method_cursor.location.file.name = "base.h"
+    assert(compare_file_name(cxx_method_cursor, 0, base_filename))
 

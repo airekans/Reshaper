@@ -424,7 +424,8 @@ def get_declaration_location_str(cursor):
 
 def compare_file_name(cursor, level, base_filename):
     """compare if cursor is in base_filename or in its .h file;
-    if cursor.location.file is not None, it will return True
+    if cursor.location.file is not None, it will return True;
+    this compare function is wrote for walk_ast as is_visit_subtree_fun
     """
     if cursor is None or cursor.location is None \
             or cursor.location.file is None:
