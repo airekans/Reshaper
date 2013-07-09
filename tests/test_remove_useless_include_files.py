@@ -16,7 +16,7 @@ def test_get_useful_include_file():
     """test get_useful_include_file
     """
 
-    def is_macro_instance_cursor(cursor, cursor_kind, name, line):
+    def is_cursor_match(cursor, cursor_kind, name, line):
         """called by get_cursor_if to get cursor
         """
         if cursor is None or cursor.location is None:
@@ -30,14 +30,14 @@ def test_get_useful_include_file():
     source_tu = get_tu(source_file, options=1)
     useful_file_list = []
 
-    define_cursor = get_cursor_if(source_tu, partial(is_macro_instance_cursor, \
+    define_cursor = get_cursor_if(source_tu, partial(is_cursor_match, \
             cursor_kind = CursorKind.MACRO_INSTANTIATION, \
             name = "HEADER_ONE_STRING", line=10))
     get_useful_include_file(define_cursor, 0, useful_file_list)
     eq_(len(useful_file_list), 1)
     assert("typedef.h" in useful_file_list[0])
 
-    macro_cursor = get_cursor_if(source_tu, partial(is_macro_instance_cursor, \
+    macro_cursor = get_cursor_if(source_tu, partial(is_cursor_match, \
             cursor_kind = CursorKind.MACRO_INSTANTIATION, \
             name = "Max", line=14))
     get_useful_include_file(macro_cursor, 0, useful_file_list)
