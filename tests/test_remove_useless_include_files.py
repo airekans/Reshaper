@@ -31,13 +31,15 @@ def test_get_useful_include_file():
     useful_file_list = []
 
     define_cursor = get_cursor_if(source_tu, partial(is_macro_instance_cursor, \
-            cursor_kind = CursorKind.MACRO_INSTANTIATION, name = "HEADER_ONE_STRING", line=10))
+            cursor_kind = CursorKind.MACRO_INSTANTIATION, \
+            name = "HEADER_ONE_STRING", line=10))
     get_useful_include_file(define_cursor, 0, useful_file_list)
     eq_(len(useful_file_list), 1)
     assert("typedef.h" in useful_file_list[0])
 
     macro_cursor = get_cursor_if(source_tu, partial(is_macro_instance_cursor, \
-            cursor_kind = CursorKind.MACRO_INSTANTIATION, name = "Max", line=14))
+            cursor_kind = CursorKind.MACRO_INSTANTIATION, \
+            name = "Max", line=14))
     get_useful_include_file(macro_cursor, 0, useful_file_list)
     eq_(len(useful_file_list), 2)
     assert("macro.h" in useful_file_list[1])
@@ -50,7 +52,8 @@ def test_get_useless_include_list():
     eq_(len(useless_include_list), 0)
 
     macro_file = os.path.join(INPUT_DIR, "use_macro.cpp")
-    macro_useless_include_list = get_useless_include_list(macro_file, None, None)
+    macro_useless_include_list = \
+            get_useless_include_list(macro_file, None, None)
     eq_(len(macro_useless_include_list), 3)
 
     files_str = ""
@@ -73,6 +76,7 @@ def test_remove_useless_includes():
     ret_tmp_file = remove_useless_includes(source_file, useless_include_list)
     assert(os.path.isfile(ret_tmp_file))
 
-    new_file_useless_includes = get_useless_include_list(ret_tmp_file, None, None)
+    new_file_useless_includes = \
+            get_useless_include_list(ret_tmp_file, None, None)
     eq_(len(new_file_useless_includes), 0)
 

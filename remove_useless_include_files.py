@@ -26,7 +26,8 @@ def parse_options():
     option_parser.add_option("-d", "--directory", dest = "directory", \
             type = "string", help = "directory to get useless include list")
     option_parser.add_option("-r", "--remove", action = "store_true", \
-            dest = "remove", help = "if given, will checkout files and remove useless include files."
+            dest = "remove", help = \
+            "if given, will checkout files and remove useless include files."
             "or else, will generator new files postfix with .header.bak.")
 
     return option_parser.parse_args()
@@ -72,7 +73,8 @@ def get_useless_include_list(filename, cdb_path, config_path):
     if cdb_path is None:
         source_tu = get_tu(filename, options=1)
     else:
-        source_tu = get_tu(filename, cdb_path=cdb_path, config_path = config_path, options=1)
+        source_tu = get_tu(filename, cdb_path=cdb_path, \
+                config_path = config_path, options=1)
 
     if source_tu is None:
         print "Failed to get TranslationUnit for %s." % filename
@@ -163,7 +165,8 @@ def main():
         sys.exit(-1)
 
     if options.filename:
-        handle_file(options.filename, options.cdb_path, options.config, options.remove)
+        handle_file(options.filename, options.cdb_path, \
+                options.config, options.remove)
 
     if options.directory:
         scan_dir_parse_files(options.directory, \
