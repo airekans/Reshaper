@@ -169,6 +169,12 @@ class Cursor(_Base):
                                 foreign_keys=[definition_id],
                                 backref=backref("definition", remote_side=id))
 
+    # lexical parent
+    lexical_parent_id = Column(Integer, ForeignKey(id))
+    lexical_parent = relationship("Cursor",
+                                  foreign_keys=[lexical_parent_id],
+                                  remote_side=[id])
+
     # nested set attributes
     left = Column("left", Integer, nullable=False)
     right = Column("right", Integer, nullable=True)
@@ -243,11 +249,14 @@ class Cursor(_Base):
 
         try:
             _cursor = _session.query(Cursor).join(File).\
-                filter(Cursor.usr == cursor.get_usr()).one()
+                filter(Cursor.usr == cursor.get_usr()).\
+                filter(File.name == cursor.location.file.name).\
+                filter(Cursor.offset_start == cursor.location.offset).one()
         except MultipleResultsFound, e:
             print e
             raise
         except NoResultFound: # The cursor has not been stored in DB.
+            print "Cursor has not been stored in DB", cursor.displayname
             _cursor = Cursor(cursor)
 
         return _cursor
@@ -433,6 +442,12 @@ def build_db_tree(cursor):
             else:
                 db_cursor.definition = \
                     Cursor.from_clang_declaration(def_cursor)
+
+        lexical_parent = cursor.lexical_parent
+        if lexical_parent is not None and \
+           lexical_parent.kind != clang.cindex.CursorKind.TRANSLATION_UNIT:
+            db_cursor.lexical_parent = \
+                Cursor.from_clang_cursor(cursor.lexical_parent)
                 
         child_left = left + 1
         for child in cursor.get_children():
