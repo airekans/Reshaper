@@ -418,6 +418,10 @@ def build_db_tree(cursor):
         db_cursor.kind = CursorKind.from_clang_cursor_kind(cursor.kind)
         if Type.is_valid_clang_type(cursor.type):
             db_cursor.type = Type.from_clang_type(cursor.type)
+            if db_cursor.type.declaration is None or \
+               db_cursor.is_definition:
+                db_cursor.type.declaration = db_cursor
+                _session.add(db_cursor.type)
 
         if cursor.location.file:
             db_cursor.file = File.from_clang_tu(_tu, cursor.location.file.name)
@@ -439,14 +443,6 @@ def build_db_tree(cursor):
 
         _session.add(db_cursor)
         _session.commit()
-
-        if Type.is_valid_clang_type(cursor.type) and \
-                (db_cursor.type.declaration is None or
-                 db_cursor.is_definition):
-            db_cursor.type.declaration = db_cursor
-            _session.add(db_cursor.type)
-            _session.commit()
-
         _session.expire(db_cursor)
         
         return right
