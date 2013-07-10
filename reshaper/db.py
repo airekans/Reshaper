@@ -251,12 +251,15 @@ class Cursor(_Base):
             _cursor = _session.query(Cursor).join(File).\
                 filter(Cursor.usr == cursor.get_usr()).\
                 filter(File.name == cursor.location.file.name).\
-                filter(Cursor.offset_start == cursor.location.offset).one()
+                filter(Cursor.offset_start == cursor.extent.start.offset).one()
         except MultipleResultsFound, e:
             print e
             raise
         except NoResultFound: # The cursor has not been stored in DB.
-            print "Cursor has not been stored in DB", cursor.displayname
+            print "Cursor has not been stored in DB"
+            print "usr", cursor.get_usr()
+            print "file", cursor.location.file.name
+            print "offset", cursor.location.offset
             _cursor = Cursor(cursor)
 
         return _cursor
@@ -448,7 +451,10 @@ def build_db_tree(cursor):
            lexical_parent.kind != clang.cindex.CursorKind.TRANSLATION_UNIT:
             db_cursor.lexical_parent = \
                 Cursor.from_clang_cursor(cursor.lexical_parent)
-                
+
+        _session.add(db_cursor)
+        # _session.commit()
+            
         child_left = left + 1
         for child in cursor.get_children():
             child_left = build_db_cursor(child, db_cursor, child_left) + 1
