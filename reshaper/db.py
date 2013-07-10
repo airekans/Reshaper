@@ -175,6 +175,18 @@ class Cursor(_Base):
                                   foreign_keys=[lexical_parent_id],
                                   remote_side=[id])
 
+    # semantic parent
+    semantic_parent_id = Column(Integer, ForeignKey(id))
+    semantic_parent = relationship("Cursor",
+                                   foreign_keys=[semantic_parent_id],
+                                   remote_side=[id])
+
+    # referenced
+    referenced_id = Column(Integer, ForeignKey(id))
+    referenced = relationship("Cursor",
+                              foreign_keys=[referenced_id],
+                              remote_side=[id])
+    
     # nested set attributes
     left = Column("left", Integer, nullable=False)
     right = Column("right", Integer, nullable=True)
@@ -452,6 +464,12 @@ def build_db_tree(cursor):
            lexical_parent.kind != clang.cindex.CursorKind.TRANSLATION_UNIT:
             db_cursor.lexical_parent = \
                 Cursor.from_clang_cursor(cursor.lexical_parent)
+
+        semantic_parent = cursor.semantic_parent
+        if semantic_parent is not None and \
+           semantic_parent.kind != clang.cindex.CursorKind.TRANSLATION_UNIT:
+            db_cursor.semantic_parent = \
+                Cursor.from_clang_cursor(cursor.semantic_parent)
 
         _session.add(db_cursor)
         # _session.commit()
