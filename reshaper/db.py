@@ -431,7 +431,8 @@ def build_db_tree(cursor):
         if Type.is_valid_clang_type(cursor.type):
             db_cursor.type = Type.from_clang_type(cursor.type)
             if db_cursor.type.declaration is None or \
-               db_cursor.is_definition:
+               (db_cursor.is_definition and
+                not db_cursor.type.declaration.is_definition):
                 db_cursor.type.declaration = db_cursor
                 _session.add(db_cursor.type)
 
