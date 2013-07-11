@@ -49,7 +49,7 @@ def get_diagnostics_str(diagnostics):
         file_info = ''
         if loc.file:
             file_info = '%s:%s:%s:' % (loc.file.name, loc.line, loc.column)
-        output += file_info + diag.spelling + '/n' 
+        output += file_info + diag.spelling + '\n' 
     return output            
 
 def check_diagnostics(diagnostics):

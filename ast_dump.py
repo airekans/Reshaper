@@ -11,7 +11,7 @@ from xml.sax.saxutils import escape
 from reshaper import util
 
 
-SPACE = '    '
+_SPACE = '    '
 
 class XMLPrinter(object):
     def __init__(self):
@@ -21,7 +21,7 @@ class XMLPrinter(object):
     def print_tag(self, level, tag, attr_label, attr):
         
         if self._stack:
-            for _i in range(0, self._level-level+1):
+            for _ in range(0, self._level-level+1):
                 end_tag = self._stack.pop()
                 print end_tag
         
@@ -29,15 +29,15 @@ class XMLPrinter(object):
         if attr_label:
             attr_str = ' %s="%s"' % (attr_label, escape(attr))
             
-        start_tag =  SPACE * level + '<%s%s>' % (tag, attr_str)
+        start_tag =  _SPACE * level + '<%s%s>' % (tag, attr_str)
         print start_tag
-        end_tag   = SPACE * level + '</%s>' % tag
+        end_tag   = _SPACE * level + '</%s>' % tag
         self._stack.append(end_tag)  
                
         self._level = level
         
-    def print_attr(self, level, name, value):
-        print SPACE * (level+1) + '<%s>%s</%s>' % (name, value, name)
+    def print_cursor(self, level, name, value):
+        print _SPACE * (level+1) + '<%s>%s</%s>' % (name, value, name)
         
     def print_remaining_end_tags(self):
         while self._stack:
@@ -57,10 +57,10 @@ def print_tag(level, tag, is_xml, attr_label='', attr = ''):
             attr_str = ': %s=%s' % (attr_label, attr)
         print '****' * level + '%s%s' % (tag, attr_str)
 
-def print_attr(level, name, value, is_xml):
+def print_cursor(level, name, value, is_xml):
     if is_xml:
         value = escape(str(value))
-        _xml_printer.print_attr(level, name, value)
+        _xml_printer.print_cursor(level, name, value)
     else:
         print '****' * (level+1) + name + ':', value
         
@@ -149,7 +149,8 @@ def main():
         return can_visit
         
     
-    if options.xml: print '<root>'
+    if options.xml: 
+        print '<root>'
         
     for file_path in args:     
         _tu = get_tu(file_path, config_path= options.config,
@@ -158,7 +159,7 @@ def main():
             print "unable to load %s" % file_path
             sys.exit(1)
             
-        if len(_tu.diagnostics):
+        if len(_tu.diagnostics) > 0:
             if options.xml: 
                 print '<diagnostics>' 
                 print escape(get_diagnostics_str(_tu.diagnostics))
