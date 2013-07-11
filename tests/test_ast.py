@@ -1,5 +1,5 @@
 from reshaper.ast import    FlyweightBase, \
-                            CursorCache, CursorLazyLoad, \
+                            CursorCache, \
                             LocationCache
 from .util import get_tu_from_text
                 
@@ -105,11 +105,11 @@ def testCursorCache():
     assert(isinstance(cc_func, CursorCache))
     
     cc_class = cc_func.semantic_parent
-    assert(cc_class is None) #can't find cursor not defined in source
+    assert(cc_class)
     
     cursor_cache.update_ref_cursors() 
     cc_class = cc_func.semantic_parent
-    assert(isinstance(cc_class, CursorLazyLoad)) #ref cursor defined in other file
+    assert(isinstance(cc_class, CursorCache)) #ref cursor defined in other file
     
  
 

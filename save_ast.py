@@ -9,13 +9,9 @@ def main():
    
     option_parser = OptionParser(usage = "%prog [options] files") 
     setup_options(option_parser)
-    option_parser.add_option("-d", "--dir", dest = "dir", \
-                             type="string", default='', \
-                             help = "destination dir to put output file, by default it is the same dir as input")
     option_parser.add_option("-r", "--readable", dest = "readable", \
                              action="store_true", \
                              help = "dump with readable format (slow)")
-    
     option_parser.add_option("-s", "--ref_source", dest = "ref_source", \
                              type="string", default='', \
                              help = "reference source file (only used when input is a header file)")
@@ -28,12 +24,12 @@ def main():
     
     for file_path in args:     
         try:
-            save_ast(file_path, options.dir, options.readable, \
-                     config_path= options.config,
+            save_ast(file_path, is_readable = options.readable, \
+                     config_path = options.config,
                      cdb_path = options.cdb_path,
                      ref_source = options.ref_source)
-        except Exception, e:
-            print "Can't parse %s:%s" % (file_path, e) 
+        except Exception, excep:
+            print "Can't parse %s:%s" % (file_path, excep) 
         
         
         
