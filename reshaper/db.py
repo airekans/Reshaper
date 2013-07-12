@@ -199,8 +199,13 @@ class Cursor(_Base):
         self.is_definition = cursor.is_definition()
         self.is_static_method = cursor.is_static_method()
 
-        location_start = cursor.extent.start
+        location_start = cursor.location
         location_end = cursor.extent.end
+
+        print "file", location_start.file, "usr", self.usr
+        print "loc.line", cursor.location.line, "loc.col", \
+            cursor.location.column
+        print "offset", cursor.location.offset
         self.location_start = SourceLocation(location_start.line,
                                              location_start.column,
                                              location_start.offset)
@@ -263,19 +268,43 @@ class Cursor(_Base):
             _cursor = _session.query(Cursor).join(File).\
                 filter(Cursor.usr == cursor.get_usr()).\
                 filter(File.name == cursor.location.file.name).\
-                filter(Cursor.offset_start == cursor.extent.start.offset).one()
+                filter(Cursor.offset_start == cursor.location.offset).one()
         except MultipleResultsFound, e:
             print e
             raise
         except NoResultFound: # The cursor has not been stored in DB.
             print "Cursor has not been stored in DB"
             print "usr", cursor.get_usr()
-            print "file", cursor.location.file.name
-            print "offset", cursor.location.offset
+            loc_start = cursor.location
+            print "file", loc_start.file
+            print "line", loc_start.line, "col", loc_start.column
             _cursor = Cursor(cursor)
 
         return _cursor
 
+    @staticmethod
+    def from_clang_referenced(cursor):
+        assert(cursor.spelling is not None)
+        
+        # because referenced cursor will certainly have spelling, so I use spelling.
+        try:
+            _cursor = _session.query(Cursor).join(File).\
+                filter(Cursor.spelling == cursor.spelling).\
+                filter(File.name == cursor.location.file.name).\
+                filter(Cursor.offset_start == cursor.location.offset).one()
+        except MultipleResultsFound, e:
+            print e
+            raise
+        except NoResultFound: # The cursor has not been stored in DB.
+            print "Cursor has not been stored in DB"
+            print "usr", cursor.get_usr()
+            loc_start = cursor.location
+            print "file", loc_start.file
+            print "line", loc_start.line, "col", loc_start.column
+            _cursor = Cursor(cursor)
+
+        return _cursor
+ 
         
 class CursorKind(_Base):
     """ The DB representation for CursorKind
@@ -463,14 +492,23 @@ def build_db_tree(cursor):
         if lexical_parent is not None and \
            lexical_parent.kind != clang.cindex.CursorKind.TRANSLATION_UNIT:
             db_cursor.lexical_parent = \
-                Cursor.from_clang_cursor(cursor.lexical_parent)
+                Cursor.from_clang_cursor(lexical_parent)
 
         semantic_parent = cursor.semantic_parent
         if semantic_parent is not None and \
            semantic_parent.kind != clang.cindex.CursorKind.TRANSLATION_UNIT:
             db_cursor.semantic_parent = \
-                Cursor.from_clang_cursor(cursor.semantic_parent)
+                Cursor.from_clang_cursor(semantic_parent)
 
+        refer_cursor = cursor.referenced
+        if refer_cursor is not None and \
+           refer_cursor.location.file is not None and \
+           refer_cursor.location.file.name != cursor.location.file.name and \
+           refer_cursor.location.offset != cursor.location.offset and \
+           refer_cursor.kind != clang.cindex.CursorKind.TRANSLATION_UNIT:
+            db_cursor.referenced = \
+                Cursor.from_clang_referenced(refer_cursor)
+            
         _session.add(db_cursor)
         # _session.commit()
             
