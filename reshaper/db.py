@@ -202,10 +202,6 @@ class Cursor(_Base):
         location_start = cursor.location
         location_end = cursor.extent.end
 
-        print "file", location_start.file, "usr", self.usr
-        print "loc.line", cursor.location.line, "loc.col", \
-            cursor.location.column
-        print "offset", cursor.location.offset
         self.location_start = SourceLocation(location_start.line,
                                              location_start.column,
                                              location_start.offset)
@@ -229,8 +225,6 @@ class Cursor(_Base):
                 filter(Cursor.usr == cursor.get_usr()).\
                 filter(Cursor.is_definition == True).one()
         except MultipleResultsFound, e:
-            print "usr", cursor.get_usr()
-            print ""
             print e
             raise
         except NoResultFound: # The cursor has not been stored in DB.
@@ -273,11 +267,6 @@ class Cursor(_Base):
             print e
             raise
         except NoResultFound: # The cursor has not been stored in DB.
-            print "Cursor has not been stored in DB"
-            print "usr", cursor.get_usr()
-            loc_start = cursor.location
-            print "file", loc_start.file
-            print "line", loc_start.line, "col", loc_start.column
             _cursor = Cursor(cursor)
 
         return _cursor
@@ -296,11 +285,6 @@ class Cursor(_Base):
             print e
             raise
         except NoResultFound: # The cursor has not been stored in DB.
-            print "Cursor has not been stored in DB"
-            print "usr", cursor.get_usr()
-            loc_start = cursor.location
-            print "file", loc_start.file
-            print "line", loc_start.line, "col", loc_start.column
             _cursor = Cursor(cursor)
 
         return _cursor
