@@ -1,7 +1,7 @@
 """util functions for semantic parsing
 """
 
-import os
+import os, re
 
 from clang.cindex import CursorKind
 from clang.cindex import TypeKind
@@ -10,9 +10,7 @@ from reshaper.util import is_cursor_in_file_func
 from functools import partial
 
 _file_types = ('.cpp', '.c', '.cc')
-
-
-
+_special_lib = ('util', 'WCDA', 'ui', 'AutotestFrame')
 
 def is_cursor(source):
     return hasattr(source, "get_children")
@@ -338,6 +336,23 @@ def get_source_path_candidates(fpath):
     return [ os.path.join(dir_name, sub_dir, fname_wo_surfix+surfix) \
              for sub_dir in sub_dir_candidates \
              for surfix in surfix_candidates ]
+
+def get_lib_name(path):
+    """get lib name for path
+    """
+    abs_path = os.path.abspath(path)
+    pattern = re.compile('.*(GUI/)([a-zA-Z]*).*')
+    search_result = pattern.search(abs_path)
+    if search_result and \
+            len(search_result.groups()) > 1:
+       cand_lib_name = search_result.groups()[1]
+       if cand_lib_name.startswith('lib'):
+           return cand_lib_name
+       elif cand_lib_name in _special_lib:
+           return cand_lib_name
+       else:
+           return 'GUI'
+    return None
 
 def is_typeref(cursor):
     return cursor.kind == CursorKind.TYPE_REF
