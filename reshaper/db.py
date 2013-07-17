@@ -69,7 +69,7 @@ class File(_Base):
         except MultipleResultsFound, e:
             print e
             raise
-        except NoResultFound: # The type has not been stored in DB.
+        except NoResultFound: # The file has not been stored in DB.
             _file = File(clang_file)
             _file.includes = []
             for include in tu.get_includes():
@@ -531,10 +531,8 @@ def build_db_type_kind():
     _session.commit()
 
 def build_db_file(tu):
-    all_files = []
     for include in tu.get_includes():
-        all_files.append(File.from_clang_tu(tu, include.source.name))
+        _session.add(File.from_clang_tu(tu, include.source.name))
 
-    _session.add_all(all_files)
     _session.commit()
     
