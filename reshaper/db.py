@@ -14,6 +14,18 @@ _engine = create_engine('sqlite:///test.db', echo=False)
 _Base = declarative_base()
 
 
+def print_error_cursor(cursor):
+    """ print the information about cursor when error occur.
+    
+    Arguments:
+    - `cursor`:
+    """
+    err_loc = cursor.location
+    print "cursor", cursor.spelling, "file", err_loc.file
+    print "usr", cursor.get_usr()
+    print "line", err_loc.line, "col", err_loc.column
+
+
 class FileInclusion(_Base):
 
     __tablename__ = 'file_inclusion'
@@ -130,7 +142,7 @@ class Cursor(_Base):
     is_static_method = Column(Boolean, nullable = False)
     
     kind_id = Column(Integer, ForeignKey('cursor_kind.id'))
-    kind = relationship('CursorKind', backref = backref('cursors', order_by = id))
+    kind = relationship('CursorKind')
 
     file_id = Column(Integer, ForeignKey('file.id'))
     file = relationship("File")
@@ -188,7 +200,7 @@ class Cursor(_Base):
                               remote_side=[id])
     
     # nested set attributes
-    left = Column("left", Integer, nullable=False)
+    left = Column("left", Integer, nullable=True)
     right = Column("right", Integer, nullable=True)
 
     
@@ -201,6 +213,8 @@ class Cursor(_Base):
 
         location_start = cursor.location
         location_end = cursor.extent.end
+
+        print_error_cursor(cursor)
 
         self.location_start = SourceLocation(location_start.line,
                                              location_start.column,
@@ -226,6 +240,7 @@ class Cursor(_Base):
                 filter(Cursor.is_definition == True).one()
         except MultipleResultsFound, e:
             print e
+            print_error_cursor(cursor)
             raise
         except NoResultFound: # The cursor has not been stored in DB.
             _cursor = None
@@ -259,14 +274,25 @@ class Cursor(_Base):
         """
 
         try:
-            _cursor = _session.query(Cursor).join(File).\
-                filter(Cursor.usr == cursor.get_usr()).\
-                filter(File.name == cursor.location.file.name).\
-                filter(Cursor.offset_start == cursor.location.offset).one()
+            # builtin definitions
+            if cursor.location.file is None:
+                _cursor = _session.query(Cursor).\
+                    filter(Cursor.spelling == cursor.spelling).one()
+            else:
+                _cursor = _session.query(Cursor).join(File).join(CursorKind).\
+                    filter(Cursor.usr == cursor.get_usr()).\
+                    filter(Cursor.spelling == cursor.spelling).\
+                    filter(Cursor.displayname == cursor.displayname).\
+                    filter(CursorKind.name == cursor.kind.name).\
+                    filter(File.name == cursor.location.file.name).\
+                    filter(Cursor.offset_start == cursor.location.offset).\
+                    filter(Cursor.offset_end == cursor.extent.end.offset).one()
         except MultipleResultsFound, e:
             print e
+            print_error_cursor(cursor)
             raise
         except NoResultFound: # The cursor has not been stored in DB.
+            print "No result found"
             _cursor = Cursor(cursor)
 
         return _cursor
@@ -278,11 +304,12 @@ class Cursor(_Base):
         # because referenced cursor will certainly have spelling, so I use spelling.
         try:
             _cursor = _session.query(Cursor).join(File).\
-                filter(Cursor.spelling == cursor.spelling).\
+                filter(Cursor.usr == cursor.get_usr()).\
                 filter(File.name == cursor.location.file.name).\
                 filter(Cursor.offset_start == cursor.location.offset).one()
         except MultipleResultsFound, e:
             print e
+            print_error_cursor(cursor)
             raise
         except NoResultFound: # The cursor has not been stored in DB.
             _cursor = Cursor(cursor)
@@ -326,8 +353,8 @@ class CursorKind(_Base):
 
     @staticmethod
     def from_clang_cursor_kind(kind):
-        query = _session.query(CursorKind).filter(CursorKind.name == kind.name)
-        return query.first()
+        return _session.query(CursorKind).\
+            filter(CursorKind.name == kind.name).one()
     
 
 class Type(_Base):
@@ -449,8 +476,9 @@ def build_db_tree(cursor):
     _tu = cursor.translation_unit
 
     def build_db_cursor(cursor, parent, left):
-        db_cursor = Cursor(cursor)
+        db_cursor = Cursor.from_clang_cursor(cursor)
         db_cursor.parent = parent
+        print "cursor_id", id(db_cursor), "parent_id", id(parent)
         db_cursor.left = left
         db_cursor.kind = CursorKind.from_clang_cursor_kind(cursor.kind)
         if Type.is_valid_clang_type(cursor.type):
