@@ -222,7 +222,9 @@ class Cursor(_Base):
         self.location_end = SourceLocation(location_end.line,
                                            location_end.column,
                                            location_end.offset)
-        
+
+        self.kind = CursorKind.from_clang_cursor_kind(cursor.kind)
+    
 
     @staticmethod
     def from_clang_declaration(cursor):
@@ -480,7 +482,6 @@ def build_db_tree(cursor):
         db_cursor.parent = parent
         print "cursor_id", id(db_cursor), "parent_id", id(parent)
         db_cursor.left = left
-        db_cursor.kind = CursorKind.from_clang_cursor_kind(cursor.kind)
         if Type.is_valid_clang_type(cursor.type):
             db_cursor.type = Type.from_clang_type(cursor.type)
             if db_cursor.type.declaration is None or \
