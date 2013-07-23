@@ -71,6 +71,12 @@ class File(_Base):
         """
         self.name = clang_file.name
         self.time = clang_file.time
+
+    @staticmethod
+    def from_clang_cursor(cursor):
+        assert cursor.location.file is not None
+        return File.from_clang_tu(cursor.translation_unit,
+                                  cursor.location.file.name)
     
     @staticmethod
     def from_clang_tu(tu, name):
@@ -224,6 +230,9 @@ class Cursor(_Base):
                                            location_end.offset)
 
         self.kind = CursorKind.from_clang_cursor_kind(cursor.kind)
+
+        if cursor.location.file:
+            self.file = File.from_clang_cursor(cursor)
     
 
     @staticmethod
@@ -489,9 +498,6 @@ def build_db_tree(cursor):
                 not db_cursor.type.declaration.is_definition):
                 db_cursor.type.declaration = db_cursor
                 _session.add(db_cursor.type)
-
-        if cursor.location.file:
-            db_cursor.file = File.from_clang_tu(_tu, cursor.location.file.name)
 
         def_cursor = cursor.get_definition()
         if def_cursor is not None:
