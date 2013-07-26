@@ -97,6 +97,26 @@ class File(_Base):
         
         return _file
 
+    @staticmethod
+    def _is_file_in_db(file_name):
+        try:
+            files = _session.query(File).\
+                filter(File.name == file_name).all()
+            return len(files) > 0
+        except:
+            return False
+
+    @staticmethod
+    def get_pending_filenames(tu):
+        pending_files = set()
+        for include in tu.get_includes():
+            for file_name in [include.source.name, include.include.name]:
+                if not File._is_file_in_db(file_name):
+                    pending_files.add(file_name)
+
+        return pending_files
+        
+
 class SourceLocation(object):
     """ DB representation of clang SourceLocation
     """
@@ -486,6 +506,9 @@ def build_db_tree(cursor):
 
     _tu = cursor.translation_unit
 
+    pending_files = File.get_pending_filenames(_tu)
+    build_db_file(_tu)
+    
     def build_db_cursor(cursor, parent, left):
         db_cursor = Cursor.from_clang_cursor(cursor)
         db_cursor.parent = parent
@@ -547,7 +570,9 @@ def build_db_tree(cursor):
     left = 0
     if cursor.kind == clang.cindex.CursorKind.TRANSLATION_UNIT:
         for child in cursor.get_children():
-            left = build_db_cursor(child, None, left) + 1
+            if child.location.file is None or \
+                    child.location.file.name in pending_files:
+                left = build_db_cursor(child, None, left) + 1
     else:
         build_db_cursor(cursor, None, left)
 
