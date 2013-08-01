@@ -14,7 +14,7 @@ _engine = create_engine('sqlite:///test.db', echo=False)
 _Base = declarative_base()
 
 
-def print_error_cursor(cursor):
+def _print_error_cursor(cursor):
     """ print the information about cursor when error occur.
     
     Arguments:
@@ -240,7 +240,7 @@ class Cursor(_Base):
         location_start = cursor.location
         location_end = cursor.extent.end
 
-        print_error_cursor(cursor)
+        _print_error_cursor(cursor)
 
         self.location_start = SourceLocation(location_start.line,
                                              location_start.column,
@@ -271,7 +271,7 @@ class Cursor(_Base):
                 filter(Cursor.is_definition == True).one()
         except MultipleResultsFound, e:
             print e
-            print_error_cursor(cursor)
+            _print_error_cursor(cursor)
             raise
         except NoResultFound: # The cursor has not been stored in DB.
             _cursor = None
@@ -320,7 +320,7 @@ class Cursor(_Base):
                     filter(Cursor.offset_end == cursor.extent.end.offset).one()
         except MultipleResultsFound, e:
             print e
-            print_error_cursor(cursor)
+            _print_error_cursor(cursor)
             raise
         except NoResultFound: # The cursor has not been stored in DB.
             print "No result found"
@@ -340,7 +340,7 @@ class Cursor(_Base):
                 filter(Cursor.offset_start == cursor.location.offset).one()
         except MultipleResultsFound, e:
             print e
-            print_error_cursor(cursor)
+            _print_error_cursor(cursor)
             raise
         except NoResultFound: # The cursor has not been stored in DB.
             _cursor = Cursor(cursor)
