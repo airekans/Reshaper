@@ -7,6 +7,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm.collections import attribute_mapped_collection
 from sqlalchemy.orm.exc import MultipleResultsFound, NoResultFound
 from sqlalchemy.schema import Table
+from sqlalchemy.sql import func
 import weakref
 import clang.cindex
 
@@ -112,6 +113,7 @@ class File(_Base):
         for include in tu.get_includes():
             for file_name in [include.source.name, include.include.name]:
                 if not File._is_file_in_db(file_name):
+                    print "file is not in db"
                     pending_files.add(file_name)
 
         return pending_files
@@ -346,6 +348,14 @@ class Cursor(_Base):
             _cursor = Cursor(cursor)
 
         return _cursor
+
+    @staticmethod
+    def get_max_nested_set_index():
+        """ Get the max value of right index for nested set model in DB.
+        """
+
+        max_right = _session.query(func.max(Cursor.right)).scalar()
+        return max_right if max_right is not None else 0
  
         
 class CursorKind(_Base):
@@ -567,10 +577,12 @@ def build_db_tree(cursor):
         
         return right
 
-    left = 0
+    left = Cursor.get_max_nested_set_index()
+    if left > 0:
+        left += 20
     if cursor.kind == clang.cindex.CursorKind.TRANSLATION_UNIT:
         for child in cursor.get_children():
-            if child.location.file is None or \
+            if child.location.file and \
                     child.location.file.name in pending_files:
                 left = build_db_cursor(child, None, left) + 1
     else:

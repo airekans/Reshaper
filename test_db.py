@@ -10,10 +10,10 @@ if __name__ == '__main__':
 
     db.build_db_cursor_kind()
     db.build_db_type_kind()
-    
-    tu = get_tu(sys.argv[1], is_from_cache_first = False)
-    db.build_db_file(tu)
-    db.build_db_tree(tu.cursor)
+
+    for filename in sys.argv[1:]:
+        _tu = get_tu(filename, is_from_cache_first = False)
+        db.build_db_tree(_tu.cursor)
 
     ipdb.set_trace()
     
