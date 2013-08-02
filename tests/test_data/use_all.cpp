@@ -1,7 +1,7 @@
-#include "typedef.h"
+#include "static_func.h"
 #include "macro.h"
 #include "enum_header.h"
-#include "static_func.h"
+#include "typedef.h"
 
 int main()
 {

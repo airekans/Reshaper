@@ -1,5 +1,8 @@
 #ifndef _HEADER_H
 #define _HEADER_H
+
+#include "static_func.h"
+
 class HeaderOne
 {
 public:
