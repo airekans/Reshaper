@@ -33,7 +33,7 @@ def parse_options():
 
     return option_parser.parse_args()
 
-def add_cursor_file(cursor, level, header_set):
+def add_cursor_file(cursor, level, header_list):
     """visitor for walk ast to get useful header files
     """
     if cursor is None:
