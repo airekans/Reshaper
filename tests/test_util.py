@@ -209,7 +209,7 @@ def test_get_function_signature_with_multiline_function():
 
 
 @with_setup(setup)
-def test_get_function_signature_with_error_cursor():
+def test_get_function_signature_with_no_token_cursor():
     # create a cursor return 0 token
     methods = get_cursors_if(_cursor_A,
                              (lambda c: c.kind == CursorKind.CXX_METHOD and
@@ -218,7 +218,7 @@ def test_get_function_signature_with_error_cursor():
     
     method_cursor = methods[0]
     method_cursor.get_tokens = lambda : []
-    eq_("", get_function_signature(method_cursor))
+    eq_("void foo()", get_function_signature(method_cursor))
 
 
 
