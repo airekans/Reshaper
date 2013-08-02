@@ -163,15 +163,6 @@ digraph G {
         self.assertEqual(dot_str_hide_functions_expected, 
                          dot_str_hide_functions, dot_str_hide_functions)
         
-    def test_gen_class_internal_relation_graph(self):
-        ''' test gen_class_collaboration_graph'''
-        src_path = os.path.join(os.path.dirname(__file__),
-                                'test_data','class_relation.cpp') 
-        _tu = get_tu(src_path)
-        
-        dot_str = dgu.gen_class_internal_relation_graph(_tu, 'A')    
-        print dot_str 
-        
         
 if __name__ == "__main__":
     unittest.main()
