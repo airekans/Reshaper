@@ -166,11 +166,6 @@ class CursorCache(object):
         key = cursor.hash
         if key in CursorCache.hash2cursor:
             return CursorCache.hash2cursor[key]
-#         elif not self.is_cursor_in_tu_file(cursor):
-#             if is_ref_cursor:
-#                 return CursorLazyLoad(cursor, self._tu_file_path)
-#             else:
-#                 return None
         else:
             cc = CursorCache(cursor, self._tu_file_path) 
             cc.update_ref_cursors()
@@ -247,46 +242,6 @@ class CursorCache(object):
     @property
     def lexical_parent(self):    
         return self._lexical_parent
-
-
-# class CursorLazyLoad(CursorCache):
-#     
-#     def __init__(self, cursor, tu_file_path):
-#         CursorCache.__init__(self, cursor, tu_file_path, False)
-#     
-#     def __load_cursor(self):
-#         if self._cursor:
-#             return
-#         _tu = get_tu(self.location.file.name)
-#         self._cursor = get_cursor_if(_tu, self.is_same_cursor)
-#         assert(self._cursor)
-#     
-#     
-#     def get_children(self):
-#         self.__load_cursor()
-#         return self._cursor.get_children()
-#     
-#     def get_definition(self):
-#         self.__load_cursor()
-#         return self._cursor.get_definition()
-#     
-#     def get_declaration(self):
-#         self.__load_cursor()
-#         return self._declaration
-#     
-#     @property
-#     def semantic_parent(self):
-#         self.__load_cursor()
-#         return self._cursor.semantic_parent
-#         
-#     @property
-#     def lexical_parent(self):    
-#         self.__load_cursor()
-#         return self._cursor.lexical_parent
-#          
-#     def update_ref_cursors(self):
-#         pass # do nothing
-
 
 
 class DiagnosticCache(object):
@@ -418,7 +373,7 @@ def get_tu(source, all_warnings=False, config_path = '~/.reshaper.cfg',
     
     return _tu
 
-def save_ast(file_path, output_path=None , is_readable=False, \
+def save_ast(file_path, output_path=None , is_xml=False, \
              config_path=None, cdb_path=None, ref_source = None):
     
     _tu = get_tu(file_path, lookup_cache_file_first = False,
@@ -434,17 +389,14 @@ def save_ast(file_path, output_path=None , is_readable=False, \
     
     cache_tu = TUCache(_tu, file_path)
         
-    cache_path = get_ast_path(output_path, file_path, is_readable)
+    cache_path = get_ast_path(output_path, file_path, is_xml)
     
     print 'Saving ast of %s to %s' % (file_path, cache_path)
         
-    if is_readable:
+    if is_xml:
         cache_tu.xml_dump(cache_path)
     else:
         cache_tu.dump(cache_path)
         
     return True
 
-def save_ast_in_dir(dir_path, is_readable, \
-                    config_path, cdb_path):
-    pass

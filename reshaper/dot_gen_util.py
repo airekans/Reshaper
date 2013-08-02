@@ -7,28 +7,28 @@ Created on May 30, 2013
 from jinja2 import Template
 import semantic as sem, util
 
-NODE_TEMPLATE = \
+_NODE_TEMPLATE = \
 '''
   {{node}} [label="{{label}}",height=0.2,width=0.4,color="black", fillcolor="grey75", style="filled" fontcolor="black"];
 '''
 
-INHERIT_TEMPLATE = \
+_INHERIT_TEMPLATE = \
 '''
   {{base}} -> {{child}} [dir="back", color="midnightblue",fontsize="10",style="solid",label="<inherit>",fontname="Helvetica"];  
 '''
 
-COMPOSITE_TEMPLATE = \
+_COMPOSITE_TEMPLATE = \
 '''
   {{cls}} -> {{member_cls}} [color="midnightblue",fontsize="10",style="dashed",label="{{member}}" ,fontname="Helvetica"];
 '''
 
-CALLEE_TEMPLATE = \
+_CALLEE_TEMPLATE = \
 '''
   {{caller_cls}} -> {{callee_cls}} [color="darkorchid3",fontsize="10",style="dashed",label="{{callee}}" ,fontname="Helvetica"];
 '''
 
 
-class DotGenertor(object):
+class DotGenerator(object):
     def __init__(self):
         self._label2node = {}
         self._dot_str = ''
@@ -41,7 +41,7 @@ class DotGenertor(object):
         
         self._label2node[label] = node
         
-        template = Template(NODE_TEMPLATE)
+        template = Template(_NODE_TEMPLATE)
                 
         self._dot_str += template.render(label=label, node = node)  
     
@@ -49,7 +49,7 @@ class DotGenertor(object):
         self.add_node(base_cls_name)
         self.add_node(child_cls_name)
         
-        template = Template(INHERIT_TEMPLATE)
+        template = Template(_INHERIT_TEMPLATE)
         base_node = self._label2node[base_cls_name]
         child_node = self._label2node[child_cls_name]
         
@@ -60,7 +60,7 @@ class DotGenertor(object):
         self.add_node(cls_name)
         self.add_node(member_cls_name)
         
-        template = Template(COMPOSITE_TEMPLATE)
+        template = Template(_COMPOSITE_TEMPLATE)
         cls_node = self._label2node[cls_name]
         member_cls_node = self._label2node[member_cls_name]
 
@@ -72,7 +72,7 @@ class DotGenertor(object):
         self.add_node(cls_name)
         self.add_node(callee_cls_name)
         
-        template = Template(CALLEE_TEMPLATE)
+        template = Template(_CALLEE_TEMPLATE)
         cls_node = self._label2node[cls_name]
         callee_cls_node = self._label2node[callee_cls_name]
 
@@ -129,7 +129,7 @@ def gen_class_collaboration_graph(_tu, class_names, source_dir= None, show_funct
     source_dir: if set, will only show the classes that define in this folder
     show_functions: if False, will not show function names
     '''
-    dot_gen = DotGenertor()
+    dot_gen = DotGenerator()
     cls_cursors = sem.get_classes_with_names(_tu, class_names)
     
     if source_dir:

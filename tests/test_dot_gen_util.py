@@ -4,9 +4,7 @@ Created on May 30, 2013
 @author: liangzhao
 '''
 import unittest, os
-from reshaper.dot_gen_util import DotGenertor, gen_class_collaboration_graph
-
-import reshaper.dot_gen_util as dgu
+from reshaper.dot_gen_util import DotGenerator, gen_class_collaboration_graph
 from reshaper.ast import get_tu, save_ast
 
 #the test result string is long, so ignore this warning
@@ -14,7 +12,7 @@ from reshaper.ast import get_tu, save_ast
 
 class Test(unittest.TestCase):
     def setUp(self):
-        self._dot_gen = DotGenertor()
+        self._dot_gen = DotGenerator()
         self.maxDiff = None
 
     def test_empty_graph(self):
