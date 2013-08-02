@@ -8,7 +8,7 @@ from reshaper.util import get_cursor_if, is_cursor_in_file_func, check_diagnosti
 import ConfigParser
 import logging, os
 from reshaper.semantic import get_source_path_candidates, is_header
-
+from reshaper import util
 
 _CONF = Config()
 
@@ -73,6 +73,9 @@ class CursorKindCache(FlyweightBase):
     '''cache of CursorKind '''
     def __init__(self, kind):
         FlyweightBase.__init__(self, kind)
+        self._is_declaration = kind.is_declaration()
+    def is_declaration(self):
+        return self._is_declaration
 
 class FileCache(FlyweightBase):
     ''' cache of File '''
@@ -112,7 +115,7 @@ class TokenCache(object):
 class CursorCache(object):
     ''' Cache for Cursor'''
     hash2cursor = {}
-    def __init__(self, cursor, tu_file_path, is_get_children = True):
+    def __init__(self, cursor, tu_file_path):
         
         
         self._tu_file_path = tu_file_path
@@ -143,19 +146,18 @@ class CursorCache(object):
         self.hash = cursor.hash
         CursorCache.hash2cursor[self.hash] = self
         
-        if is_get_children:
-            for c in cursor.get_children():
-                child = self.create_cursor_cache(c, is_get_children,
-                                                 is_ref_cursor = False)
-                if not child:
-                    continue
-                child.set_parent(self)
-                self._children.append(child)
+
+        for c in cursor.get_children():
+            child = self.create_cursor_cache(c)
+            if not child:
+                continue
+            child.set_parent(self)
+            self._children.append(child)
     
     def is_cursor_in_tu_file(self, cursor):
         return is_cursor_in_file_func(self._tu_file_path)(cursor)  
         
-    def create_cursor_cache(self, cursor, is_populate_children, is_ref_cursor):
+    def create_cursor_cache(self, cursor):
         '''is_ref_cursor means the cursor is
            declaration, definition, semantic_parent or lexical_parent '''         
         if not cursor:
@@ -164,37 +166,24 @@ class CursorCache(object):
         key = cursor.hash
         if key in CursorCache.hash2cursor:
             return CursorCache.hash2cursor[key]
-        elif not self.is_cursor_in_tu_file(cursor):
-            if is_ref_cursor:
-                return CursorLazyLoad(cursor, self._tu_file_path)
-            else:
-                return None
         else:
-            return CursorCache(cursor, self._tu_file_path, is_populate_children) 
+            cc = CursorCache(cursor, self._tu_file_path) 
+            cc.update_ref_cursors()
+            return cc
     
     def update_ref_cursors(self):
-        is_populate_children = False
-        is_ref_cursor = True
-        
+              
         _definition = self._cursor.get_definition()
-        self._definition = self.create_cursor_cache(_definition,
-                                                     is_populate_children,
-                                                     is_ref_cursor)
+        self._definition = self.create_cursor_cache(_definition)
          
-        _declaration = _CONF.lib.clang_getCursorReferenced(self._cursor)
-        self._declaration = self.create_cursor_cache(_declaration, 
-                                                     is_populate_children,
-                                                     is_ref_cursor)
+        _declaration = util.get_declaration(self._cursor)
+        self._declaration = self.create_cursor_cache(_declaration)
         
         _semantic_parent = self._cursor.semantic_parent 
-        self._semantic_parent = self.create_cursor_cache(_semantic_parent, 
-                                                         is_populate_children,
-                                                         is_ref_cursor)
+        self._semantic_parent = self.create_cursor_cache(_semantic_parent)
         
         _lexical_parent =  self._cursor.lexical_parent
-        self._lexical_parent = self.create_cursor_cache(_lexical_parent,
-                                                        is_populate_children,
-                                                        is_ref_cursor)
+        self._lexical_parent = self.create_cursor_cache(_lexical_parent)
         
         for c in self._children:
             c.update_ref_cursors()
@@ -202,7 +191,6 @@ class CursorCache(object):
     
     def __getstate__(self):
         dic_copy = dict(self.__dict__)
-        del dic_copy['_tu_file_path']
         del dic_copy['_cursor'] 
         return dic_copy   
     
@@ -226,6 +214,7 @@ class CursorCache(object):
     
     def is_definition(self):
         return self._is_definition
+    
  
     def get_definition(self):
         return self._definition
@@ -255,46 +244,6 @@ class CursorCache(object):
         return self._lexical_parent
 
 
-class CursorLazyLoad(CursorCache):
-    
-    def __init__(self, cursor, tu_file_path):
-        CursorCache.__init__(self, cursor, tu_file_path, False)
-    
-    def __load_cursor(self):
-        if self._cursor:
-            return
-        _tu = get_tu(self.location.file.name)
-        self._cursor = get_cursor_if(_tu, self.is_same_cursor)
-        assert(self._cursor)
-    
-    
-    def get_children(self):
-        self.__load_cursor()
-        return self._cursor.get_children()
-    
-    def get_definition(self):
-        self.__load_cursor()
-        return self._cursor.get_definition()
-    
-    def get_declaration(self):
-        self.__load_cursor()
-        return self._declaration
-    
-    @property
-    def semantic_parent(self):
-        self.__load_cursor()
-        return self._cursor.semantic_parent
-        
-    @property
-    def lexical_parent(self):    
-        self.__load_cursor()
-        return self._cursor.lexical_parent
-         
-    def update_ref_cursors(self):
-        pass # do nothing
-
-
-
 class DiagnosticCache(object):
     def __init__(self, diag):
         self.spelling =  diag.spelling
@@ -304,13 +253,15 @@ class DiagnosticCache(object):
 class TUCache(object):
     def __init__(self, tu, tu_path):
         CursorCache.hash2cursor.clear()
-        self.cursor = CursorCache(tu.cursor, tu_path, True)
+        self.cursor = CursorCache(tu.cursor, tu_path)
         self.cursor.update_ref_cursors()
         self.diagnostics = [DiagnosticCache(diag) for diag in tu.diagnostics]
     
-    def text_dump(self, file_path):
+    def xml_dump(self, file_path):
         ''' dump with text format '''
-        pickle.dump(self, open(file_path,'wb'))
+        from gnosis.xml.pickle import XML_Pickler
+        o = XML_Pickler(self)
+        o.dump(open(file_path,'wb'))
         
     def dump(self,file_path):
         ''' dump with binary format, which is faster and uses less space'''
@@ -323,13 +274,13 @@ class TUCache(object):
     def get_parent(self):
         return None   
     
-def get_ast_path(dir_name, source):
-    if not dir_name:
+def get_ast_path(output_path, source, is_readable):
+    if output_path:
+        return output_path
+    elif is_readable:
+        return source + '.xml'
+    else:
         return source + '.ast'
-    
-    filename = os.path.basename(source)
-    return os.path.join(dir_name, filename + '.ast')
-
 
 _source2tu = {}
 
@@ -350,7 +301,7 @@ def _get_cdb_cmd_for_header(cdb, cdb_path, header_path, ref_source):
     return None
 
 def get_tu(source, all_warnings=False, config_path = '~/.reshaper.cfg', 
-           cache_folder = '', is_from_cache_first = True,
+           lookup_cache_file_first = True,
            cdb_path = None, ref_source = None):
     """Obtain a translation unit from source and language.
 
@@ -369,8 +320,8 @@ def get_tu(source, all_warnings=False, config_path = '~/.reshaper.cfg',
     if full_path in _source2tu:
         return _source2tu[full_path]
     
-    if is_from_cache_first:
-        cache_path = get_ast_path(cache_folder, source)
+    if lookup_cache_file_first:
+        cache_path = get_ast_path(None, source, False)
         if os.path.isfile(cache_path):
             _tu =  TUCache.load(cache_path)
             _source2tu[full_path] = _tu
@@ -419,15 +370,12 @@ def get_tu(source, all_warnings=False, config_path = '~/.reshaper.cfg',
     
     _tu = TranslationUnit.from_source(source, args)
     
-    cache_tu = TUCache(_tu, source)
-    _source2tu[full_path] = cache_tu
-    
-    return cache_tu
+    return _tu
 
-def save_ast(file_path, _dir=None , is_readable=False, \
+def save_ast(file_path, output_path=None , is_xml=False, \
              config_path=None, cdb_path=None, ref_source = None):
     
-    _tu = get_tu(file_path, is_from_cache_first = False,
+    _tu = get_tu(file_path, lookup_cache_file_first = False,
                  cdb_path = cdb_path,
                  config_path = config_path,
                  ref_source = ref_source)
@@ -437,16 +385,17 @@ def save_ast(file_path, _dir=None , is_readable=False, \
         return False
     
     check_diagnostics(_tu.diagnostics)
+    
+    cache_tu = TUCache(_tu, file_path)
         
-    cache_path = get_ast_path(_dir, file_path)
+    cache_path = get_ast_path(output_path, file_path, is_xml)
     
     print 'Saving ast of %s to %s' % (file_path, cache_path)
         
-    if is_readable:
-        _tu.text_dump(cache_path)
+    if is_xml:
+        cache_tu.xml_dump(cache_path)
     else:
-        _tu.dump(cache_path)
+        cache_tu.dump(cache_path)
         
     return True
-
 
