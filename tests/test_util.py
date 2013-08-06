@@ -15,9 +15,8 @@ _cursor_A = None
 def setup():
     global _tu
     source = os.path.join(INPUT_DIR, 'class.cpp')
-    save_ast(source)
-    
-    _tu = get_tu(source, config_path = None)
+
+    _tu = get_tu(source, config_path = None, lookup_cache_file_first = False)
     assert(_tu is not None)
     
     global _cursor_A
