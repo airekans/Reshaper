@@ -243,10 +243,16 @@ def remove_invalid_includes_for_file(filename, \
     file_obj = IncludeHandler(filename, cdb_path = cdb_path, \
             config_path = config_path)
     tmp_file = file_obj.get_clean_include_file()
+    if not tmp_file:
+        print 'Info: %s has no invalid includes' % filename
+        return
 
     if remove_origin_file:
         tmp_file.checkout()
         tmp_file.remove_invalid_includes()
+    else:
+        print 'Info: %s finished, result file is %s' % \
+                (file_name, tmp_file)
 
 def main():
     """main function
