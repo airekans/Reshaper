@@ -6,7 +6,7 @@ should make sure that the length of include files
 cannot be over 100 lines
 """
 import os, sys, re
-from clang.cindex import TypeKind
+from clang.cindex import TranslationUnit, TypeKind
 from optparse import OptionParser
 from functools import partial
 from reshaper.option import setup_options
@@ -56,7 +56,8 @@ class IncludeHandler(object):
     purpose if to remove invalid include files
     """
     def __init__(self, filename, cdb_path = None, \
-            config_path = "~/.reshaper.cfg", options = 1):
+            config_path = "~/.reshaper.cfg", \
+            options = TranslationUnit.PARSE_DETAILED_PROCESSING_RECORD):
         self._file_name = os.path.abspath(filename)
         if not os.path.isfile(self._file_name):
             raise ValueError, "%s : No such file!"
@@ -73,7 +74,7 @@ class IncludeHandler(object):
                     % self._file_name
 
         self._useful_list = []
-        self._invalid_list= []
+        self._invalid_list = []
         self._indirect_dict = {}
         self._header_list = []
         self._temp_file = None
@@ -188,12 +189,13 @@ class IncludeHandler(object):
                 if not match_pattern:
                     write_obj.write(line)
 
-            file_obj.close()
-            write_obj.close()
             self._temp_file = tmp_file_name
         except IOError, err:
             print err
             sys.exit(-1)
+        finally:
+            file_obj.close()
+            write_obj.close()
 
         return self._temp_file
 
@@ -225,7 +227,8 @@ class IncludeHandler(object):
             print "checkout %s error!" % self._file_name
             sys.exit(-1)
 
-def remove_invalid_includes_for_file(filename, cdb_path, config_path, remove_origin_file):
+def remove_invalid_includes_for_file(filename, \
+        cdb_path, config_path, remove_origin_file):
     """ handle file to remove invalid include files
     """
     file_obj = IncludeHandler(filename, cdb_path = cdb_path, \
@@ -258,12 +261,12 @@ def main():
     if options.filename:
         remove_invalid_includes_for_file(options.filename, options.cdb_path, \
                 options.config, options.remove)
-
-    if options.directory:
+    elif options.directory:
         scan_dir_parse_files(options.directory, \
-                partial(remove_invalid_includes_for_file, cdb_path = options.cdb_path, \
-                config_path = options.config, \
-                remove_origin_file = options.remove))
+                partial(remove_invalid_includes_for_file, \
+                    cdb_path = options.cdb_path, \
+                    config_path = options.config, \
+                    remove_origin_file = options.remove))
 
 if __name__ == "__main__":
     main()
