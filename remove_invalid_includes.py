@@ -252,7 +252,7 @@ def remove_invalid_includes_for_file(filename, \
         tmp_file.remove_invalid_includes()
     else:
         print 'Info: %s finished, result file is %s' % \
-                (file_name, tmp_file)
+                (filename, tmp_file)
 
 def main():
     """main function
