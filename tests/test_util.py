@@ -15,9 +15,8 @@ _cursor_A = None
 def setup():
     global _tu
     source = os.path.join(INPUT_DIR, 'class.cpp')
-    save_ast(source)
-    
-    _tu = get_tu(source, config_path = None)
+
+    _tu = get_tu(source, config_path = None, lookup_cache_file_first = False)
     assert(_tu is not None)
     
     global _cursor_A
@@ -197,7 +196,7 @@ def test_get_function_signature_with_multiline_function():
 
 
 @with_setup(setup)
-def test_get_function_signature_with_error_cursor():
+def test_get_function_signature_with_no_token_cursor():
     # create a cursor return 0 token
     methods = get_cursors_if(_tu,
                              (lambda c: c.kind == CursorKind.CXX_METHOD and
@@ -206,7 +205,7 @@ def test_get_function_signature_with_error_cursor():
     
     method_cursor = methods[0]
     method_cursor.get_tokens = lambda : []
-    eq_("", get_function_signature(method_cursor))
+    eq_("void foo()", get_function_signature(method_cursor))
 
 
 

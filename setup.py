@@ -11,6 +11,7 @@ setup(name='reshaper',
       author_email='airekans@gmail.com',
       url='https://github.com/airekans/reshaper',
       packages=['reshaper'],
-      scripts=['extract_interface.py', 'ast_dump.py', 'serialize_class.py']
+      scripts=['extract_interface.py', 'ast_dump.py', 
+               'tools/cdb_dump.py']
 )
 

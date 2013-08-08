@@ -364,9 +364,8 @@ def get_tu(source, all_warnings=False, config_path = '~/.reshaper.cfg',
 
         filter_options = ['clang', 'clang++', '-MMD', '-MP']
         args += [arg for arg in cmds[0].arguments if arg not in filter_options]
-        
-    
-    logging.debug(' '.join(args))    
+
+    logging.debug(' '.join(args))
     
     _tu = TranslationUnit.from_source(source, args)
     

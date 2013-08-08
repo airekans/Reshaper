@@ -1,11 +1,36 @@
 #! /usr/bin/env python
 
-import json
+try:
+    import json
+except ImportError:
+    import simplejson as json
+    
 import sys
 import os
 import re
 from optparse import OptionParser
 
+
+def join_if_relative_path(prefix_path, path):
+    if path[0] != '/':
+        return os.path.join(prefix_path, path)
+    else:
+        return path
+
+def transform_compile_command(cmd, work_dir):
+    i, cmd_len = 0, len(cmd)
+    while i < cmd_len:
+        arg = cmd[i]
+        if arg.startswith('-I'):
+            if arg == '-I': # in the form of "-I path"
+                cmd[i + 1] = join_if_relative_path(work_dir, cmd[i + 1])
+                i += 1
+            else:
+                include_path = join_if_relative_path(work_dir, arg[2:])
+                arg = '-I' + include_path
+                cmd[i] = arg
+
+        i += 1
 
 def convert_file_to_cdb(in_fd, work_dir):
     compile_command_regex = \
@@ -14,10 +39,15 @@ def convert_file_to_cdb(in_fd, work_dir):
     for line in in_fd:
         result = compile_command_regex.match(line)
         if result is not None:
+            cmd_str = ''.join(['clang++', result.group('infix'),
+                           result.group('suffix')])
+            
+            cmd = cmd_str.split()
+            transform_compile_command(cmd, work_dir)
+
             cdb.append({
                 "directory": work_dir,
-                "command": ''.join(['clang++', result.group('infix'),
-                                    result.group('suffix')]),
+                "command": ' '.join(cmd),
                 "file": result.group("file")
             })
 
