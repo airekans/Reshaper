@@ -4,8 +4,6 @@
 import os
 from clang.cindex import CursorKind
 from nose.tools import eq_
-from reshaper.ast import get_tu
-from reshaper.util import get_cursor_if
 from remove_invalid_includes import IncludeHandler, remove_invalid_includes_for_file
 from functools import partial
 

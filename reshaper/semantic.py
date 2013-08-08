@@ -352,7 +352,7 @@ def get_lib_name(path):
            return cand_lib_name
        else:
            return 'GUI'
-    return None
+    return ''
 
 def is_typeref(cursor):
     return cursor.kind == CursorKind.TYPE_REF

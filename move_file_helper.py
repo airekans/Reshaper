@@ -35,11 +35,11 @@ class IncludeObject(object):
         '''
         self.can_be_moved = can_be_moved
 
-class MoveFileHelper(object):
+class MoveFileHandle(object):
     '''used to pass file get move helper information
     '''
-    def __init__(self, get_tu_func, lib_name = "", \
-            file_name = "", depth = 1):
+    def __init__(self, get_tu_func, file_name = "", \
+            lib_name = "", depth = 1):
         self._lib_name = lib_name
         self._file_name = get_source_file(file_name)
         self._get_tu_func = get_tu_func
@@ -151,6 +151,17 @@ class MoveFileHelper(object):
         for file_obj in includes:
             self._get_include_recurvely(file_obj, 1, source_tu.get_includes())
 
+    def begin_to_handle_for_UT(self, source_tu):
+        '''this is used for unittest
+        '''
+        includes = []
+        for include in source_tu.get_includes():
+            if include.depth == 1 and \
+                    get_lib_name(include.include.name) == self._lib_name:
+                includes.append(include.include.name)
+        for file_obj in includes:
+            self._get_include_recurvely(file_obj, 1, source_tu.get_includes())
+
     def get_output_list(self):
         '''return output list of IncludeObject
         '''
@@ -169,9 +180,6 @@ def parse_options():
     option_parser.add_option('-d', '--depth', dest = 'depth', default = 1, \
             type = 'int', help ='depth to generator, default is 1.')
     return option_parser.parse_args()
-
-
-
 
 def main():
     """main function
@@ -192,10 +200,10 @@ def main():
             print "Error : Can't get lib name, %s" % file_path
             continue
 
-        file_handler = MoveFileHelper(\
+        file_handler = MoveFileHandle(\
                 partial(get_tu, cdb_path = options.cdb_path, \
                     config_path = options.config), 
-                lib_name, file_name, options.depth)
+                file_name, lib_name, options.depth)
 
         print "-------------------------------------------------"
         print file_name
