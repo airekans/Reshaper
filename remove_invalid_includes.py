@@ -164,6 +164,17 @@ class IncludeHandler(object):
         # gen pattern to get includes
         pattern = re.compile('^(#include) *[<"](.*)[>"]')
         # handle file
+        '''
+        open file to get contents and write to new file according to:
+        1) use pattern.search to get all includes
+        2) if search succeed, include filename will be the 2nd element of
+            the group,(between " and ")
+        3) search invalid includes list, if it not in invalid list, write it
+            to new tmp_file
+        
+        in order to import performance, only lines < max_include_lines will be
+        search and check.
+        '''
         try:
             file_obj = open(self._file_name, 'r')
             write_obj = open(tmp_file_name, 'w')
@@ -196,8 +207,6 @@ class IncludeHandler(object):
         finally:
             file_obj.close()
             write_obj.close()
-
-        return self._temp_file
 
     def get_clean_include_file(self):
         """get clean include file
