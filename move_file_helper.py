@@ -72,6 +72,12 @@ class MoveFileHandle(object):
         self._already_handle_list = []
         self._output_list = []
         self._includes_cache = {}
+        self._no_hint = False
+
+    def set_no_hint(self, no_hint = True):
+        '''no need to hint
+        '''
+        self._no_hint = no_hint
 
     def get_includes_for_source_file(self, header_name, \
             source_file):
@@ -113,13 +119,16 @@ class MoveFileHandle(object):
 
         # if is leaf node, not return directly.
         should_return = False
-        if current_depth >= self._max_depth:
-            should_return = True
+        if current_depth >= self._max_depth and self._no_hint:
+            return
 
         if header_name in self._already_handle_list:
             include_obj.set_have_been_parsed()
             self._output_list.append(include_obj)
             return
+
+        if current_depth >= self._max_depth:
+            should_return = True
 
         if not should_return:
             current_depth += 1
@@ -227,6 +236,11 @@ def parse_options():
 
     option_parser.add_option('-d', '--depth', dest = 'depth', default = 1, \
             type = 'int', help ='depth to generator, default is 1.')
+    option_parser.add_option('-n', '--no-hint', \
+            action = 'store_true', dest = 'no_hint', \
+            help = "don't 'need hint to suggest if leaf" 
+            ' node file can be moved or not'
+            )
     return option_parser.parse_args()
 
 def main():
@@ -252,13 +266,16 @@ def main():
                 partial(get_tu, cdb_path = options.cdb_path, \
                     config_path = options.config), 
                 file_name, lib_name, options.depth)
+        if options.no_hint:
+            file_handler.set_no_hint()
 
         print "-------------------------------------------------"
         print file_name
         for obj in file_handler.get_output_list():
             out_str = obj.depth * "**" + " "  + os.path.abspath(obj.file_name)
-            out_str += "*" if obj.can_be_moved else ''
-            out_str += " ~" if obj.have_parsed else ''
+            if not options.no_hint:
+                out_str += "*" if obj.can_be_moved else ''
+                out_str += " ~" if obj.have_parsed else ''
             print out_str
 
 if __name__ == '__main__':
