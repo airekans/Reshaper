@@ -18,19 +18,16 @@ def test_MoveFileHandle():
     file_obj.begin_to_handle_for_UT(source_tu)
     includes = file_obj.get_output_list()
 
-    eq_(4, len(includes))
+    eq_(3, len(includes))
 
     assert('move_file_helper_test.h' in includes[0].file_name)
     eq_(1, includes[0].depth)
 
     assert('no_source_header.h' in includes[1].file_name)
-    eq_(2, includes[1].depth)
+    eq_(1, includes[1].depth)
 
     assert('indirectly_include.h' in includes[2].file_name)
-    eq_(3, includes[2].depth)
-
-    assert('no_source_header.h' in includes[3].file_name)
-    eq_(1, includes[3].depth)
+    eq_(2, includes[2].depth)
 
 def test_get_includes_for_source_file():
     '''test get includes for source file
@@ -39,8 +36,8 @@ def test_get_includes_for_source_file():
     file_obj = MoveFileHandle(get_tu, source_file, '', 3)
 
     source_includes = []
-    includes = file_obj.get_includes_for_source_file('', \
-            source_file, source_includes)
+    includes, _ = file_obj.get_includes_for_source_file('', \
+            source_file)
     eq_(2, len(includes))
     assert('move_file_helper_test.h' in includes[0])
     assert('no_source_header.h' in includes[1])

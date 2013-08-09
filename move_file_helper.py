@@ -11,7 +11,8 @@ from optparse import OptionParser
 from functools import partial
 from reshaper.option import setup_options
 from reshaper.ast import get_tu
-from reshaper.semantic import get_lib_name, get_source_path_candidates
+from reshaper.semantic import is_header, get_lib_name, get_source_path_candidates
+import pdb
 
 def get_source_file(fpath):
     '''from header file path to get source file path
@@ -20,6 +21,24 @@ def get_source_file(fpath):
         if os.path.isfile(file_name):
             return os.path.abspath(file_name)
 
+def get_header_file_name(fpath):
+    '''get file name without extend
+    '''
+    if is_header(fpath):
+        return fpath
+    if not os.path.isfile(fpath):
+        return ''
+    dir_name, base_name = os.path.split(fpath)
+    fname, _ = os.path.splitext(fpath)
+
+    sub_dir_candidates = ['', '..']
+    surfix_candidates = ['.h', '.hh', '.hpp']
+
+    for file_name in [os.path.join(dir_name, sub_dir, fname + surfix) \
+            for sub_dir in sub_dir_candidates \
+            for surfix in surfix_candidates]:
+        if os.path.isfile(file_name):
+            return os.path.abspath(file_name)
 
 class IncludeObject(object):
     '''class to cache include information
@@ -29,11 +48,17 @@ class IncludeObject(object):
         self.depth = depth
         self.source = source
         self.can_be_moved = False
+        self.have_parsed = False
 
     def set_can_be_moved(self, can_be_moved = True):
         '''if this file_name can be moved
         '''
         self.can_be_moved = can_be_moved
+
+    def set_have_been_parsed(self, parsed = True):
+        '''if this file is parsed already
+        '''
+        self.have_parsed = parsed
 
 class MoveFileHandle(object):
     '''used to pass file get move helper information
@@ -46,26 +71,13 @@ class MoveFileHandle(object):
         self._max_depth = depth
         self._already_handle_list = []
         self._output_list = []
+        self._includes_cache = {}
 
     def get_includes_for_source_file(self, header_name, \
-            source_file, source_includes):
+            source_file):
         '''get includes list for source file
         '''
-        includes = []
-        source_tu = self._get_tu_func(source_file)
-        if not source_tu:
-            return includes
-
-        # update includes
-        source_includes = source_tu.get_includes()
-
-        for include in source_tu.get_includes():
-            if os.path.abspath(include.include.name) == header_name:
-                continue
-            if include.depth == 1 and \
-                get_lib_name(include.include.name) == self._lib_name:
-                includes.append(include.include.name)
-        return includes
+        return self._get_includes(source_file, header_name)
 
     def get_includes_for_header_file(self, header_name, source_includes):
         '''get includes list for header file,
@@ -96,16 +108,22 @@ class MoveFileHandle(object):
             current_depth, source_includes):
         '''get include file recurvely
         '''
+        header_name = os.path.abspath(header_name)
         include_obj = IncludeObject(header_name, current_depth)
 
+        # if is leaf node, not return directly.
         should_return = False
         if current_depth >= self._max_depth:
             should_return = True
-        if header_name in self._already_handle_list:
-            should_return = True
 
-        current_depth += 1
-        self._already_handle_list.append(header_name)
+        if header_name in self._already_handle_list:
+            include_obj.set_have_been_parsed()
+            self._output_list.append(include_obj)
+            return
+
+        if not should_return:
+            current_depth += 1
+            self._already_handle_list.append(header_name)
 
         file_includes = []
         source_file = get_source_file(header_name)
@@ -117,15 +135,17 @@ class MoveFileHandle(object):
             file_includes = self.get_includes_for_header_file(header_name, \
                     source_includes)
         else:
-            file_includes = self.get_includes_for_source_file(header_name, \
-                    source_file, source_includes)
+            file_includes, source_includes = \
+                    self.get_includes_for_source_file(\
+                    header_name, source_file)
      
         if not file_includes:
             include_obj.set_can_be_moved(True)
-        self._output_list.append(include_obj)
 
         if should_return:
             return
+
+        self._output_list.append(include_obj)
 
         for file_obj in file_includes:
             self._get_include_recurvely(file_obj, \
@@ -137,30 +157,58 @@ class MoveFileHandle(object):
         if self._max_depth < 1:
             return
 
-        self._already_handle_list.append(self._file_name)
-        try:
-            source_tu = self._get_tu_func(self._file_name)
-        except Exception:
-            raise ValueError, "Can't get tu for %s " % self._file_name
+        header_name = get_header_file_name(self._file_name)
+        self._already_handle_list.append(header_name)
+        self._output_list.append(IncludeObject(header_name, 1))
 
-        includes = []
-        for include in source_tu.get_includes():
-            if include.depth == 1 and \
-                    get_lib_name(include.include.name) == self._lib_name:
-                includes.append(include.include.name)
+        includes, source_includes  = \
+                self._get_includes(self._file_name, header_name)
+
         for file_obj in includes:
-            self._get_include_recurvely(file_obj, 1, source_tu.get_includes())
+            self._get_include_recurvely(file_obj, 1, source_includes)
 
     def begin_to_handle_for_UT(self, source_tu):
         '''this is used for unittest
+        keep its behavior the same as that of begin_to_handle
+        '''
+
+        header_name = get_header_file_name(self._file_name)
+        self._already_handle_list.append(header_name)
+        self._output_list.append(IncludeObject(header_name, 1))
+
+        includes, source_includes  = \
+                self._get_includes(self._file_name, header_name)
+
+        for file_obj in includes:
+            self._get_include_recurvely(file_obj, 1, source_includes)
+
+    def _get_includes(self, file_name, header_name = ''):
+        ''' get includes under self.lib_name for a file
+        1) file_name
+        2) source_includes is return value
+        3) header file name
         '''
         includes = []
+        try:
+            source_tu = self._get_tu_func(file_name)
+        except Exception:
+            raise ValueError, "Can't get tu for %s" % file_name
+
+
+        # get includes in source file
         for include in source_tu.get_includes():
+            if os.path.abspath(include.include.name) == header_name:
+                continue
             if include.depth == 1 and \
                     get_lib_name(include.include.name) == self._lib_name:
                 includes.append(include.include.name)
-        for file_obj in includes:
-            self._get_include_recurvely(file_obj, 1, source_tu.get_includes())
+        # get includes in header file
+        if header_name:
+            includes.extend(self.get_includes_for_header_file(header_name, \
+                    source_tu.get_includes()))
+
+        self._includes_cache[file_name] = source_tu
+        return includes, source_tu.get_includes()
 
     def get_output_list(self):
         '''return output list of IncludeObject
@@ -209,7 +257,9 @@ def main():
         print file_name
         for obj in file_handler.get_output_list():
             out_str = obj.depth * "**" + " "  + os.path.abspath(obj.file_name)
-            print out_str + "*" if obj.can_be_moved else out_str
+            out_str += "*" if obj.can_be_moved else ''
+            out_str += " ~" if obj.have_parsed else ''
+            print out_str
 
 if __name__ == '__main__':
     main()
