@@ -12,7 +12,6 @@ import weakref
 import clang.cindex
 import os
 
-# _engine = create_engine('sqlite:///test.db', echo=False)
 _Base = declarative_base()
 
 
@@ -641,7 +640,3 @@ class TypeKind(_Base):
         return query.first()
         
 
-# _Base.metadata.create_all(_engine) 
-
-# _Session = sessionmaker(bind=_engine)
-# _session = _Session()
