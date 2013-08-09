@@ -10,11 +10,140 @@ from sqlalchemy.schema import Table
 from sqlalchemy.sql import func
 import weakref
 import clang.cindex
+import os
 
-_engine = create_engine('sqlite:///test.db', echo=False)
+# _engine = create_engine('sqlite:///test.db', echo=False)
 _Base = declarative_base()
 
 
+class ProjectEngine(object):
+    """ Project Engine is a DB engine specific to one project
+    """
+    
+    def __init__(self, project_name):
+        """
+        
+        Arguments:
+        - `project_name`: the name of the project.
+        """
+        self._project_name = project_name
+        assert len(project_name) > 0
+
+        # create the sqlalchemy engine
+        self._db_file = project_name + '.db'
+        is_first_time = not os.path.isfile(self._db_file)
+
+        self._engine = create_engine(
+            'sqlite:///' + self._db_file, echo=False)
+        _Base.metadata.create_all(self._engine)
+        _Session = sessionmaker(bind=self._engine)
+        self._session = _Session()
+
+        if is_first_time:
+            print "Initialize the DB."
+            self.build_db_cursor_kind()
+            self.build_db_type_kind()
+
+
+    def get_session(self):
+        return self._session
+
+    def build_db_cursor_kind(self):
+        all_kinds = clang.cindex.CursorKind.get_all_kinds()
+
+        self._session.add_all([CursorKind(kind) for kind in all_kinds])
+        self._session.commit()
+
+    def build_db_type_kind(self):
+        all_kinds = [clang.cindex.TypeKind.from_id(_i) for _i in xrange(30)]
+        all_kinds += [clang.cindex.TypeKind.from_id(_i)
+                      for _i in xrange(100, 114)]
+
+        self._session.add_all([TypeKind(kind) for kind in all_kinds])
+        self._session.commit()
+
+    def build_db_file(self, tu):
+        for include in tu.get_includes():
+            self._session.add(
+                File.from_clang_tu(tu, include.source.name, self))
+
+        self._session.commit()
+
+    def build_db_tree(self, cursor):
+        _tu = cursor.translation_unit
+        pending_files = File.get_pending_filenames(_tu, self)
+        self.build_db_file(_tu)
+
+        def build_db_cursor(cursor, parent, left):
+            db_cursor = Cursor.from_clang_cursor(cursor, self)
+            db_cursor.parent = parent
+            print "cursor_id", id(db_cursor), "parent_id", id(parent)
+            db_cursor.left = left
+            if Type.is_valid_clang_type(cursor.type):
+                db_cursor.type = Type.from_clang_type(cursor.type, self)
+                if db_cursor.type.declaration is None or \
+                   (db_cursor.is_definition and
+                    not db_cursor.type.declaration.is_definition):
+                    db_cursor.type.declaration = db_cursor
+                    self._session.add(db_cursor.type)
+
+            def_cursor = cursor.get_definition()
+            if def_cursor is not None:
+                if cursor.is_definition():
+                    Cursor.from_definition(db_cursor, self)
+                else:
+                    db_cursor.definition = \
+                        Cursor.from_clang_declaration(def_cursor, self)
+
+            lexical_parent = cursor.lexical_parent
+            if lexical_parent is not None and \
+               lexical_parent.kind != clang.cindex.CursorKind.TRANSLATION_UNIT:
+                db_cursor.lexical_parent = \
+                    Cursor.from_clang_cursor(lexical_parent, self)
+
+            semantic_parent = cursor.semantic_parent
+            if semantic_parent is not None and \
+               semantic_parent.kind != clang.cindex.CursorKind.TRANSLATION_UNIT:
+                db_cursor.semantic_parent = \
+                    Cursor.from_clang_cursor(semantic_parent, self)
+
+            refer_cursor = cursor.referenced
+            if refer_cursor is not None and \
+               refer_cursor.location.file is not None and \
+               refer_cursor.location.file.name != cursor.location.file.name and \
+               refer_cursor.location.offset != cursor.location.offset and \
+               refer_cursor.kind != clang.cindex.CursorKind.TRANSLATION_UNIT:
+                db_cursor.referenced = \
+                    Cursor.from_clang_referenced(refer_cursor, self)
+
+            self._session.add(db_cursor)
+            # _session.commit()
+
+            child_left = left + 1
+            for child in cursor.get_children():
+                child_left = build_db_cursor(child, db_cursor, child_left) + 1
+
+            right = child_left
+            db_cursor.right = right
+
+            self._session.add(db_cursor)
+            self._session.commit()
+            self._session.expire(db_cursor)
+
+            return right
+
+        left = Cursor.get_max_nested_set_index(self)
+        if left > 0:
+            left += 20
+        if cursor.kind == clang.cindex.CursorKind.TRANSLATION_UNIT:
+            for child in cursor.get_children():
+                if child.location.file and \
+                        child.location.file.name in pending_files:
+                    left = build_db_cursor(child, None, left) + 1
+        else:
+            build_db_cursor(cursor, None, left)
+
+    
 def _print_error_cursor(cursor):
     """ print the information about cursor when error occur.
     
@@ -74,16 +203,16 @@ class File(_Base):
         self.time = clang_file.time
 
     @staticmethod
-    def from_clang_cursor(cursor):
+    def from_clang_cursor(cursor, proj_engine):
         assert cursor.location.file is not None
         return File.from_clang_tu(cursor.translation_unit,
-                                  cursor.location.file.name)
+                                  cursor.location.file.name, proj_engine)
     
     @staticmethod
-    def from_clang_tu(tu, name):
+    def from_clang_tu(tu, name, proj_engine):
         clang_file = tu.get_file(name)
         try:
-            _file = _session.query(File).\
+            _file = proj_engine.get_session().query(File).\
                 filter(File.name == clang_file.name).one()
         except MultipleResultsFound, e:
             print e
@@ -94,25 +223,26 @@ class File(_Base):
             for include in tu.get_includes():
                 if include.source.name == _file.name:
                     _file.includes.append(
-                        File.from_clang_tu(tu, include.include.name))
+                        File.from_clang_tu(
+                            tu, include.include.name, proj_engine))
         
         return _file
 
     @staticmethod
-    def _is_file_in_db(file_name):
+    def _is_file_in_db(file_name, proj_engine):
         try:
-            files = _session.query(File).\
+            files = proj_engine.get_session().query(File).\
                 filter(File.name == file_name).all()
             return len(files) > 0
         except:
             return False
 
     @staticmethod
-    def get_pending_filenames(tu):
+    def get_pending_filenames(tu, proj_engine):
         pending_files = set()
         for include in tu.get_includes():
             for file_name in [include.source.name, include.include.name]:
-                if not File._is_file_in_db(file_name):
+                if not File._is_file_in_db(file_name, proj_engine):
                     print "file is not in db"
                     pending_files.add(file_name)
 
@@ -232,7 +362,7 @@ class Cursor(_Base):
     right = Column("right", Integer, nullable=True)
 
     
-    def __init__(self, cursor):
+    def __init__(self, cursor, proj_engine):
         self.spelling = cursor.spelling
         self.displayname = cursor.displayname
         self.usr = cursor.get_usr()
@@ -251,14 +381,15 @@ class Cursor(_Base):
                                            location_end.column,
                                            location_end.offset)
 
-        self.kind = CursorKind.from_clang_cursor_kind(cursor.kind)
+        self.kind = \
+            CursorKind.from_clang_cursor_kind(cursor.kind, proj_engine)
 
         if cursor.location.file:
-            self.file = File.from_clang_cursor(cursor)
+            self.file = File.from_clang_cursor(cursor, proj_engine)
     
 
     @staticmethod
-    def from_clang_declaration(cursor):
+    def from_clang_declaration(cursor, proj_engine):
         # if the cursor itself is a definition, then find out all the declaration cursors
         # that refer to it.
         # if the cursor is a declaration, then get the definition cursor
@@ -268,7 +399,7 @@ class Cursor(_Base):
             return None
         
         try:
-            _cursor = _session.query(Cursor).\
+            _cursor = proj_engine.get_session().query(Cursor).\
                 filter(Cursor.usr == cursor.get_usr()).\
                 filter(Cursor.is_definition == True).one()
         except MultipleResultsFound, e:
@@ -281,10 +412,10 @@ class Cursor(_Base):
         return _cursor
 
     @staticmethod
-    def from_definition(cursor):
+    def from_definition(cursor, proj_engine):
         assert cursor.is_definition
         try:
-            _cursors = _session.query(Cursor).\
+            _cursors = proj_engine.get_session().query(Cursor).\
                 filter(Cursor.usr == cursor.usr).\
                 filter(Cursor.is_definition == False).all()
         except MultipleResultsFound, e:
@@ -296,10 +427,10 @@ class Cursor(_Base):
         for _cursor in _cursors:
             _cursor.definition = cursor
 
-        _session.add_all(_cursors)
+        proj_engine.get_session().add_all(_cursors)
         
     @staticmethod
-    def from_clang_cursor(cursor):
+    def from_clang_cursor(cursor, proj_engine):
         """ Static method to create a cursor from libclang's cursor
         
         Arguments:
@@ -309,10 +440,11 @@ class Cursor(_Base):
         try:
             # builtin definitions
             if cursor.location.file is None:
-                _cursor = _session.query(Cursor).\
+                _cursor = proj_engine.get_session().query(Cursor).\
                     filter(Cursor.spelling == cursor.spelling).one()
             else:
-                _cursor = _session.query(Cursor).join(File).join(CursorKind).\
+                _cursor = proj_engine.get_session().query(Cursor).\
+                    join(File).join(CursorKind).\
                     filter(Cursor.usr == cursor.get_usr()).\
                     filter(Cursor.spelling == cursor.spelling).\
                     filter(Cursor.displayname == cursor.displayname).\
@@ -326,17 +458,17 @@ class Cursor(_Base):
             raise
         except NoResultFound: # The cursor has not been stored in DB.
             print "No result found"
-            _cursor = Cursor(cursor)
+            _cursor = Cursor(cursor, proj_engine)
 
         return _cursor
 
     @staticmethod
-    def from_clang_referenced(cursor):
+    def from_clang_referenced(cursor, proj_engine):
         assert(cursor.spelling is not None)
         
         # because referenced cursor will certainly have spelling, so I use spelling.
         try:
-            _cursor = _session.query(Cursor).join(File).\
+            _cursor = proj_engine.get_session().query(Cursor).join(File).\
                 filter(Cursor.usr == cursor.get_usr()).\
                 filter(File.name == cursor.location.file.name).\
                 filter(Cursor.offset_start == cursor.location.offset).one()
@@ -345,16 +477,17 @@ class Cursor(_Base):
             _print_error_cursor(cursor)
             raise
         except NoResultFound: # The cursor has not been stored in DB.
-            _cursor = Cursor(cursor)
+            _cursor = Cursor(cursor, proj_engine)
 
         return _cursor
 
     @staticmethod
-    def get_max_nested_set_index():
+    def get_max_nested_set_index(proj_engine):
         """ Get the max value of right index for nested set model in DB.
         """
 
-        max_right = _session.query(func.max(Cursor.right)).scalar()
+        max_right = proj_engine.get_session().\
+            query(func.max(Cursor.right)).scalar()
         return max_right if max_right is not None else 0
  
         
@@ -393,8 +526,8 @@ class CursorKind(_Base):
         self.is_unexposed = kind.is_unexposed()
 
     @staticmethod
-    def from_clang_cursor_kind(kind):
-        return _session.query(CursorKind).\
+    def from_clang_cursor_kind(kind, proj_engine):
+        return proj_engine.get_session().query(CursorKind).\
             filter(CursorKind.name == kind.name).one()
     
 
@@ -459,9 +592,9 @@ class Type(_Base):
             cursor_type.kind != clang.cindex.TypeKind.INVALID
         
     @staticmethod
-    def from_clang_type(cursor_type):
+    def from_clang_type(cursor_type, proj_engine):
         try:
-            _type = _session.query(Type).join(TypeKind).\
+            _type = proj_engine.get_session().query(Type).join(TypeKind).\
                 filter(TypeKind.name == cursor_type.kind.name).\
                 filter(Type.spelling == cursor_type.spelling).\
                 filter(Type.is_const_qualified ==
@@ -471,11 +604,13 @@ class Type(_Base):
             raise
         except NoResultFound: # The type has not been stored in DB.
             _type = Type(cursor_type)
-            _type.kind = TypeKind.from_clang_type_kind(cursor_type.kind)
+            _type.kind = \
+                TypeKind.from_clang_type_kind(cursor_type.kind, proj_engine)
 
         # take care for the BLOCKPOINTER
         if cursor_type.kind == clang.cindex.TypeKind.POINTER:
-            _type.pointee = Type.from_clang_type(cursor_type.get_pointee())
+            _type.pointee = \
+                Type.from_clang_type(cursor_type.get_pointee(), proj_engine)
             
         return _type
         
@@ -494,117 +629,19 @@ class TypeKind(_Base):
         self.spelling = type_kind.spelling
 
     @staticmethod
-    def from_clang_type_kind(type_kind):
+    def from_clang_type_kind(type_kind, proj_engine):
         """ Get the DB TypeKind from clang's TypeKind
         
         Arguments:
         - `type_kind`:
         """
 
-        query = _session.query(TypeKind).filter(TypeKind.name == type_kind.name)
+        query = proj_engine.get_session().query(TypeKind).\
+            filter(TypeKind.name == type_kind.name)
         return query.first()
         
 
+# _Base.metadata.create_all(_engine) 
 
-_Base.metadata.create_all(_engine) 
-
-_Session = sessionmaker(bind=_engine)
-_session = _Session()
-
-
-def build_db_tree(cursor):
-
-    _tu = cursor.translation_unit
-
-    pending_files = File.get_pending_filenames(_tu)
-    build_db_file(_tu)
-    
-    def build_db_cursor(cursor, parent, left):
-        db_cursor = Cursor.from_clang_cursor(cursor)
-        db_cursor.parent = parent
-        print "cursor_id", id(db_cursor), "parent_id", id(parent)
-        db_cursor.left = left
-        if Type.is_valid_clang_type(cursor.type):
-            db_cursor.type = Type.from_clang_type(cursor.type)
-            if db_cursor.type.declaration is None or \
-               (db_cursor.is_definition and
-                not db_cursor.type.declaration.is_definition):
-                db_cursor.type.declaration = db_cursor
-                _session.add(db_cursor.type)
-
-        def_cursor = cursor.get_definition()
-        if def_cursor is not None:
-            if cursor.is_definition():
-                Cursor.from_definition(db_cursor)
-            else:
-                db_cursor.definition = \
-                    Cursor.from_clang_declaration(def_cursor)
-
-        lexical_parent = cursor.lexical_parent
-        if lexical_parent is not None and \
-           lexical_parent.kind != clang.cindex.CursorKind.TRANSLATION_UNIT:
-            db_cursor.lexical_parent = \
-                Cursor.from_clang_cursor(lexical_parent)
-
-        semantic_parent = cursor.semantic_parent
-        if semantic_parent is not None and \
-           semantic_parent.kind != clang.cindex.CursorKind.TRANSLATION_UNIT:
-            db_cursor.semantic_parent = \
-                Cursor.from_clang_cursor(semantic_parent)
-
-        refer_cursor = cursor.referenced
-        if refer_cursor is not None and \
-           refer_cursor.location.file is not None and \
-           refer_cursor.location.file.name != cursor.location.file.name and \
-           refer_cursor.location.offset != cursor.location.offset and \
-           refer_cursor.kind != clang.cindex.CursorKind.TRANSLATION_UNIT:
-            db_cursor.referenced = \
-                Cursor.from_clang_referenced(refer_cursor)
-            
-        _session.add(db_cursor)
-        # _session.commit()
-            
-        child_left = left + 1
-        for child in cursor.get_children():
-            child_left = build_db_cursor(child, db_cursor, child_left) + 1
-
-        right = child_left
-        db_cursor.right = right
-
-        _session.add(db_cursor)
-        _session.commit()
-        _session.expire(db_cursor)
-        
-        return right
-
-    left = Cursor.get_max_nested_set_index()
-    if left > 0:
-        left += 20
-    if cursor.kind == clang.cindex.CursorKind.TRANSLATION_UNIT:
-        for child in cursor.get_children():
-            if child.location.file and \
-                    child.location.file.name in pending_files:
-                left = build_db_cursor(child, None, left) + 1
-    else:
-        build_db_cursor(cursor, None, left)
-
-def build_db_cursor_kind():
-    all_kinds = clang.cindex.CursorKind.get_all_kinds()
-
-    _session.add_all([CursorKind(kind) for kind in all_kinds])
-    _session.commit()
-
-def build_db_type_kind():
-    all_kinds = [clang.cindex.TypeKind.from_id(_i) for _i in xrange(30)]
-    all_kinds += [clang.cindex.TypeKind.from_id(_i)
-                  for _i in xrange(100, 114)]
-
-    _session.add_all([TypeKind(kind) for kind in all_kinds])
-    _session.commit()
-
-def build_db_file(tu):
-    for include in tu.get_includes():
-        _session.add(File.from_clang_tu(tu, include.source.name))
-
-    _session.commit()
-    
+# _Session = sessionmaker(bind=_engine)
+# _session = _Session()
