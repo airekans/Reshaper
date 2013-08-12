@@ -74,6 +74,11 @@ class ProjectEngine(object):
         self.build_db_file(_tu)
 
         def build_db_cursor(cursor, parent, left):
+            if cursor.kind in [clang.cindex.CursorKind.USING_DIRECTIVE,
+                               clang.cindex.CursorKind.USING_DECLARATION]:
+                print "skip using directive"
+                return left
+            
             db_cursor = Cursor.from_clang_cursor(cursor, self)
             db_cursor.parent = parent
             print "cursor_id", id(db_cursor), "parent_id", id(parent)
