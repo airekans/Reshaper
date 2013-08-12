@@ -393,7 +393,7 @@ class Cursor(_Base):
         # that refer to it.
         # if the cursor is a declaration, then get the definition cursor
 
-        assert not cursor.is_definition()
+        assert cursor.is_definition()
         if cursor.get_usr() == "": # builtin definitions
             return None
         
