@@ -9,6 +9,7 @@ from sqlalchemy.orm.exc import MultipleResultsFound, NoResultFound
 from sqlalchemy.schema import Table
 from sqlalchemy.sql import func
 import weakref
+from clang.cindex import CursorKind as ckind
 import clang.cindex
 import os
 
@@ -77,6 +78,9 @@ class ProjectEngine(object):
             if cursor.kind in [clang.cindex.CursorKind.USING_DIRECTIVE,
                                clang.cindex.CursorKind.USING_DECLARATION]:
                 print "skip using directive"
+                return left
+            elif cursor.location.file is None:
+                print "skip builtin element"
                 return left
             
             db_cursor = Cursor.from_clang_cursor(cursor, self)
@@ -223,6 +227,8 @@ class File(_Base):
             raise
         except NoResultFound: # The file has not been stored in DB.
             _file = File(clang_file)
+            print "adding file %s to DB" % clang_file.name
+            proj_engine.get_session().add(_file)
             _file.includes = []
             for include in tu.get_includes():
                 if include.source.name == _file.name:
@@ -247,8 +253,10 @@ class File(_Base):
         for include in tu.get_includes():
             for file_name in [include.source.name, include.include.name]:
                 if not File._is_file_in_db(file_name, proj_engine):
-                    print "file is not in db"
                     pending_files.add(file_name)
+
+        if not File._is_file_in_db(tu.spelling, proj_engine):
+            pending_files.add(tu.spelling)
 
         return pending_files
         
@@ -403,9 +411,11 @@ class Cursor(_Base):
             return None
         
         try:
-            _cursor = proj_engine.get_session().query(Cursor).\
+            _cursor = proj_engine.get_session().query(Cursor).join(File).\
                 filter(Cursor.usr == cursor.get_usr()).\
-                filter(Cursor.is_definition == True).one()
+                filter(Cursor.is_definition == True).\
+                filter(File.name == cursor.location.file.name).\
+                filter(Cursor.offset_start == cursor.location.offset).one()
         except MultipleResultsFound, e:
             print e
             _print_error_cursor(cursor)
@@ -440,6 +450,10 @@ class Cursor(_Base):
         Arguments:
         - `cursor`:
         """
+        if cursor.kind in [ckind.PAREN_EXPR, ckind.BINARY_OPERATOR,
+                           ckind.BINARY_OPERATOR, ckind.COMPOUND_ASSIGNMENT_OPERATOR,
+                           ckind.CONDITIONAL_OPERATOR, ckind.UNEXPOSED_EXPR]:
+            return Cursor(cursor, proj_engine)
 
         try:
             # builtin definitions
