@@ -67,6 +67,8 @@ class ProjectEngine(object):
             self._session.add(
                 File.from_clang_tu(tu, include.source.name, self))
 
+        self._session.add(File.from_clang_tu(tu, tu.spelling, self))
+            
         self._session.commit()
 
     def build_db_tree(self, cursor):
