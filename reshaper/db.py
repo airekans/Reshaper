@@ -20,7 +20,7 @@ class ProjectEngine(object):
     """ Project Engine is a DB engine specific to one project
     """
     
-    def __init__(self, project_name):
+    def __init__(self, project_name, is_in_memory = False):
         """
         
         Arguments:
@@ -30,8 +30,8 @@ class ProjectEngine(object):
         assert len(project_name) > 0
 
         # create the sqlalchemy engine
-        self._db_file = project_name + '.db'
-        is_first_time = not os.path.isfile(self._db_file)
+        self._db_file = project_name + '.db' if not is_in_memory else ':memory:'
+        is_first_time = is_in_memory or not os.path.isfile(self._db_file)
 
         self._engine = create_engine(
             'sqlite:///' + self._db_file, echo=False)
