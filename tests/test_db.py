@@ -2,10 +2,11 @@ from reshaper import db
 from clang.cindex import CursorKind as ckind
 from clang.cindex import TypeKind as tkind
 from nose.tools import eq_
+from .util import get_tu_from_text
 
 
 def test_project_engine_initialize():
-    """
+    """ Project Engine will initialize DB in its ctor. Test this behavior.
     """
 
     proj_engine = db.ProjectEngine('test', is_in_memory = True)
@@ -29,6 +30,26 @@ def test_project_engine_initialize():
     expected_tkind_names = set(kind.name for kind in expected_all_tkinds)
     actual_tkind_names = set(kind.name for kind in actual_all_tkinds)
     eq_(expected_tkind_names, actual_tkind_names)
+
+def test_project_engine_build_file():
+    TEST_INPUT = \
+"""
+int main()
+{
+    return 0;
+}
+"""
+    _tu = get_tu_from_text(TEST_INPUT, 't.cpp')
+    proj_engine = db.ProjectEngine('test', is_in_memory = True)
+    assert proj_engine.get_session() is not None
+
+    proj_engine.build_db_file(_tu)
+
+    expected_file_names = set(['t.cpp'])
+    actual_file_names = set(file.name for file in
+                            proj_engine.get_session().query(db.File).all())
+    eq_(expected_file_names, actual_file_names)
+    
     
 
 def test_file():
