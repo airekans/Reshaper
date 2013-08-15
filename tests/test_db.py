@@ -3,7 +3,11 @@ from clang.cindex import CursorKind as ckind
 from clang.cindex import TypeKind as tkind
 from nose.tools import eq_
 from .util import get_tu_from_text
+from reshaper.ast import get_tu
+import os
 
+
+_TEST_DATA_DIR = os.path.join(os.path.dirname(__file__), 'test_data')
 
 def test_project_engine_initialize():
     """ Project Engine will initialize DB in its ctor. Test this behavior.
@@ -49,7 +53,17 @@ int main()
     actual_file_names = set(file.name for file in
                             proj_engine.get_session().query(db.File).all())
     eq_(expected_file_names, actual_file_names)
-    
+
+    # Test file with include
+    INPUT_FILE = os.path.join(_TEST_DATA_DIR, 'class.cpp')
+    _tu = get_tu(INPUT_FILE, is_from_cache_first = False)
+    proj_engine.build_db_file(_tu)
+    expected_file_names = \
+        set(['t.cpp', os.path.join(_TEST_DATA_DIR, 'class.h'),
+             os.path.join(_TEST_DATA_DIR, 'class.cpp')])
+    actual_file_names = set(file.name for file in
+                            proj_engine.get_session().query(db.File).all())
+    eq_(expected_file_names, actual_file_names)
     
 
 def test_file():
