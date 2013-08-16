@@ -1,7 +1,7 @@
 from reshaper import db
 from clang.cindex import CursorKind as ckind
 from clang.cindex import TypeKind as tkind
-from nose.tools import eq_
+from nose.tools import eq_, with_setup
 from .util import get_tu_from_text
 from reshaper.ast import get_tu
 import os
@@ -66,7 +66,36 @@ int main()
     eq_(expected_file_names, actual_file_names)
     
 
-def test_file():
-    pass
+_tu = None
+_proj_engine = None
 
+def setup_for_test_file():
+    global _tu, _proj_engine
+
+    TEST_INPUT = \
+"""
+int main()
+{
+    return 0;
+}
+"""
+
+    _tu = get_tu_from_text(TEST_INPUT, 't.cpp')
+    _proj_engine = db.ProjectEngine('test', is_in_memory = True)
+    
+@with_setup(setup_for_test_file)
+def test_file_get_pending_filenames():
+    pending_files = db.File.get_pending_filenames(_tu, _proj_engine)
+    eq_(set(['t.cpp']), pending_files)
+
+    _proj_engine.build_db_file(_tu)
+    pending_files = db.File.get_pending_filenames(_tu, _proj_engine)
+    assert not pending_files
+
+@with_setup(setup_for_test_file)
+def test_file_from_clang_tu():
+    expected_file = _tu.get_file(_tu.spelling)
+    file = db.File.from_clang_tu(_tu, _tu.spelling, _proj_engine)
+    eq_(expected_file.name, file.name)
+    eq_(expected_file.time, file.time)
     

@@ -6,12 +6,15 @@ from sqlalchemy.orm import composite
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm.collections import attribute_mapped_collection
 from sqlalchemy.orm.exc import MultipleResultsFound, NoResultFound
+from sqlalchemy.orm.unitofwork import SaveUpdateState
 from sqlalchemy.schema import Table
 from sqlalchemy.sql import func
+from sqlalchemy.exc import CircularDependencyError
 import weakref
 from clang.cindex import CursorKind as ckind
 import clang.cindex
 import os
+import sys
 
 _Base = declarative_base()
 
@@ -77,8 +80,8 @@ class ProjectEngine(object):
         self.build_db_file(_tu)
 
         def build_db_cursor(cursor, parent, left):
-            if cursor.kind in [clang.cindex.CursorKind.USING_DIRECTIVE,
-                               clang.cindex.CursorKind.USING_DECLARATION]:
+            if cursor.kind in [ckind.USING_DIRECTIVE,
+                               ckind.USING_DECLARATION]:
                 print "skip using directive"
                 return left
             elif cursor.location.file is None:
@@ -107,13 +110,13 @@ class ProjectEngine(object):
 
             lexical_parent = cursor.lexical_parent
             if lexical_parent is not None and \
-               lexical_parent.kind != clang.cindex.CursorKind.TRANSLATION_UNIT:
+               lexical_parent.kind != ckind.TRANSLATION_UNIT:
                 db_cursor.lexical_parent = \
                     Cursor.from_clang_cursor(lexical_parent, self)
 
             semantic_parent = cursor.semantic_parent
             if semantic_parent is not None and \
-               semantic_parent.kind != clang.cindex.CursorKind.TRANSLATION_UNIT:
+               semantic_parent.kind != ckind.TRANSLATION_UNIT:
                 db_cursor.semantic_parent = \
                     Cursor.from_clang_cursor(semantic_parent, self)
 
@@ -122,7 +125,7 @@ class ProjectEngine(object):
                refer_cursor.location.file is not None and \
                refer_cursor.location.file.name != cursor.location.file.name and \
                refer_cursor.location.offset != cursor.location.offset and \
-               refer_cursor.kind != clang.cindex.CursorKind.TRANSLATION_UNIT:
+               refer_cursor.kind != ckind.TRANSLATION_UNIT:
                 db_cursor.referenced = \
                     Cursor.from_clang_referenced(refer_cursor, self)
 
@@ -164,6 +167,15 @@ def _print_error_cursor(cursor):
     print "cursor", cursor.spelling, "file", err_loc.file
     print "usr", cursor.get_usr()
     print "line", err_loc.line, "col", err_loc.column
+    
+def _print_circular_dep_error(error):
+    cycles = error.cycles
+    for state in cycles:
+        if isinstance(state, SaveUpdateState):
+            obj = state.state.obj()
+            if isinstance(obj, Cursor):
+                print >> sys.stderr, "error cursor", obj.spelling, obj.displayname, obj.usr
+                print >> sys.stderr, "line, column", obj.line_start, obj.column_start
 
 
 class FileInclusion(_Base):
@@ -307,9 +319,9 @@ class Cursor(_Base):
     is_definition = Column(Boolean, nullable = False)
 
     type_id = Column(Integer, ForeignKey('type.id'))
-    type = relationship('Type',
-                        foreign_keys=[type_id],
-                        backref = backref('instances', order_by = id))
+    type = relationship('Type', foreign_keys=[type_id])
+#                        foreign_keys=[type_id],
+#                        backref = backref('instances', order_by = id))
 
     is_static_method = Column(Boolean, nullable = False)
     
@@ -347,11 +359,11 @@ class Cursor(_Base):
 
     # definition
     definition_id = Column(Integer, ForeignKey(id))
-    declarations = relationship("Cursor",
-                                # cascade deletions
-                                cascade="all",
-                                foreign_keys=[definition_id],
-                                backref=backref("definition", remote_side=id))
+    definition = relationship("Cursor",
+                              # cascade deletions
+                              cascade="all",
+                              foreign_keys=[definition_id],
+                              remote_side=[id])
 
     # lexical parent
     lexical_parent_id = Column(Integer, ForeignKey(id))
@@ -479,6 +491,9 @@ class Cursor(_Base):
         except NoResultFound: # The cursor has not been stored in DB.
             print "No result found"
             _cursor = Cursor(cursor, proj_engine)
+#        except CircularDependencyError, e:
+#            _print_circular_dep_error(e)
+#            raise
 
         return _cursor
 
