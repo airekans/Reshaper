@@ -6,10 +6,8 @@ from sqlalchemy.orm import composite
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm.collections import attribute_mapped_collection
 from sqlalchemy.orm.exc import MultipleResultsFound, NoResultFound
-from sqlalchemy.orm.unitofwork import SaveUpdateState
 from sqlalchemy.schema import Table
 from sqlalchemy.sql import func
-from sqlalchemy.exc import CircularDependencyError
 import weakref
 from clang.cindex import CursorKind as ckind
 import clang.cindex
@@ -167,15 +165,6 @@ def _print_error_cursor(cursor):
     print "cursor", cursor.spelling, "file", err_loc.file
     print "usr", cursor.get_usr()
     print "line", err_loc.line, "col", err_loc.column
-    
-def _print_circular_dep_error(error):
-    cycles = error.cycles
-    for state in cycles:
-        if isinstance(state, SaveUpdateState):
-            obj = state.state.obj()
-            if isinstance(obj, Cursor):
-                print >> sys.stderr, "error cursor", obj.spelling, obj.displayname, obj.usr
-                print >> sys.stderr, "line, column", obj.line_start, obj.column_start
 
 
 class FileInclusion(_Base):
@@ -320,8 +309,6 @@ class Cursor(_Base):
 
     type_id = Column(Integer, ForeignKey('type.id'))
     type = relationship('Type', foreign_keys=[type_id])
-#                        foreign_keys=[type_id],
-#                        backref = backref('instances', order_by = id))
 
     is_static_method = Column(Boolean, nullable = False)
     
@@ -491,9 +478,6 @@ class Cursor(_Base):
         except NoResultFound: # The cursor has not been stored in DB.
             print "No result found"
             _cursor = Cursor(cursor, proj_engine)
-#        except CircularDependencyError, e:
-#            _print_circular_dep_error(e)
-#            raise
 
         return _cursor
 
