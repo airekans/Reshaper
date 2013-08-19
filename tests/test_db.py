@@ -9,6 +9,11 @@ import os
 
 _TEST_DATA_DIR = os.path.join(os.path.dirname(__file__), 'test_data')
 
+def _get_clang_type_kinds():
+    all_tkinds = [tkind.from_id(_i) for _i in xrange(30)]
+    all_tkinds += [tkind.from_id(_i) for _i in xrange(100, 114)]
+    return all_tkinds
+
 def test_project_engine_initialize():
     """ Project Engine will initialize DB in its ctor. Test this behavior.
     """
@@ -26,8 +31,7 @@ def test_project_engine_initialize():
     eq_(expected_ckind_names, actual_ckind_names)
 
     # Check TypeKind
-    expected_all_tkinds = [tkind.from_id(_i) for _i in xrange(30)]
-    expected_all_tkinds += [tkind.from_id(_i) for _i in xrange(100, 114)]
+    expected_all_tkinds = _get_clang_type_kinds()
     actual_all_tkinds = proj_engine.get_session().query(db.TypeKind).all()
     eq_(len(expected_all_tkinds), len(actual_all_tkinds))
 
@@ -50,7 +54,7 @@ int main()
     proj_engine.build_db_file(_tu)
 
     expected_file_names = set(['t.cpp'])
-    actual_file_names = set(file.name for file in
+    actual_file_names = set(_file.name for _file in
                             proj_engine.get_session().query(db.File).all())
     eq_(expected_file_names, actual_file_names)
 
@@ -61,7 +65,7 @@ int main()
     expected_file_names = \
         set(['t.cpp', os.path.join(_TEST_DATA_DIR, 'class.h'),
              os.path.join(_TEST_DATA_DIR, 'class.cpp')])
-    actual_file_names = set(file.name for file in
+    actual_file_names = set(_file.name for _file in
                             proj_engine.get_session().query(db.File).all())
     eq_(expected_file_names, actual_file_names)
     
@@ -95,17 +99,34 @@ def test_file_get_pending_filenames():
 @with_setup(setup_for_test_file)
 def test_file_from_clang_tu():
     expected_file = _tu.get_file(_tu.spelling)
-    file = db.File.from_clang_tu(_tu, _tu.spelling, _proj_engine)
-    eq_(expected_file.name, file.name)
-    eq_(expected_file.time, file.time)
+    _file = db.File.from_clang_tu(_tu, _tu.spelling, _proj_engine)
+    eq_(expected_file.name, _file.name)
+    eq_(expected_file.time, _file.time)
 
 @with_setup(setup_for_test_file)
 def test_cursor_kind():   
     def assert_ckind_equal(ckind, db_ckind):
         eq_(ckind.name, db_ckind.name)
-        return False
+        eq_(ckind.is_declaration(), db_ckind.is_declaration)
+        eq_(ckind.is_reference(), db_ckind.is_reference)
+        eq_(ckind.is_expression(), db_ckind.is_expression)
+        eq_(ckind.is_statement(), db_ckind.is_statement)
+        eq_(ckind.is_attribute(), db_ckind.is_attribute)
+        eq_(ckind.is_translation_unit(), db_ckind.is_translation_unit)
+        eq_(ckind.is_preprocessing(), db_ckind.is_preprocessing)
+        eq_(ckind.is_unexposed(), db_ckind.is_unexposed)
     
     for kind in ckind.get_all_kinds():
         db_ckind = db.CursorKind.from_clang_cursor_kind(kind, _proj_engine)
         assert_ckind_equal(kind, db_ckind)
+
+@with_setup(setup_for_test_file)
+def test_type_kind():
+    def assert_tkind_equal(tkind, db_tkind):
+        eq_(tkind.name, db_tkind.name)
+        eq_(tkind.spelling, db_tkind.spelling)
+    
+    for kind in _get_clang_type_kinds():
+        db_tkind = db.TypeKind.from_clang_type_kind(kind, _proj_engine)
+        assert_tkind_equal(kind, db_tkind)
 
