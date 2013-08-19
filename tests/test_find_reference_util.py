@@ -11,7 +11,7 @@ from .util import get_tu_from_text
 
 from os import remove
 
-filter_usr_test_input = """\
+TEST_INPUT = """\
 class TestClass
 {
 public:
@@ -39,7 +39,7 @@ void CallFunc()
 def test_filter_cursurs_by_usr():
     '''test function filter_cursors_by_usr
     '''
-    _tu = get_tu_from_text(filter_usr_test_input)
+    _tu = get_tu_from_text(TEST_INPUT)
     spelling = "TargetFunc"
     target_cursor = get_cursor_with_location(_tu, spelling, 4)
     target_usr = target_cursor.get_usr()
@@ -55,15 +55,17 @@ def test_filter_cursurs_by_usr():
 def test_get_cursors_with_name():
     '''test function get_cursors_with_name
     '''
-    file_name = "./test_get_cursors_with_name"
-    fp = open(file_name, 'w')
-    fp.write(filter_usr_test_input)
-    fp.close()
+    file_name = "/tmp/test_get_cursors_with_name"
+    ftmp = open(file_name, 'w')
+    ftmp.write(TEST_INPUT)
+    ftmp.close()
+    
     name = "TargetFunc"
     ref = []
     get_cursors_with_name(file_name, name, ref)
     remove(file_name)
     eq_(len(ref), 7)
+    
     ref = []
     res = get_cursors_with_name(file_name, name, ref)
     eq_(res, None)
