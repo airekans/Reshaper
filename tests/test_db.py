@@ -98,4 +98,14 @@ def test_file_from_clang_tu():
     file = db.File.from_clang_tu(_tu, _tu.spelling, _proj_engine)
     eq_(expected_file.name, file.name)
     eq_(expected_file.time, file.time)
+
+@with_setup(setup_for_test_file)
+def test_cursor_kind():   
+    def assert_ckind_equal(ckind, db_ckind):
+        eq_(ckind.name, db_ckind.name)
+        return False
     
+    for kind in ckind.get_all_kinds():
+        db_ckind = db.CursorKind.from_clang_cursor_kind(kind, _proj_engine)
+        assert_ckind_equal(kind, db_ckind)
+

@@ -8,11 +8,9 @@ from sqlalchemy.orm.collections import attribute_mapped_collection
 from sqlalchemy.orm.exc import MultipleResultsFound, NoResultFound
 from sqlalchemy.schema import Table
 from sqlalchemy.sql import func
-import weakref
 from clang.cindex import CursorKind as ckind
 import clang.cindex
 import os
-import sys
 
 _Base = declarative_base()
 
@@ -374,7 +372,6 @@ class Cursor(_Base):
     left = Column("left", Integer, nullable=True)
     right = Column("right", Integer, nullable=True)
 
-    
     def __init__(self, cursor, proj_engine):
         self.spelling = cursor.spelling
         self.displayname = cursor.displayname
@@ -451,9 +448,7 @@ class Cursor(_Base):
         Arguments:
         - `cursor`:
         """
-        if cursor.kind in [ckind.PAREN_EXPR, ckind.BINARY_OPERATOR,
-                           ckind.BINARY_OPERATOR, ckind.COMPOUND_ASSIGNMENT_OPERATOR,
-                           ckind.CONDITIONAL_OPERATOR, ckind.UNEXPOSED_EXPR]:
+        if not cursor.spelling and not cursor.get_usr():
             return Cursor(cursor, proj_engine)
 
         try:
