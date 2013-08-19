@@ -7,7 +7,7 @@ from reshaper.util import get_cursor_with_location
 from reshaper.semantic import get_cursors_add_parent
 from reshaper.find_reference_util import filter_cursors_by_usr
 from reshaper.find_reference_util import get_cursors_with_name
-from util import get_tu_from_text
+from .util import get_tu_from_text
 
 from os import remove
 
@@ -69,10 +69,4 @@ def test_get_cursors_with_name():
     eq_(res, None)
     eq_(ref, [])
 
-def main():
-    print '-'*20
-    test_get_cursors_with_name()
-        
-if __name__ == "__main__":
-    main()
     
