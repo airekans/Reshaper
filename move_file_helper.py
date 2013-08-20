@@ -12,7 +12,6 @@ from functools import partial
 from reshaper.option import setup_options
 from reshaper.ast import get_tu
 from reshaper.semantic import is_header, get_lib_name, get_source_path_candidates
-import pdb
 
 def get_source_file(fpath):
     '''from header file path to get source file path
@@ -29,7 +28,7 @@ def get_header_file_name(fpath):
     if not os.path.isfile(fpath):
         return ''
     dir_name, base_name = os.path.split(fpath)
-    fname, _ = os.path.splitext(fpath)
+    fname, _ = os.path.splitext(base_name)
 
     sub_dir_candidates = ['', '..']
     surfix_candidates = ['.h', '.hh', '.hpp']
