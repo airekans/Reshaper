@@ -3,8 +3,7 @@ find_reference_util.py
 '''
 
 import os, sys, stat
-from nose.tools import eq_
-from nose.tools import raises
+from nose.tools import eq_, raises
 
 from reshaper.util import get_cursor_with_location
 from reshaper.semantic import get_cursors_add_parent
@@ -71,18 +70,17 @@ def test_get_cursors_with_name():
     
     ref = []
     res = get_cursors_with_name(file_name, name, ref)
-    eq_(res, None)
+    assert res is None
     eq_(ref, [])
     
-def test_parse_find_reference_args():
+def test_parse_find_refe_args_regular():
     '''test function get_cursors_with_name when arguments are given properly
     '''
     file_name = "/tmp/testfile"
-    tmp_file = open(file_name, 'w')
-    tmp_file.close()
+    tmp_file = open(file_name, 'w').close()
     
-    sys.argv[1:] = ['--file=/tmp/testfile', '--spelling=testspell', '-l 10', 
-                 '-c 10', '--output-file=/tmp/output']    
+    sys.argv[1:] = ['--file=/tmp/testfile', '--spelling=testspell', '-l', '10', 
+                 '-c' '10', '--output-file=/tmp/output']    
     option = parse_find_reference_args('test_parse_find_reference_args')
     
     eq_(option.filename, '/tmp/testfile')
@@ -91,28 +89,26 @@ def test_parse_find_reference_args():
     eq_(option.spelling, 'testspell')
     eq_(option.output_file_name, '/tmp/output')
     
-    sys.argv[1:] = ['--file=/tmp/testfile', '--spelling=testspell', '-l 10']    
+    sys.argv[1:] = ['--file=/tmp/testfile', '--spelling=testspell', '-l', '10']    
     option = parse_find_reference_args('test_parse_find_reference_args')
     
-    eq_(option.column, None)
+    assert option.column is None
     eq_(option.output_file_name, './test_parse_find_reference_args')
     
     os.remove(file_name)
 
-def test_parse_find_reference_args2():
+def test_parse_find_refe_args2_outputfile():
     '''test when invalid output file is given by command line
     '''
     file_name = '/tmp/testfile'
-    tmp_file = open(file_name, 'w')
-    tmp_file.close()
+    tmp_file = open(file_name, 'w').close()
     
     invalid_output_file = '/tmp/invalid_output'
-    tmp_file = open(invalid_output_file, 'w')
-    tmp_file.close()
+    tmp_file = open(invalid_output_file, 'w').close()
     os.chmod(invalid_output_file, not stat.S_IWUSR)
     
-    sys.argv[1:] = ['--file=/tmp/testfile', '--spelling=testspell', '-l 10', 
-                 '-c 10', '--output-file=/tmp/invalid_output']    
+    sys.argv[1:] = ['--file=/tmp/testfile', '--spelling=testspell', '-l', '10', 
+                 '-c', '10', '--output-file=/tmp/invalid_output']    
     option = parse_find_reference_args('test_parse_find_reference_args')
     
     eq_(option.output_file_name, './test_parse_find_reference_args')
@@ -121,18 +117,18 @@ def test_parse_find_reference_args2():
     os.remove(invalid_output_file)
 
 @raises(SystemExit)
-def test_parse_find_reference_args3():
+def test_parse_find_refe_args3_no_fname():
     '''test function get_cursors_with_name when filename is not given
     '''
-    sys.argv[1:] = ['--spelling=testspell', '-l 10', '-c 10']
+    sys.argv[1:] = ['--spelling=testspell', '-l', '10', '-c', '10']
     parse_find_reference_args('test_parse_find_reference_args') 
 
 @raises(SystemExit)
-def test_parse_find_reference_args4():
+def test_parse_find_refe_args4_invld_fname():
     '''test function get_cursors_with_name when filename does not exist
     '''
     sys.argv[1:] = ['--file=/tmp/not_exist', '--spelling=testspell', 
-                    '-l 10', '-c 10']
+                    '-l', '10', '-c', '10']
     parse_find_reference_args('test_parse_find_reference_args') 
     
 @raises(SystemExit)    
@@ -140,10 +136,9 @@ def test_parse_find_reference_args5():
     '''test function get_cursors_with_name when spelling is not given
     '''
     file_name = "/tmp/testfile"
-    tmp_file = open(file_name, 'w')
-    tmp_file.close()
+    tmp_file = open(file_name, 'w').close()
     
-    sys.argv[1:] = ['--file=/tmp/testfile', '-l 10', '-c 10']
+    sys.argv[1:] = ['--file=/tmp/testfile', '-l', '10', '-c', '10']
     parse_find_reference_args('test_parse_find_reference_args') 
     
 @raises(SystemExit)    
@@ -151,9 +146,8 @@ def test_parse_find_reference_args6():
     '''test function get_cursors_with_name when line is not given
     '''
     file_name = "/tmp/testfile"
-    tmp_file = open(file_name, 'w')
-    tmp_file.close()
+    tmp_file = open(file_name, 'w').close()
         
-    sys.argv[1:] = ['--file=/tmp/testfile', '--spelling=testspell', '-c 10']
+    sys.argv[1:] = ['--file=/tmp/testfile', '--spelling=testspell', '-c', '10']
     parse_find_reference_args('test_parse_find_reference_args') 
     
