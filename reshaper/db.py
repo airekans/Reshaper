@@ -411,6 +411,7 @@ class Cursor(_Base):
         try:
             _cursor = proj_engine.get_session().query(Cursor).join(File).\
                 filter(Cursor.usr == cursor.get_usr()).\
+                filter(Cursor.spelling == cursor.spelling).\
                 filter(Cursor.is_definition == True).\
                 filter(File.name == cursor.location.file.name).\
                 filter(Cursor.offset_start == cursor.location.offset).one()
@@ -429,6 +430,7 @@ class Cursor(_Base):
         try:
             _cursors = proj_engine.get_session().query(Cursor).\
                 filter(Cursor.usr == cursor.usr).\
+                filter(Cursor.spelling == cursor.spelling).\
                 filter(Cursor.is_definition == False).all()
         except MultipleResultsFound, e:
             print e
