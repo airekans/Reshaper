@@ -23,13 +23,13 @@ class Test(unittest.TestCase):
         
         set2 = set([2, 3])
         dist1 = da.calculate_set_dist(set1, set2)
-        self.assertLess(dist1, 1)
-        self.assertLess(0, dist1)
+        self.assertTrue(dist1 < 1)
+        self.assertTrue(0 < dist1)
         
         set2 = set([2, 4, 5])
         dist2 = da.calculate_set_dist(set1, set2)
-        self.assertLess(dist1, dist2)
-        self.assertLess(dist2, 1)
+        self.assertTrue(dist1 < dist2)
+        self.assertTrue(dist2 < 1)
         
     def test_cluster(self):
         analyzer = da.DependencyAnalyzer()
