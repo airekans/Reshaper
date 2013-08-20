@@ -113,7 +113,7 @@ def test_parse_find_refe_args2_inv_outfile():
     invalid_output_file = os.path.join(os.path.dirname(__file__), 
                              'test_data/test_find_reference_util_invout_tmp')
     open(invalid_output_file, 'w').close()
-    os.chmod(invalid_output_file, not stat.S_IWUSR)
+    os.chmod(invalid_output_file, stat.S_IRUSR)
     
     sys.argv[1:] = ['--file='+file_name, '--spelling=testspell', '-l', 
                     '10', '-c', '10', '--output-file='+invalid_output_file]    
