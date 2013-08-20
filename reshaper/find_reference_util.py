@@ -98,7 +98,7 @@ def parse_find_reference_args(default_output_filename):
     else:
         tmp_output_file = os.path.join(".", \
             default_output_filename)
-        print "Error occurs, default output file %s will be used"\
+        print "Output file is not given, default output file %s will be used"\
             % tmp_output_file
         options.output_file_name = tmp_output_file 
 
