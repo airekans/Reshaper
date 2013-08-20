@@ -119,7 +119,7 @@ def walk_all_methods_def(_tu, class_name, func, on_no_callee):
                 found_hash.add(decl_cusor.hash)
                 
             if not cursors:
-                on_no_callee()
+                on_no_callee(method_def)
 
 
 def gen_class_internal_relation_graph(_tu, class_name):

@@ -71,14 +71,20 @@ digraph G {
         
     def test_gen_class_collaboration_graph(self):
         ''' test gen_class_collaboration_graph'''
-        src_path = os.path.join(os.path.dirname(__file__),
-                                'test_data','class_relation.cpp') 
+        
+        data_dir = os.path.join(os.path.dirname(__file__), 
+                                'test_data')
+        src_path = os.path.join(data_dir, 
+                                'class_relation.cpp') 
+                
+        print src_path
+                
         _tu = get_tu(src_path)
         
-        data_dir = os.path.join(os.path.dirname(__file__), 'test_data')
         
         dot_str = gen_class_collaboration_graph(_tu, 'A')
         
+        print data_dir
         dot_str_filtered = gen_class_collaboration_graph(_tu, 'A', data_dir)
         
         dot_str_hide_functions = gen_class_collaboration_graph(_tu, 'A', show_functions = False)
@@ -160,6 +166,7 @@ digraph G {
   Node2 -> Node8 [color="darkorchid3",fontsize="10",style="dashed",label="<use>" ,fontname="Helvetica"];
 }'''
         self.assertEqual(dot_str_expected, dot_str, dot_str)
+        
         self.assertEqual(dot_str_filtered_expected, dot_str_filtered, 
                          dot_str_filtered)
         self.assertEqual(dot_str_hide_functions_expected, 
@@ -171,6 +178,7 @@ digraph G {
                                 'test_data','class_relation.cpp') 
         _tu = get_tu(src_path)
         
+        print src_path
         dot_str = dgu.gen_class_internal_relation_graph(_tu, 'A')    
         
         expected_dot_str = \
@@ -190,7 +198,8 @@ digraph G {
   Node6 [label="m_si",height=0.2,width=0.4,color="black", fillcolor="grey75", style="filled" fontcolor="black"];
   Node5 -> Node6 [color="darkorchid3",fontsize="10",style="dashed",label="" ,fontname="Helvetica"];
 }'''        
-        self.assertEqual(expected_dot_str, dot_str) 
+        
+        self.assertEqual(expected_dot_str, dot_str, dot_str) 
         
         
 if __name__ == "__main__":

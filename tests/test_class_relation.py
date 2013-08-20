@@ -7,6 +7,7 @@ import os, unittest
 from reshaper.ast import get_tu, save_ast
 from reshaper.util import get_cursor
 import reshaper.semantic as sem
+import reshaper.class_relation_util as cru
 
 CLASS_RELATION_INPUT_HEADER_FILE = os.path.join(os.path.dirname(__file__),
                                      'test_data','class_relation.h')    
@@ -85,6 +86,13 @@ class TestClassRelation(unittest.TestCase):
         
         for name, cursor in zip(expected_base_names, base_cursors):
             self.assertEqual(name, cursor.spelling)
+            
+    
+    def test_get_callee_cls_files_in_same_lib(self):
+        _tu = get_tu(CLASS_RELATION_INPUT_SRC_FILE, lookup_cache_file_first = True)
+        cls_cursor = get_cursor(_tu, 'A')
+        header2source = cru.get_callee_cls_files_in_same_lib(cls_cursor)
+        print header2source
 
 if __name__ == '__main__':
     unittest.main()
