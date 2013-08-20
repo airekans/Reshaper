@@ -56,9 +56,9 @@ def test_get_cursors_with_name():
     '''test function get_cursors_with_name
     '''
     file_name = "/tmp/test_get_cursors_with_name"
-    ftmp = open(file_name, 'w')
-    ftmp.write(TEST_INPUT)
-    ftmp.close()
+    tmp_file = open(file_name, 'w')
+    tmp_file.write(TEST_INPUT)
+    tmp_file.close()
     
     name = "TargetFunc"
     ref = []
