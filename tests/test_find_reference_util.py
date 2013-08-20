@@ -95,6 +95,7 @@ def test_parse_find_reference_args():
     option = parse_find_reference_args('test_parse_find_reference_args')
     
     eq_(option.column, None)
+    eq_(option.output_file_name, './test_parse_find_reference_args')
     
     os.remove(file_name)
 
