@@ -58,7 +58,7 @@ def test_get_cursors_with_name():
     '''test function get_cursors_with_name
     '''
     file_name = os.path.join(os.path.dirname(__file__), 
-                             'test_data/test_find_reference_util_tmp')
+                             'test_data', 'test_find_reference_util_tmp')
     tmp_file = open(file_name, 'w')
     tmp_file.write(TEST_INPUT)
     tmp_file.close()
@@ -79,13 +79,13 @@ def test_parse_find_refe_args_regular():
     given properly
     '''
     file_name = os.path.join(os.path.dirname(__file__), 
-                             'test_data/test_find_reference_util_tmp')
+                             'test_data', 'test_find_reference_util_tmp')
     output_file = os.path.join(os.path.dirname(__file__), 
-                             'test_data/test_find_refe_util_out_tmp')
+                             'test_data', 'test_find_refe_util_out_tmp')
     open(file_name, 'w').close()
     
     sys.argv[1:] = ['--file='+file_name, '--spelling=testspell', 
-                    '-l', '10', '-c' '10', '--output-file='+output_file]    
+                    '-l', '10', '-c', '10', '--output-file='+output_file]    
     option = parse_find_reference_args('def_output_filename')
     
     eq_(option.filename, file_name)
@@ -107,11 +107,11 @@ def test_parse_find_refe_args2_inv_outfile():
     '''test if command line argument '--output-file' is invalid
     '''
     file_name = os.path.join(os.path.dirname(__file__), 
-                             'test_data/test_find_reference_util_tmp')
+                             'test_data', 'test_find_reference_util_tmp')
     open(file_name, 'w').close()
     
-    invalid_output_file = os.path.join(os.path.dirname(__file__), 
-                             'test_data/test_find_reference_util_invout_tmp')
+    invalid_output_file = os.path.join(os.path.dirname(__file__), 'test_data', 
+                                       'test_find_reference_util_invout_tmp')
     open(invalid_output_file, 'w').close()
     os.chmod(invalid_output_file, stat.S_IRUSR)
     
@@ -144,7 +144,7 @@ def test_parse_find_refe_args5_no_spell():
     '''test if command line argument '--spelling' is not given
     '''
     file_name = os.path.join(os.path.dirname(__file__), 
-                             'test_data/test_find_reference_util_tmp')
+                             'test_data', 'test_find_reference_util_tmp')
     open(file_name, 'w').close()
     
     sys.argv[1:] = ['--file='+file_name, '-l', '10', '-c', '10']
@@ -155,7 +155,7 @@ def test_parse_find_refe_args6_no_line():
     '''test if command line argument '--line' is not given
     '''
     file_name = os.path.join(os.path.dirname(__file__), 
-                             'test_data/test_find_reference_util_tmp')
+                             'test_data', 'test_find_reference_util_tmp')
     open(file_name, 'w').close()
         
     sys.argv[1:] = ['--file='+file_name, '--spelling=testspell', '-c', '10']

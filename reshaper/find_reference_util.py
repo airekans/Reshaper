@@ -87,20 +87,15 @@ def parse_find_reference_args(default_output_filename):
 
     if options.output_file_name is not None:
         try:
-            file_handle = open(options.output_file_name, 'w')
+            open(options.output_file_name, 'w')
         except IOError, e:
             print e
-            tmp_output_file = os.path.join(".", \
-                default_output_filename)
-            print "Error occurs, default output file %s will be used"\
-                % tmp_output_file
-            options.output_file_name = tmp_output_file 
-    else:
-        tmp_output_file = os.path.join(".", \
-            default_output_filename)
-        print "Output file is not given, default output file %s will be used"\
-            % tmp_output_file
-        options.output_file_name = tmp_output_file 
+        else:
+            return options
+
+    options.output_file_name = os.path.join(".", default_output_filename)
+    print "Error occur, default output file %s is used"\
+        % options.output_file_name
 
     return options
  
