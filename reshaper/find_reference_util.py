@@ -85,7 +85,8 @@ def parse_find_reference_args(default_output_filename):
         print ", the first one in %s line %s will be used" \
                 % (options.filename, options.line)
 
-    if not options.output_file_name:
+    if not options.output_file_name or \
+        not os.access(options.output_file_name, os.W_OK):
         options.output_file_name = os.path.join('.', default_output_filename)
 
     return options
