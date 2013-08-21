@@ -9,6 +9,9 @@ from reshaper.util import get_cursor_with_location, \
                           get_cursor_if, get_cursor
 from .util import get_tu_from_text
 
+import os
+from shutil import rmtree
+from tests.test_util import _tu
 
 parent_calling_func_test_input = """\
 void TargetFunc()
@@ -409,7 +412,32 @@ def test_get_source_path_candidates():
          result)
  
 
+def test_scan_dir_parse_files():
+    """Test function scan_dir_parse_files()
+    """
+    test_dir = os.path.join(os.path.dirname(__file__), 'test_data', 
+                            'test_scan_dir_parse_files')
+    test_dir2 = os.path.join(test_dir, 'tmp_dir')
+    if os.path.exists(test_dir):
+        rmtree(test_dir)
+        
+    os.mkdir(test_dir)
+    os.mkdir(test_dir2)
+    for file_name in ('tmp', 'tmp.h', 'tmp.c'):
+        os.mknod(os.path.join(test_dir, file_name))
+        os.mknod(os.path.join(test_dir2, file_name))
+        
+    result = []
+    sem.scan_dir_parse_files(test_dir, result.append)
+    rmtree(test_dir)
+    
+    eq_([os.path.join(test_dir, 'tmp.c'),
+         os.path.join(test_dir2, 'tmp.c')], result)
+    
+    
 
+
+    
     
     
     
