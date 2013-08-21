@@ -110,19 +110,13 @@ def test_parse_find_refe_args2_inv_outfile():
                              'test_data', 'test_find_reference_util_tmp')
     open(file_name, 'w').close()
     
-    invalid_output_file = os.path.join(os.path.dirname(__file__), 'test_data', 
-                                       'test_find_reference_util_invout_tmp')
-    open(invalid_output_file, 'w').close()
-    os.chmod(invalid_output_file, stat.S_IRUSR)
-    
     sys.argv[1:] = ['--file='+file_name, '--spelling=testspell', '-l', 
-                    '10', '-c', '10', '--output-file='+invalid_output_file]    
+                    '10', '-c', '10', '--output-file=invalid_file']    
     option = parse_find_reference_args('def_output_filename')
     
     eq_(option.output_file_name, './def_output_filename')
     
     os.remove(file_name)
-    os.remove(invalid_output_file)
 
 @raises(SystemExit)
 def test_parse_find_refe_args3_no_fname():

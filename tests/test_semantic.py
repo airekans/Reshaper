@@ -416,15 +416,14 @@ def test_scan_dir_parse_files():
     """
     test_dir = os.path.join(os.path.dirname(__file__), 'test_data', 
                             'test_scan_dir_parse_files')
-    test_dir2 = os.path.join(test_dir, 'tmp_dir')
+    test_dir2 = os.path.join(test_dir, 'test_dir2')
     if os.path.exists(test_dir):
         rmtree(test_dir)
         
-    os.mkdir(test_dir)
-    os.mkdir(test_dir2)
+    os.makedirs(test_dir2)
     for file_name in ('tmp', 'tmp.h', 'tmp.c'):
-        os.mknod(os.path.join(test_dir, file_name))
-        os.mknod(os.path.join(test_dir2, file_name))
+        open(os.path.join(test_dir, file_name), 'w').close()
+        open(os.path.join(test_dir2, file_name), 'w').close()
         
     result = []
     sem.scan_dir_parse_files(test_dir, result.append)

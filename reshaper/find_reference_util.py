@@ -85,17 +85,11 @@ def parse_find_reference_args(default_output_filename):
         print ", the first one in %s line %s will be used" \
                 % (options.filename, options.line)
 
-    if options.output_file_name is not None:
-        try:
-            open(options.output_file_name, 'w')
-        except IOError, e:
-            print e
-        else:
-            return options
-
-    options.output_file_name = os.path.join(".", default_output_filename)
-    print "Error occur, default output file %s is used"\
-        % options.output_file_name
+    if not options.output_file_name or \
+        not os.path.isfile(options.output_file_name):
+        options.output_file_name = os.path.join('.', default_output_filename)
+        print "Error occur, default output file %s is used"\
+            % options.output_file_name
 
     return options
  
