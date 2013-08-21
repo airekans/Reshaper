@@ -83,6 +83,7 @@ def test_parse_find_refe_args_regular():
     output_file = os.path.join(os.path.dirname(__file__), 
                              'test_data', 'test_find_refe_util_out_tmp')
     open(file_name, 'w').close()
+    open(output_file, 'w').close()
     
     sys.argv[1:] = ['--file='+file_name, '--spelling=testspell', 
                     '-l', '10', '-c', '10', '--output-file='+output_file]    
@@ -102,6 +103,7 @@ def test_parse_find_refe_args_regular():
     eq_(option.output_file_name, './def_output_filename')
     
     os.remove(file_name)
+    os.remove(output_file)
 
 def test_parse_find_refe_args2_inv_outfile():
     '''test if command line argument '--output-file' is invalid
