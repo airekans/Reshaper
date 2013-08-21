@@ -3,7 +3,7 @@ Created on Jun 24, 2013
 
 @author: liangzhao
 '''
-import unittest, os
+import unittest, os, sys
 import reshaper.dependency_analysis as da
 
 class Test(unittest.TestCase):
@@ -70,9 +70,10 @@ class Test(unittest.TestCase):
         self.assertEqual(set(['f1', 'f2', 'g2', 'a1', 'b1', 'c2', 'e2']), 
                          set(analyzer.get_depended_leafs()))
         
-        self.assertAlmostEqual([('c2', 0.8571428571428571),
-                                ('b1', 0.5)], 
-                               analyzer.calculate_all_correlation('a1'))
+        if sys.version_info >= (2, 7):
+            self.assertAlmostEqual([('c2', 0.8571428571428571),
+                                    ('b1', 0.5)], 
+                                   analyzer.calculate_all_correlation('a1'))
         
         expected_leafs = set(['f2', 'a1', 'b1', 'c2', 'e2'])
         self.assertEqual(expected_leafs, 
