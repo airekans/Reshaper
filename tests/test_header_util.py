@@ -45,6 +45,14 @@ class Test(unittest.TestCase):
                                            Test.TEST_HEADER_FILE)
         cursor_names = [c.spelling for c in cursors]
         self.assertEqual(['X', 'string', 'A', 'B', 'B1', 'C'], cursor_names)
+        
+    def test_get_all_class_names(self):
+        cursor_names = sem.get_all_class_names(self.__tu_cursor, \
+                                           Test.TEST_HEADER_FILE)
+        self.assertEqual(['X', 'string', 'A', 'B', 'B1', 'C'], cursor_names)
+        
+        cursor_names = sem.get_all_class_names(self.__tu_cursor, None)
+        self.assertEqual(['X', 'string', 'A', 'B', 'B1', 'C'], cursor_names)
     
 if __name__ == "__main__":
     unittest.main()
