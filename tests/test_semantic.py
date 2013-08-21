@@ -11,7 +11,6 @@ from .util import get_tu_from_text
 
 import os
 from shutil import rmtree
-from tests.test_util import _tu
 
 parent_calling_func_test_input = """\
 void TargetFunc()
