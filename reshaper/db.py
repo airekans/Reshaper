@@ -486,6 +486,7 @@ class Cursor(_Base):
         try:
             _cursor = proj_engine.get_session().query(Cursor).join(File).\
                 filter(Cursor.usr == cursor.get_usr()).\
+                filter(Cursor.spelling == cursor.spelling).\
                 filter(File.name == cursor.location.file.name).\
                 filter(Cursor.offset_start == cursor.location.offset).one()
         except MultipleResultsFound, e:
