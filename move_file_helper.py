@@ -19,6 +19,7 @@ def get_source_file(fpath):
     for file_name in get_source_path_candidates(fpath):
         if os.path.isfile(file_name):
             return os.path.abspath(file_name)
+    return None
 
 def get_header_file_name(fpath):
     '''get file name without extend
@@ -39,7 +40,7 @@ def get_header_file_name(fpath):
         if os.path.isfile(file_name):
             return os.path.abspath(file_name)
 
-class IncludeObject(object):
+class IncludeInfo(object):
     '''class to cache include information
     '''
     def __init__(self, file_name = "", depth = -1, source = ""):
@@ -109,12 +110,12 @@ class MoveFileHandle(object):
 
         return include_list
 
-    def _get_include_recurvely(self, header_name,
+    def _get_include_recursively(self, header_name,
             current_depth, source_includes):
         '''get include file recurvely
         '''
         header_name = os.path.abspath(header_name)
-        include_obj = IncludeObject(header_name, current_depth)
+        include_obj = IncludeInfo(header_name, current_depth)
 
         # if is leaf node, not return directly.
         should_return = False
@@ -156,7 +157,7 @@ class MoveFileHandle(object):
         self._output_list.append(include_obj)
 
         for file_obj in file_includes:
-            self._get_include_recurvely(file_obj, \
+            self._get_include_recursively(file_obj, \
                     current_depth, source_includes)
 
     def begin_to_handle(self):
@@ -167,13 +168,13 @@ class MoveFileHandle(object):
 
         header_name = get_header_file_name(self._file_name)
         self._already_handle_list.append(header_name)
-        self._output_list.append(IncludeObject(header_name, 1))
+        self._output_list.append(IncludeInfo(header_name, 1))
 
         includes, source_includes  = \
                 self._get_includes(self._file_name, header_name)
 
         for file_obj in includes:
-            self._get_include_recurvely(file_obj, 1, source_includes)
+            self._get_include_recursively(file_obj, 1, source_includes)
 
     def begin_to_handle_for_UT(self, source_tu):
         '''this is used for unittest
@@ -182,13 +183,13 @@ class MoveFileHandle(object):
 
         header_name = get_header_file_name(self._file_name)
         self._already_handle_list.append(header_name)
-        self._output_list.append(IncludeObject(header_name, 1))
+        self._output_list.append(IncludeInfo(header_name, 1))
 
         includes, source_includes  = \
                 self._get_includes(self._file_name, header_name)
 
         for file_obj in includes:
-            self._get_include_recurvely(file_obj, 1, source_includes)
+            self._get_include_recursively(file_obj, 1, source_includes)
 
     def _get_includes(self, file_name, header_name = ''):
         ''' get includes under self.lib_name for a file
@@ -219,7 +220,7 @@ class MoveFileHandle(object):
         return includes, source_tu.get_includes()
 
     def get_output_list(self):
-        '''return output list of IncludeObject
+        '''return output list of IncludeInfo
         '''
         if not self._output_list:
             self.begin_to_handle()
