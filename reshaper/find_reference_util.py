@@ -59,13 +59,14 @@ def get_cursors_with_name(file_name, name, ref_curs):
     ref_curs.extend(cursors)
 
 
-def parse_find_reference_args(default_output_filename):
+def parse_find_reference_args(default_output_filename, args = None, prog = None):
     '''get user options and parse it for 
     finding reference
+    arguments: args and prog are used for passing arguments during unit test 
     '''
-    option_parser = OptionParser(usage = "%prog [options]")
+    option_parser = OptionParser(usage = "%prog [options]", prog = prog)
     setup_find_reference_options(option_parser)
-    options, args = option_parser.parse_args()
+    options, args = option_parser.parse_args(args)
 
     #check input args
     if options.filename is None:
