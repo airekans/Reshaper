@@ -124,7 +124,32 @@ def test_parse_find_refe_args2_inv_outfile():
     
     os.remove(file_name)
     os.remove(inv_outfile)
-    
+
+
+class RedirectStdStreams(object):
+    '''redirect stderr to remove error message during test
+    '''
+    def __init__(self, stderr=open(os.devnull, 'w')):
+        self._stderr = stderr or sys.stderr
+
+    def __enter__(self):
+        self.old_stderr = sys.stderr
+        self.old_stderr.flush()
+        sys.stderr = self._stderr
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        self._stderr.flush()
+        sys.stderr = self.old_stderr
+        
+def RedirectStderr(func):
+    '''redirect stderr function decorator
+    '''
+    def test_wrappedFunc():
+        with RedirectStdStreams():
+            func()
+    return test_wrappedFunc
+
+@RedirectStderr
 @raises(SystemExit)
 def test_parse_find_refe_args3_no_fname():
     '''test if command line argument '--file' is not given
@@ -133,6 +158,7 @@ def test_parse_find_refe_args3_no_fname():
     parse_find_reference_args('def_output_filename', args, 
                               'test_parse_find_refe_args3_no_fname') 
 
+@RedirectStderr
 @raises(SystemExit)
 def test_parse_find_refe_args4_inv_fname():
     '''test if command line argument '--file' is invalid
@@ -141,7 +167,8 @@ def test_parse_find_refe_args4_inv_fname():
             '-l', '10', '-c', '10']
     parse_find_reference_args('def_output_filename', args, 
                               'test_parse_find_refe_args4_inv_fname') 
-    
+
+@RedirectStderr
 @raises(SystemExit)    
 def test_parse_find_refe_args5_no_spell():
     '''test if command line argument '--spelling' is not given
@@ -154,6 +181,7 @@ def test_parse_find_refe_args5_no_spell():
     parse_find_reference_args('def_output_filename', args, 
                               'test_parse_find_refe_args5_no_spell') 
 
+@RedirectStderr
 @raises(SystemExit)    
 def test_parse_find_refe_args6_no_line():
     '''test if command line argument '--line' is not given
