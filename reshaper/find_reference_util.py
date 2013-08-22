@@ -86,7 +86,8 @@ def parse_find_reference_args(default_output_filename):
                 % (options.filename, options.line)
 
     if not options.output_file_name or \
-        not os.access(options.output_file_name, os.W_OK):
+        (os.path.isfile(options.output_file_name) and \
+        not os.access(options.output_file_name, os.W_OK)):
         options.output_file_name = os.path.join('.', default_output_filename)
 
     return options

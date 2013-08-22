@@ -78,6 +78,7 @@ def test_parse_find_refe_args_regular():
     '''test function get_cursors_with_name when command line arguments are 
     given properly
     '''
+    #regular situation with all arguments properly given
     file_name = os.path.join(os.path.dirname(__file__), 
                              'test_data', 'test_find_reference_util_tmp')
     output_file = os.path.join(os.path.dirname(__file__), 
@@ -95,12 +96,20 @@ def test_parse_find_refe_args_regular():
     eq_(option.spelling, 'testspell')
     eq_(option.output_file_name, output_file)
     
+    #no output filename is given, will use default
     sys.argv[1:] = ['--file='+file_name, '--spelling=testspell',
                      '-l', '10']    
     option = parse_find_reference_args('def_output_filename')
     
     assert option.column is None
     eq_(option.output_file_name, './def_output_filename')
+    
+    #output file does not exist, but can be created latter
+    sys.argv[1:] = ['--file='+file_name, '--spelling=testspell',
+                     '-l', '10', '--output-file=non_exist_path']    
+    option = parse_find_reference_args('def_output_filename')
+    
+    eq_(option.output_file_name, 'non_exist_path')
     
     os.remove(file_name)
     os.remove(output_file)
@@ -110,15 +119,20 @@ def test_parse_find_refe_args2_inv_outfile():
     '''
     file_name = os.path.join(os.path.dirname(__file__), 
                              'test_data', 'test_find_reference_util_tmp')
+    inv_outfile = os.path.join(os.path.dirname(__file__), 
+                             'test_data', 'test_inv_out')
     open(file_name, 'w').close()
+    open(inv_outfile, 'w').close()
+    os.chmod(inv_outfile, stat.S_IRUSR)
     
     sys.argv[1:] = ['--file='+file_name, '--spelling=testspell', '-l', 
-                    '10', '-c', '10', '--output-file=invalid_file']    
+                    '10', '-c', '10', '--output-file='+inv_outfile]    
     option = parse_find_reference_args('def_output_filename')
     
     eq_(option.output_file_name, './def_output_filename')
     
     os.remove(file_name)
+    os.remove(inv_outfile)
     
 @raises(SystemExit)
 def test_parse_find_refe_args3_no_fname():
