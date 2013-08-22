@@ -2,12 +2,12 @@
 find_reference_util.py
 '''
 
-import os, sys, stat
+import os, stat
 from nose.tools import eq_, raises
 
 from reshaper.util import get_cursor_with_location
 from reshaper.semantic import get_cursors_add_parent
-from .util import get_tu_from_text
+from .util import get_tu_from_text, RedirectStderr
 
 from reshaper.find_reference_util import filter_cursors_by_usr
 from reshaper.find_reference_util import get_cursors_with_name
@@ -124,30 +124,6 @@ def test_parse_find_refe_args2_inv_outfile():
     
     os.remove(file_name)
     os.remove(inv_outfile)
-
-
-class RedirectStdStreams(object):
-    '''redirect stderr to remove error message during test
-    '''
-    def __init__(self, stderr=open(os.devnull, 'w')):
-        self._stderr = stderr or sys.stderr
-
-    def __enter__(self):
-        self.old_stderr = sys.stderr
-        self.old_stderr.flush()
-        sys.stderr = self._stderr
-
-    def __exit__(self, exc_type, exc_value, traceback):
-        self._stderr.flush()
-        sys.stderr = self.old_stderr
-        
-def RedirectStderr(func):
-    '''redirect stderr function decorator
-    '''
-    def test_wrappedFunc():
-        with RedirectStdStreams():
-            func()
-    return test_wrappedFunc
 
 @RedirectStderr
 @raises(SystemExit)
