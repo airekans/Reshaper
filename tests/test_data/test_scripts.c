@@ -8,6 +8,7 @@ class D
 
 namespace Outer{
     namespace Inner{
+    	class B;
         class C
         {
             C();

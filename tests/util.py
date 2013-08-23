@@ -31,7 +31,7 @@ class RedirectStdStreams(object):
         self._stderr.flush()
         sys.stderr = self.old_stderr
         
-def redirectStderr(func):
+def redirect_stderr(func):
     '''redirect stderr function decorator
     '''
     def test_wrapped_func():
@@ -40,7 +40,7 @@ def redirectStderr(func):
     return test_wrapped_func
 
 
-def assertStdout (expected_str):
+def assert_stdout (expected_str):
     '''assert stdout string is expected string
     '''
     def outer_wrap(func):
@@ -56,4 +56,20 @@ def assertStdout (expected_str):
                 sys.stdout = saved_stdout
         return test_inner_wrap
     return outer_wrap
-            
+
+def abnormal_sysexit(func):
+    '''assert abnormal sys.exit is called
+    '''
+    def test_wrap(*arg, **kw):
+        try:
+            func(*arg, **kw)
+        except SystemExit, e:
+            assert(e.code != 0)
+        except:
+            raise
+        else:
+            message = "%s() did not raise abnormal SystemExit" \
+            % (func.__name__)
+    return test_wrap
+        
+        
