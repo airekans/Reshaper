@@ -3,11 +3,11 @@ find_reference_util.py
 '''
 
 import os, stat
-from nose.tools import eq_, raises
+from nose.tools import eq_
 
 from reshaper.util import get_cursor_with_location
 from reshaper.semantic import get_cursors_add_parent
-from .util import get_tu_from_text, redirectStderr
+from .util import get_tu_from_text, redirect_stderr, abnormal_sysexit
 
 from reshaper.find_reference_util import filter_cursors_by_usr
 from reshaper.find_reference_util import get_cursors_with_name
@@ -125,8 +125,8 @@ def test_parse_find_refe_args2_inv_outfile():
     os.remove(file_name)
     os.remove(inv_outfile)
 
-@redirectStderr
-@raises(SystemExit)
+@redirect_stderr
+@abnormal_sysexit
 def test_parse_find_refe_args3_no_fname():
     '''test if command line argument '--file' is not given
     '''
@@ -134,8 +134,8 @@ def test_parse_find_refe_args3_no_fname():
     parse_find_reference_args('def_output_filename', args, 
                               'test_parse_find_refe_args3_no_fname') 
 
-@redirectStderr
-@raises(SystemExit)
+@redirect_stderr
+@abnormal_sysexit
 def test_parse_find_refe_args4_inv_fname():
     '''test if command line argument '--file' is invalid
     '''
@@ -144,8 +144,8 @@ def test_parse_find_refe_args4_inv_fname():
     parse_find_reference_args('def_output_filename', args, 
                               'test_parse_find_refe_args4_inv_fname') 
 
-@redirectStderr
-@raises(SystemExit)    
+@redirect_stderr
+@abnormal_sysexit   
 def test_parse_find_refe_args5_no_spell():
     '''test if command line argument '--spelling' is not given
     '''
@@ -157,8 +157,8 @@ def test_parse_find_refe_args5_no_spell():
     parse_find_reference_args('def_output_filename', args, 
                               'test_parse_find_refe_args5_no_spell') 
 
-@redirectStderr
-@raises(SystemExit)    
+@redirect_stderr
+@abnormal_sysexit   
 def test_parse_find_refe_args6_no_line():
     '''test if command line argument '--line' is not given
     '''

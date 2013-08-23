@@ -6,8 +6,6 @@ The result will be output to stdout.
 Usage: extract_interface.py class.cpp class_name
 
 """
-
-from clang.cindex import CursorKind
 import sys
 import os
 from reshaper.ast import get_tu
@@ -17,7 +15,6 @@ from reshaper.option import setup_options
 from reshaper import semantic
 from optparse import OptionParser
 from functools import partial
-from compiler.ast import Break
 
 
 def parse_options(argv):
@@ -41,7 +38,7 @@ def parse_options(argv):
     return option_parser, options, args
 
     
-def main(argv):
+def main(argv = sys.argv[1:]):
     option_parser, options, args = parse_options(argv)
     if len(args) != 2:
         option_parser.error("Please input source file and class name.")
@@ -63,23 +60,21 @@ def main(argv):
                  cdb_path = options.cdb_path)
     # TODO: the following line should be changed to work on class in a namespace
     
-    namespace_name = class_to_extract.split('::')
-    class_cursor = _tu.cursor
+    ns_and_cls_names = class_to_extract.split('::')
+    curr_cursor = _tu.cursor
     
-    for ns in namespace_name:
-        for cur in class_cursor.get_children():
-            if cur.kind in [CursorKind.NAMESPACE, CursorKind.CLASS_DECL]\
-                and (cur.spelling == ns or cur.displayname == ns):
-                class_cursor = cur
+    for name in ns_and_cls_names:
+        for cur in curr_cursor.get_children():
+            if semantic.is_class_definition(cur, name) or\
+                semantic.is_namespace_definition(cur, name):                
+                curr_cursor = cur
                 break
         else:
             print "source file %s does not contain any class named %s" % \
                 (src, class_to_extract)
             sys.exit(1)
             
-    if class_cursor is None or \
-            class_cursor.kind != CursorKind.CLASS_DECL or \
-            not class_cursor.is_definition():
+    if curr_cursor is None or not semantic.is_class_definition(curr_cursor):
         print "source file %s does not contain any class named %s" % \
             (src, class_to_extract)
         sys.exit(1)
@@ -103,10 +98,10 @@ def main(argv):
         methods = semantic.get_class_callee_names(cls_cursor, class_to_extract)
 
     # print out the interface class
-    class_printer = extract_interface(class_cursor, methods)
+    class_printer = extract_interface(curr_cursor, methods)
     print class_printer.get_definition()
         
 
 if __name__ == '__main__':
-    main(sys.argv[1:])
+    main()
         

@@ -146,6 +146,13 @@ def is_class_definition(cursor, class_name = None):
     else:
         return is_class(cursor) and cursor.is_definition()
 
+def is_namespace(cursor):
+    return cursor.kind == CursorKind.NAMESPACE
+
+def is_namespace_definition(cursor, namespace_name = None):
+    return cursor.is_definition() and is_namespace(cursor) and\
+        namespace_name in [None, cursor.spelling, cursor.displayname]
+        
 
 def is_function(cursor):
     """ check whether the cursor is a function.
