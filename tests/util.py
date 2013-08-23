@@ -3,7 +3,7 @@
 from clang.cindex import  TranslationUnit
 from reshaper.ast import TUCache
 
-import sys, os
+import sys, os, StringIO
 
 def get_tu_from_text(source):
     '''just for unit test
@@ -38,3 +38,20 @@ def RedirectStderr(func):
         with RedirectStdStreams():
             func()
     return test_wrappedFunc
+
+
+def AssertStdout (expected_str):
+    def outer_wrap(func):
+        def test_inner_wrap():
+            saved_stdout = sys.stdout
+            try:
+                out = StringIO.StringIO()
+                sys.stdout = out
+                func()
+                output = out.getvalue().strip()
+                assert output == expected_str
+            finally:
+                sys.stdout = saved_stdout
+        return test_inner_wrap
+    return outer_wrap
+            

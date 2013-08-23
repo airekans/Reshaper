@@ -17,13 +17,14 @@ from reshaper.option import setup_options
 from reshaper import semantic
 from optparse import OptionParser
 from functools import partial
+from compiler.ast import Break
 
 
-def parse_options():
+def parse_options(argv):
     """ parse the command line options and arguments and returns them
     """
 
-    option_parser = OptionParser(usage = "%prog [options] FILE CLASSNAME")
+    option_parser = OptionParser(usage = "%prog [options] FILE CLASSNAME",)
     setup_options(option_parser)
     option_parser.add_option("-m", "--methods", dest = "methods",
                              type = "string",
@@ -36,12 +37,12 @@ def parse_options():
                              help = "Name of the class that uses CLASSNAME")
     
     # handle option or argument error.
-    options, args = option_parser.parse_args()
+    options, args = option_parser.parse_args(args = argv)
     return option_parser, options, args
 
     
-def main():
-    option_parser, options, args = parse_options()
+def main(argv):
+    option_parser, options, args = parse_options(argv)
     if len(args) != 2:
         option_parser.error("Please input source file and class name.")
 
@@ -61,11 +62,21 @@ def main():
     _tu = get_tu(src, config_path= options.config,
                  cdb_path = options.cdb_path)
     # TODO: the following line should be changed to work on class in a namespace
-    class_cursor = \
-        get_cursor_if(_tu,
-                      partial(semantic.is_class_definition,
-                              class_name = class_to_extract))
     
+    namespace_name = class_to_extract.split('::')
+    class_cursor = _tu.cursor
+    
+    for ns in namespace_name:
+        for cur in class_cursor.get_children():
+            if cur.kind in [CursorKind.NAMESPACE, CursorKind.CLASS_DECL]\
+                and (cur.spelling == ns or cur.displayname == ns):
+                class_cursor = cur
+                break
+        else:
+            print "source file %s does not contain any class named %s" % \
+                (src, class_to_extract)
+            sys.exit(1)
+            
     if class_cursor is None or \
             class_cursor.kind != CursorKind.CLASS_DECL or \
             not class_cursor.is_definition():
@@ -97,5 +108,5 @@ def main():
         
 
 if __name__ == '__main__':
-    main()
+    main(sys.argv[1:])
         
