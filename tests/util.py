@@ -31,16 +31,18 @@ class RedirectStdStreams(object):
         self._stderr.flush()
         sys.stderr = self.old_stderr
         
-def RedirectStderr(func):
+def redirectStderr(func):
     '''redirect stderr function decorator
     '''
-    def test_wrappedFunc():
+    def test_wrapped_func():
         with RedirectStdStreams():
             func()
-    return test_wrappedFunc
+    return test_wrapped_func
 
 
-def AssertStdout (expected_str):
+def assertStdout (expected_str):
+    '''assert stdout string is expected string
+    '''
     def outer_wrap(func):
         def test_inner_wrap():
             saved_stdout = sys.stdout
