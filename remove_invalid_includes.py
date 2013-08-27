@@ -234,8 +234,8 @@ def get_used_include_file(filename, \
         return
 
     if remove_origin_file:
-        tmp_file.checkout()
-        tmp_file.remove_invalid_includes()
+        file_obj.checkout()
+        file_obj.remove_invalid_includes()
     else:
         print 'Info: %s finished, result file is %s' % \
                 (filename, tmp_file)
