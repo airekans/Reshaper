@@ -222,7 +222,7 @@ class IncludeHandler(object):
             print "checkout %s error!" % self._file_name
             sys.exit(-1)
 
-def remove_invalid_includes_for_file(filename, \
+def get_used_include_file(filename, \
         cdb_path, config_path, remove_origin_file):
     """ handle file to remove invalid include files
     """
@@ -260,11 +260,11 @@ def main():
         sys.exit(-1)
 
     if options.filename:
-        remove_invalid_includes_for_file(options.filename, options.cdb_path, \
+        get_used_include_file(options.filename, options.cdb_path, \
                 options.config, options.remove)
     elif options.directory:
         scan_dir_parse_files(options.directory, \
-                partial(remove_invalid_includes_for_file, \
+                partial(get_used_include_file, \
                     cdb_path = options.cdb_path, \
                     config_path = options.config, \
                     remove_origin_file = options.remove))
