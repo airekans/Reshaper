@@ -57,7 +57,7 @@ def assert_stdout (expected_str):
         return test_inner_wrap
     return outer_wrap
 
-def abnormal_sysexit(func):
+def abnormal_exit(func):
     '''assert abnormal sys.exit is called
     '''
     def test_wrap(*arg, **kw):
@@ -70,6 +70,17 @@ def abnormal_sysexit(func):
         else:
             message = "%s() did not raise abnormal SystemExit" \
             % (func.__name__)
+            raise AssertionError(message)
     return test_wrap
         
-        
+def file_equals_str(file_path, string):
+    file_str = ''
+    fp = open(file_path, 'r')
+    for each_line in fp.readlines():
+        file_str += each_line
+    fp.close()
+    
+    if string == file_str:
+        return True
+    else:
+        return False

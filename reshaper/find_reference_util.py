@@ -13,7 +13,7 @@ import reshaper.option
 def get_usr_of_declaration_cursor(cursor):
     """get declaration cursor and return its USR
     """
-    declaration_cursor = cursor.get_declaration()
+    declaration_cursor = get_declaration(cursor)
     if is_cursor(declaration_cursor):
         return declaration_cursor.get_usr()
     return None

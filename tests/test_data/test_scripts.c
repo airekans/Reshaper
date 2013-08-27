@@ -50,6 +50,7 @@ namespace Outer{
     };
 }
 
+using namespace Outer;
 class A
 {
 public:
@@ -57,6 +58,6 @@ public:
     virtual ~A();
     void foo();
     int bar(double d);
-    Outer::B test_B(*Outer::B);
-    Outer::Inner::C test_C (*Outer::Inner::C);
+    B test_B(*B);
+    Inner::C test_C (*Inner::C);
 };

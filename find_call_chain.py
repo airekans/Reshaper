@@ -81,13 +81,13 @@ def conver_list_to_output_string(output_contents):
     output_string += "}\n"
     return output_string
 
-def main():
+def main(argv = sys.argv[1:]):
     '''main function : get the user args;
     find reference for the specific word;
     begin to handle its output recursively
     '''
     output_file = "findCallChainResult.txt"
-    options = parse_find_reference_args(output_file)
+    options = parse_find_reference_args(output_file, args = argv)
     tu_source = get_tu(options.filename)
     assert(semantic_util.is_tu(tu_source))
 
