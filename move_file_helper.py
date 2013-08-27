@@ -93,20 +93,10 @@ class MoveFileHandler(object):
         if not source_includes:
             return include_list
 
-        depth = -1
-        header_name = os.path.abspath(header_name)
-
         for include in source_includes:
-            if depth == -1:
-                if os.path.abspath(include.include.name) == header_name:
-                    depth = include.depth
-            else:
-                assert(depth >=0)
-                if include.depth == depth + 1 and \
-                    get_lib_name(include.include.name) == self._lib_name:
-                    include_list.append(include.include.name)
-                if include.depth >= depth:
-                    break
+            if os.path.abspath(include.source.name) == header_name and \
+                get_lib_name(include.include.name) == self._lib_name:
+                include_list.append(include.include.name)
 
         return include_list
 
