@@ -156,7 +156,7 @@ class IncludeHandler(object):
         # get tmp_file_name
         tmp_file_name = "%s%s" % (self._file_name, postfix)
         # gen pattern to get includes
-        pattern = re.compile('^(#include) *[<"](.*)[>"]')
+        pattern = re.compile(r'^(#include) *[<"](.*)[>"]')
         # handle file
         '''
         open file to get contents and write to new file according to:
@@ -170,20 +170,18 @@ class IncludeHandler(object):
             file_obj = open(self._file_name, 'r')
             write_obj = open(tmp_file_name, 'w')
 
-            while 1:
-                line = file_obj.readline()
+            for line in file_obj:
                 if not line:
                     break
 
                 match_pattern = False
-                if line:
-                    ret_search = pattern.search(line)
-                    if ret_search and len(ret_search.groups()) > 1:
-                        include_str = ret_search.group(2)
-                        for f in self._invalid_list:
-                            if include_str in f:
-                                match_pattern = True
-                                break
+                ret_search = pattern.search(line)
+                if ret_search and len(ret_search.groups()) > 1:
+                    include_str = ret_search.group(2)
+                    for f in self._invalid_list:
+                        if include_str in f:
+                            match_pattern = True
+                            break
 
                 if not match_pattern:
                     write_obj.write(line)
