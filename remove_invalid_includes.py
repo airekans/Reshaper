@@ -165,24 +165,18 @@ class IncludeHandler(object):
             the group,(between " and ")
         3) search invalid includes list, if it not in invalid list, write it
             to new tmp_file
-        
-        in order to import performance, only lines < max_include_lines will be
-        search and check.
         '''
         try:
             file_obj = open(self._file_name, 'r')
             write_obj = open(tmp_file_name, 'w')
 
-            line_no = 0
-            max_include_lines = 250
             while 1:
                 line = file_obj.readline()
                 if not line:
                     break
 
-                line_no += 1
                 match_pattern = False
-                if line and line_no < max_include_lines:
+                if line:
                     ret_search = pattern.search(line)
                     if ret_search and len(ret_search.groups()) > 1:
                         include_str = ret_search.group(2)
