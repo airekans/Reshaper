@@ -69,7 +69,7 @@ class MoveFileHandler(object):
         self._file_name = get_source_file(file_name)
         self._get_tu_func = get_tu_func
         self._max_depth = depth
-        self._already_handle_list = []
+        self._already_handle_list = set()
         self._output_list = []
         self._includes_cache = {}
         self._no_hint = False
@@ -124,7 +124,7 @@ class MoveFileHandler(object):
 
         if not should_return:
             current_depth += 1
-            self._already_handle_list.append(header_name)
+            self._already_handle_list.add(header_name)
 
         file_includes = []
         source_file = get_source_file(header_name)
@@ -159,7 +159,7 @@ class MoveFileHandler(object):
             return
 
         header_name = get_header_file_name(self._file_name)
-        self._already_handle_list.append(header_name)
+        self._already_handle_list.add(header_name)
         self._output_list.append(IncludeInfo(header_name, 1))
 
         includes, source_includes  = \
