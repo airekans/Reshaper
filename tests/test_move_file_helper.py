@@ -15,7 +15,7 @@ def test_MoveFileHandle():
     file_obj = MoveFileHandler(get_tu, source_file, '', 3)
 
     source_tu = get_tu(source_file)
-    file_obj.begin_to_handle_for_UT(source_tu)
+    file_obj.begin_to_handle()
     includes = file_obj.get_output_list()
 
     eq_(3, len(includes))

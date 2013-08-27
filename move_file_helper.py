@@ -107,18 +107,20 @@ class MoveFileHandler(object):
         header_name = os.path.abspath(header_name)
         include_obj = IncludeInfo(header_name, current_depth)
 
-        # if is leaf node, not return directly.
+        # if it reaches max depth, set should_return to True 
         should_return = False
-        if current_depth >= self._max_depth and self._no_hint:
+        if current_depth >= self._max_depth:
+            should_return = True
+        
+        # if need hint (self._no_hint is False), not return directly,
+        # go on to parse this file to get hint info (can_be_moved)
+        if should_return and self._no_hint:
             return
 
         if header_name in self._already_handle_list:
             include_obj.set_have_been_parsed()
             self._output_list.append(include_obj)
             return
-
-        if current_depth >= self._max_depth:
-            should_return = True
 
         if not should_return:
             current_depth += 1
@@ -141,10 +143,10 @@ class MoveFileHandler(object):
         if not file_includes:
             include_obj.set_can_be_moved(True)
 
+        self._output_list.append(include_obj)
+
         if should_return:
             return
-
-        self._output_list.append(include_obj)
 
         for file_obj in file_includes:
             self._get_include_recursively(file_obj, \
@@ -155,21 +157,6 @@ class MoveFileHandler(object):
         '''
         if self._max_depth < 1:
             return
-
-        header_name = get_header_file_name(self._file_name)
-        self._already_handle_list.append(header_name)
-        self._output_list.append(IncludeInfo(header_name, 1))
-
-        includes, source_includes  = \
-                self._get_includes(self._file_name, header_name)
-
-        for file_obj in includes:
-            self._get_include_recursively(file_obj, 1, source_includes)
-
-    def begin_to_handle_for_UT(self, source_tu):
-        '''this is used for unittest
-        keep its behavior the same as that of begin_to_handle
-        '''
 
         header_name = get_header_file_name(self._file_name)
         self._already_handle_list.append(header_name)

@@ -10,7 +10,7 @@ from reshaper.util import is_cursor_in_file_func
 from functools import partial
 
 _file_types = ('.cpp', '.c', '.cc')
-_special_lib = ('util', 'WCDA', 'ui', 'AutotestFrame')
+_special_lib = ('util', 'WCDA', 'ui', 'AutotestFrame', 'adv_rts')
 
 def is_cursor(source):
     return hasattr(source, "get_children")
@@ -341,7 +341,7 @@ def get_lib_name(path):
     """get lib name for path
     """
     abs_path = os.path.abspath(path)
-    pattern = re.compile('.*(GUI/)([a-zA-Z]*).*')
+    pattern = re.compile(r'.*(GUI/)([a-zA-Z_]*).*')
     search_result = pattern.search(abs_path)
     if search_result and \
             len(search_result.groups()) > 1:
