@@ -193,6 +193,8 @@ class MoveFileHandler(object):
             includes.extend(self.get_includes_for_header_file(header_name, \
                     source_tu.get_includes()))
 
+        # add source_tu to cache, or else source_tu.get_includes() iterator will
+        # be deleted.
         self._includes_cache[file_name] = source_tu
         return includes, source_tu.get_includes()
 
