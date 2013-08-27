@@ -2,8 +2,6 @@
 
 """remove_invalid_includes.py 
 tools used to remove invalid include files,
-should make sure that the length of include files 
-cannot be over 100 lines
 """
 import os, sys, re
 from clang.cindex import TranslationUnit, TypeKind
@@ -118,14 +116,14 @@ class IncludeHandler(object):
         tmp_list = [item for item in self._header_list \
                 if item not in self._useful_list]
 
+        # if a.cpp -> b.h -> c.h and c.h is indeed used by a.cpp,
+        # we can't remove b.h
         inter_list = [item for item in self._useful_list \
-                if item in self._indirect_dict.keys()]
-
-        indirect_list = []
+                if item in self._indirect_dict]
+        indirect_list = set()
         for c in inter_list:
             f = self._indirect_dict[c]
-            if f not in indirect_list:
-                indirect_list.append(f)
+            indirect_list.add(f)
 
         self._invalid_list = filter(lambda x : x not in indirect_list, tmp_list)
 
