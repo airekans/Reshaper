@@ -62,12 +62,8 @@ class IncludeHandler(object):
         if not os.path.isfile(self._file_name):
             raise ValueError, "%s : No such file!"
 
-        if cdb_path is None:
-            self._tu = get_tu(self._file_name, \
-                    config_path = config_path, options = options)
-        else:
-            self._tu = get_tu(self._file_name, cdb_path = cdb_path, \
-                    config_path = config_path, options = options)
+        self._tu = get_tu(self._file_name, cdb_path = cdb_path, \
+                config_path = config_path, options = options)
 
         if not self._tu:
             raise ValueError, "Can't get TranslationUnit for %s" \
