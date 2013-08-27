@@ -4,7 +4,7 @@
 import os
 from clang.cindex import CursorKind
 from nose.tools import eq_
-from remove_invalid_includes import IncludeHandler, remove_invalid_includes_for_file
+from remove_invalid_includes import IncludeHandler, get_used_include_file 
 from functools import partial
 
 INPUT_DIR = os.path.join(os.path.dirname(__file__), 'test_data')
@@ -39,7 +39,7 @@ def test_remove_invalid_includes_for_file():
     includes = include_obj.get_header_list()
     eq_(len(includes), 4)
 
-    remove_invalid_includes_for_file(source_file, None, "~/.reshaper.cfg", False)
+    get_used_include_file(source_file, None, "~/.reshaper.cfg", False)
 
     clean_file = os.path.join(INPUT_DIR, "use_partial.cpp.header.bak")
     clean_include_obj = IncludeHandler(clean_file)
