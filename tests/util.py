@@ -57,7 +57,7 @@ def assert_stdout (expected_str):
         return test_inner_wrap
     return outer_wrap
 
-def abnormal_sysexit(func):
+def abnormal_exit(func):
     '''assert abnormal sys.exit is called
     '''
     def test_wrap(*arg, **kw):
@@ -70,6 +70,7 @@ def abnormal_sysexit(func):
         else:
             message = "%s() did not raise abnormal SystemExit" \
             % (func.__name__)
+            raise AssertionError(message)
     return test_wrap
         
         

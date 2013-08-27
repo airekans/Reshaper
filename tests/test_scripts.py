@@ -1,9 +1,9 @@
 '''unit tests for scripts'''
 
-from tests.util import assert_stdout, abnormal_sysexit
+from tests.util import assert_stdout, abnormal_exit
 import extract_interface
 
-import os, sys
+import os
 
 _INPUT_PATH = os.path.join(os.path.dirname(__file__), 
                        'test_data', 'test_scripts.c')
@@ -14,8 +14,8 @@ public:
     virtual ~IA {}
     virtual void foo() = 0;
     virtual int bar(double d) = 0;
-    virtual Outer::B test_B(*Outer::B) = 0;
-    virtual Outer::Inner::C test_C (*Outer::Inner::C) = 0;
+    virtual B test_B(*B) = 0;
+    virtual Inner::C test_C (*Inner::C) = 0;
 };
 class ID
 {
@@ -40,28 +40,28 @@ def test_extract_interface():
     extract_interface.main([_INPUT_PATH, 'Outer::D']) #in namespace
     extract_interface.main([_INPUT_PATH, 'Outer::B::D']) #in class in namespace
     
-@abnormal_sysexit
+@abnormal_exit
 def test_extract_interface_err1():
     '''test script extract_interface with invalid input:
        get class in lower namespace and cause error
     '''
     extract_interface.main([_INPUT_PATH, 'B']) 
     
-@abnormal_sysexit
+@abnormal_exit
 def test_extract_interface_err2():
     '''test script extract_interface with invalid input:
        get invalid class and cause error
     '''
     extract_interface.main([_INPUT_PATH, 'Invalid']) 
     
-@abnormal_sysexit
+@abnormal_exit
 def test_extract_interface_err3():
     '''test script extract_interface with invalid input:
        try to get Outer::B::C and cause error
     '''
     extract_interface.main([_INPUT_PATH, 'Outer::C']) 
     
-@abnormal_sysexit
+@abnormal_exit
 def test_extract_interface_err4():
     '''test script extract_interface with invalid input:
        try to get class declaration 
