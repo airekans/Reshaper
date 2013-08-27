@@ -60,7 +60,7 @@ class IncludeInfo(object):
         '''
         self.have_parsed = parsed
 
-class MoveFileHandle(object):
+class MoveFileHandler(object):
     '''used to pass file get move helper information
     '''
     def __init__(self, get_tu_func, file_name = "", \
@@ -262,7 +262,7 @@ def main():
             print "Error : Can't get lib name, %s" % file_path
             continue
 
-        file_handler = MoveFileHandle(\
+        file_handler = MoveFileHandler(\
                 partial(get_tu, cdb_path = options.cdb_path, \
                     config_path = options.config), 
                 file_name, lib_name, options.depth)
