@@ -26,7 +26,7 @@ def parse_options():
             type = "string", help = "filename to get invalid include list")
     option_parser.add_option("-d", "--directory", dest = "directory", \
             type = "string", help = "directory to get invalid include list")
-    option_parser.add_option("-r", "--remove", action = "store_true", \
+    option_parser.add_option("-i", "--in-place", action = "store_true", \
             dest = "remove", help = \
             "if given, will checkout files and remove invalid include files."
             "or else, will generator new files postfix with .header.bak.")
