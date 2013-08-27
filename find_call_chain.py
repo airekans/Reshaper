@@ -32,7 +32,7 @@ def find_reference_update_output_contents(target_cursor, \
         spelling_value = (target_cursor.displayname.split('('))[0]
 
     refer_curs = []
-    semantic_util.scan_dir_parse_files(search_directory, \
+    semantic_util.walkdir(search_directory, \
             partial(get_cursors_with_name, \
             name = spelling_value, \
             ref_curs = refer_curs))

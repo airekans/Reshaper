@@ -66,7 +66,7 @@ def get_methods_from_class(class_cursor, methods = None):
     return member_method_cursors
 
     
-def scan_dir_parse_files(directory, parse_file):
+def walkdir(directory, parse_file):
     '''Scan directory recursivly to 
     get files with file_types
     '''

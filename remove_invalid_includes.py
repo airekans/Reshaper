@@ -10,7 +10,7 @@ from functools import partial
 from reshaper.option import setup_options
 from reshaper.ast import get_tu
 from reshaper.util import walk_ast, get_declaration
-from reshaper.semantic import scan_dir_parse_files
+from reshaper.semantic import walkdir
 from reshaper.find_reference_util import compare_file_name
 
 def parse_options():
@@ -263,7 +263,7 @@ def main():
         get_used_include_file(options.filename, options.cdb_path, \
                 options.config, options.remove)
     elif options.directory:
-        scan_dir_parse_files(options.directory, \
+        walkdir(options.directory, \
                 partial(get_used_include_file, \
                     cdb_path = options.cdb_path, \
                     config_path = options.config, \

@@ -96,7 +96,7 @@ def main():
     
     #parse input directory
     refer_curs = []
-    semantic_util.scan_dir_parse_files(options.directory, \
+    semantic_util.walkdir(options.directory, \
             partial(get_cursors_with_name, \
                     name = options.spelling, \
                     ref_curs = refer_curs))
