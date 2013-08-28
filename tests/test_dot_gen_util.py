@@ -14,7 +14,7 @@ from reshaper.ast import get_tu, save_ast
 
 class Test(unittest.TestCase):
     def setUp(self):
-        self._dot_gen = DotGenertor()
+        self._dot_gen = DotGenerator()
         self.maxDiff = None
 
     def test_empty_graph(self):

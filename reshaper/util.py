@@ -49,7 +49,7 @@ def get_diagnostics_str(diagnostics):
         file_info = ''
         if loc.file:
             file_info = '%s:%s:%s:' % (loc.file.name, loc.line, loc.column)
-        output += file_info + diag.spelling + '/n' 
+        output += file_info + diag.spelling + '\n' 
     return output            
 
 def check_diagnostics(diagnostics):
@@ -218,7 +218,8 @@ def get_function_signature(fun_cursor):
     """
     tokens = list(fun_cursor.get_tokens())
     if len(tokens) < 1:
-        return ""
+        return fun_cursor.type.get_result().spelling + " " + \
+            fun_cursor.displayname
 
     valid_tokens = []
     for t in tokens:

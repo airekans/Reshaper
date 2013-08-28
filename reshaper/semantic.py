@@ -146,6 +146,13 @@ def is_class_definition(cursor, class_name = None):
     else:
         return is_class(cursor) and cursor.is_definition()
 
+def is_namespace(cursor):
+    return cursor.kind == CursorKind.NAMESPACE
+
+def is_namespace_definition(cursor, namespace_name = None):
+    return cursor.is_definition() and is_namespace(cursor) and\
+        namespace_name in [None, cursor.spelling, cursor.displayname]
+        
 
 def is_function(cursor):
     """ check whether the cursor is a function.
@@ -375,7 +382,7 @@ def get_used_cls_names(cls_cursor):
     for callee in callees:
         callee_cls = get_semantic_parent_of_decla_cursor(callee)
         if callee_cls:
-            hash2cursor.update({callee_cls.hash: callee_cls})
+            hash2cursor[callee_cls.hash] = callee_cls
     
     return [cursor.spelling for cursor in hash2cursor.values()]
 
@@ -395,8 +402,7 @@ def get_name(cursor):
     
 def get_children_attrs(cursor, keep_func, 
                        attr_getter= get_name, is_sorted = False):
-    if not cursor:
-        return []
+    assert(cursor is not None)
     
     mb_var_attrs = []
     for child in cursor.get_children():
@@ -451,8 +457,13 @@ def get_all_class_cursors(source, header_path = None):
 def get_all_class_names(source, header_path):
     ''' get names of all class or struct type'''
     
+    if not header_path:
+        is_visit_subtree_fun = lambda _c, _l : True
+    else:
+        is_visit_subtree_fun = is_cursor_in_file_func(header_path)
+    
     return util.get_cursors_if(source, is_class, \
-                                is_cursor_in_file_func(header_path), \
+                                is_visit_subtree_fun, \
                                 transform_fun = get_name)
 
 def get_classes_with_names(source, names):
@@ -465,6 +476,9 @@ def get_classes_with_names(source, names):
     return [cls for cls in classes if cls.spelling in names]
     
 def get_member_var_classes(cls_cursor, keep_cls_func=lambda c: True):
+    
+    assert(is_class(cls_cursor))
+    
     member_var_cursors = get_children_attrs(cls_cursor, 
                                             is_cls_non_static_member_var, 
                                             attr_getter=lambda c: c)
