@@ -4,10 +4,10 @@ Created on May 30, 2013
 @author: liangzhao
 '''
 import unittest, os
-from reshaper.dot_gen_util import DotGenertor, gen_class_collaboration_graph
+from reshaper.dot_gen_util import DotGenerator, gen_class_collaboration_graph
 
 import reshaper.dot_gen_util as dgu
-from reshaper.ast import get_tu, save_ast
+from reshaper.ast import get_tu
 
 #the test result string is long, so ignore this warning
 #pylint: disable-msg=C0301

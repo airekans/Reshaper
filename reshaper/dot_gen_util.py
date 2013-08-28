@@ -123,7 +123,7 @@ def walk_all_methods_def(_tu, class_name, func, on_no_callee):
 
 
 def gen_class_internal_relation_graph(_tu, class_name):
-    dot_gen = DotGenertor()
+    dot_gen = DotGenerator()
     
     def walk_func(method_def_cursor, callee_decl_cursor):
         dot_gen.add_callee_class(method_def_cursor.spelling, '', 

@@ -302,7 +302,6 @@ def _get_cdb_cmd_for_header(cdb, cdb_path, header_path, ref_source):
 
 
 def get_tu(source, all_warnings=False, config_path = '~/.reshaper.cfg', 
-           lookup_cache_file_first = False,
            cdb_path = None, ref_source = None):
     """Obtain a translation unit from source and language.
 
@@ -321,13 +320,6 @@ def get_tu(source, all_warnings=False, config_path = '~/.reshaper.cfg',
     if full_path in _source2tu:
         return _source2tu[full_path]
     
-    if lookup_cache_file_first:
-        cache_path = get_ast_path(None, source, False)
-        if os.path.isfile(cache_path):
-            _tu =  TUCache.load(cache_path)
-            _source2tu[full_path] = _tu
-            return _tu
-        
     args = ['-x', 'c++', '-std=c++11']
  
     if all_warnings:
@@ -372,30 +364,4 @@ def get_tu(source, all_warnings=False, config_path = '~/.reshaper.cfg',
     
     return _tu
 
-def save_ast(file_path, output_path=None , is_xml=False, \
-             config_path=None, cdb_path=None, ref_source = None):
-    
-    _tu = get_tu(file_path, lookup_cache_file_first = False,
-                 cdb_path = cdb_path,
-                 config_path = config_path,
-                 ref_source = ref_source)
-    
-    if not _tu:
-        print "unable to load %s" % file_path
-        return False
-    
-    check_diagnostics(_tu.diagnostics)
-    
-    cache_tu = TUCache(_tu, file_path)
-        
-    cache_path = get_ast_path(output_path, file_path, is_xml)
-    
-    print 'Saving ast of %s to %s' % (file_path, cache_path)
-        
-    if is_xml:
-        cache_tu.xml_dump(cache_path)
-    else:
-        cache_tu.dump(cache_path)
-        
-    return True
 
