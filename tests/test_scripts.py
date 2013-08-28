@@ -7,6 +7,7 @@ import find_call_chain
 import find_reference
 import gen_collaboration_graph
 import serialize_class
+import ast_dump
 
 import os
 
@@ -249,3 +250,15 @@ def test_serialize_class():
                              'test_data', 'test_serializer.cpp')
     args = [input_file, 'A']
     serialize_class._main(args)
+    
+def test_ast_dump():
+    '''test ast_dump.py script
+    '''
+    input_file = os.path.join(os.path.dirname(__file__), 
+                             'test_data', 'test_serializer.cpp')
+    args = [input_file]
+    ast_dump.main(args)
+    
+#test_ast_dump()
+
+
