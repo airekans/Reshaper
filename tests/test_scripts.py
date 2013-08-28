@@ -9,7 +9,7 @@ import gen_collaboration_graph
 import serialize_class
 import ast_dump
 
-import os
+import os, sys
 
 _INPUT_PATH = os.path.join(os.path.dirname(__file__), 
                        'test_data', 'test_scripts.c')
@@ -81,7 +81,7 @@ def test_find_call_chain():
                              'test_data', 'call_chain')
     output_path = os.path.join(input_dir_path, 'out.txt')
     
-    args = ['-f', os.path.join(input_dir_path, 'b.h'), '-s', 'TargetFunc',\
+    args = ['-f', os.path.join(input_dir_path, 'b.h'), '-s', 'TargetFunc', \
             '-d', input_dir_path, '-o', output_path,
             '-l', '4', '-c', '7']    
     find_call_chain.main(args)
@@ -91,7 +91,7 @@ digraph G{
 }
 ''')
     
-    args = ['-f', os.path.join(input_dir_path, 'b.h'), '-s', 'TargetFunc',\
+    args = ['-f', os.path.join(input_dir_path, 'b.h'), '-s', 'TargetFunc', \
             '-d', input_dir_path, '-o', output_path,
             '-l', '6', '-c', '7']    
     find_call_chain.main(args)
@@ -101,7 +101,7 @@ digraph G{
 }
 ''')
     
-    args = ['-f', os.path.join(input_dir_path, 'b.h'), '-s', 'TargetFunc',\
+    args = ['-f', os.path.join(input_dir_path, 'b.h'), '-s', 'TargetFunc', \
             '-d', input_dir_path, '-o', output_path,
             '-l', '12', '-c', '7']    
     find_call_chain.main(args)
@@ -120,7 +120,7 @@ def test_find_reference():
                              'test_data', 'call_chain')
     output_path = os.path.join(input_dir_path, 'out.txt')
     
-    args = ['-f', os.path.join(input_dir_path, 'c.h'), '-s', 'TargetFunc1',\
+    args = ['-f', os.path.join(input_dir_path, 'c.h'), '-s', 'TargetFunc1', \
             '-d', input_dir_path, '-o', output_path,
             '-l', '4', '-c', '6']
     find_reference.main(args)
@@ -137,13 +137,13 @@ class : Test
 line 4, column 6
 ''')
 
-    args = ['-f', os.path.join(input_dir_path, 'c.cpp'), '-s', 'TargetFunc2',\
+    args = ['-f', os.path.join(input_dir_path, 'c.cpp'), '-s', 'TargetFunc2', \
             '-d', input_dir_path, '-o', output_path,
             '-l', '8', '-c', '5']
     find_reference.main(args)
     assert  file_equals_str(output_path, '''
-Reference of "TargetFunc2()": file : ''' + os.path.join(input_dir_path, 'c.cpp') \
-+ ''', location 8 5 
+Reference of "TargetFunc2()": file : ''' + \
+os.path.join(input_dir_path, 'c.cpp') + ''', location 8 5 
 ----------------------------------------------------------------
  file : ''' + os.path.join(input_dir_path, 'c.cpp') + ''' 
 global function
@@ -154,26 +154,26 @@ Call function:TargetFunc3()
 line 15, column 3
 ''')
     
-    args = ['-f', os.path.join(input_dir_path, 'c.cpp'), '-s', 'TargetFunc3',\
+    args = ['-f', os.path.join(input_dir_path, 'c.cpp'), '-s', 'TargetFunc3', \
             '-d', input_dir_path, '-o', output_path,
             '-l', '14', '-c', '7']
     find_reference.main(args)
     assert  file_equals_str(output_path, '''
-Reference of "TargetFunc3()": file : ''' + os.path.join(input_dir_path, 'c.cpp') \
-+ ''', location 14 7 
+Reference of "TargetFunc3()": file : ''' + \
+os.path.join(input_dir_path, 'c.cpp') + ''', location 14 7 
 ----------------------------------------------------------------
  file : ''' + os.path.join(input_dir_path, 'c.cpp') + ''' 
 anonymouse namespace
 line 14, column 7
 ''')
     
-    args = ['-f', os.path.join(input_dir_path, 'c.cpp'), '-s', 'TargetFunc4',\
+    args = ['-f', os.path.join(input_dir_path, 'c.cpp'), '-s', 'TargetFunc4', \
             '-d', input_dir_path, '-o', output_path,
             '-l', '20', '-c', '7']
     find_reference.main(args)
     assert  file_equals_str(output_path, '''
-Reference of "TargetFunc4()": file : ''' + os.path.join(input_dir_path, 'c.cpp') \
-+ ''', location 20 7 
+Reference of "TargetFunc4()": file : ''' \
++ os.path.join(input_dir_path, 'c.cpp') + ''', location 20 7 
 ----------------------------------------------------------------
  file : ''' + os.path.join(input_dir_path, 'c.cpp') + ''' 
 namespace : Test_ns
@@ -250,15 +250,46 @@ def test_serialize_class():
                              'test_data', 'test_serializer.cpp')
     args = [input_file, 'A']
     serialize_class._main(args)
-    
+
+
 def test_ast_dump():
     '''test ast_dump.py script
+        output to sys.stdout is first stored in a file, then compared with
+        reference file line by line
     '''
     input_file = os.path.join(os.path.dirname(__file__), 
-                             'test_data', 'test_serializer.cpp')
+                             'test_data', 'test_ast_dump.cpp')
+    output_file = os.path.join(os.path.dirname(__file__), 
+                             'test_data', 'test_ast_dump.out')
+    ref_file = os.path.join(os.path.dirname(__file__), 
+                             'test_data', 'test_ast_dump.ref')
+    
+    old_stdout = sys.stdout
+    redirect = open(output_file, 'w')
+    sys.stdout = redirect
+    
+    
     args = [input_file]
     ast_dump.main(args)
     
-#test_ast_dump()
-
-
+    args = ['-l', '1', '-r', input_file]
+    ast_dump.main(args)
+    
+    args = ['-a', '-x', input_file]
+    ast_dump.main(args)
+    
+    sys.stdout = old_stdout
+    
+    out_str = open(output_file, 'r')
+    out_line = out_str.readline()
+    ref_str = open(ref_file, 'r')
+    ref_line = ref_str.readline()
+    
+    while out_line and ref_line:
+        if not out_line.strip().startswith(ref_line.rstrip('\n')):
+            raise
+        out_line = out_str.readline()
+        ref_line = ref_str.readline()
+            
+    out_str.close()
+    ref_str.close()

@@ -1,4 +1,4 @@
 class A{
+public:
 	int foo();
-	float m_f;
-}
+};
