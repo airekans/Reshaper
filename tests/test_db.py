@@ -115,11 +115,49 @@ def test_file_from_clang_tu(tu, proj_engine):
     eq_(expected_file.name, _file.name)
     eq_(expected_file.time, _file.time)
 
-def test_file_from_clang_tu_with_multiple_files():
-    FILE_TEST_DIR = os.path.join(_TEST_DATA_DIR, 'db', 'file')
+
+FILE_TEST_DIR = os.path.join(_TEST_DATA_DIR, 'db', 'file')
+
+@nottest
+def setup_for_test_file_with_multiple_files():
     SOURCE_PATH = os.path.join(FILE_TEST_DIR, 'main.cpp')
-#    _tu = get_tu(SOURCE_PATH, is_from_cache_first = False)
+    _tu = get_tu(SOURCE_PATH, is_from_cache_first=False)
+    assert _tu
+    _proj_engine = db.ProjectEngine('test', is_in_memory = True)
+    return {'tu': _tu, 'proj_engine': _proj_engine}
+
+@with_param_setup(setup_for_test_file_with_multiple_files)
+def test_file_get_pending_filenames_with_multiple_files(tu, proj_engine):
+    pending_files = db.File.get_pending_filenames(tu, proj_engine)
+    expected_files = set(os.path.join(FILE_TEST_DIR, _file) 
+                         for _file in ['main.cpp', 'c.h', 'b.h', 'a.h'] )
+    eq_(expected_files, pending_files)
     
+    proj_engine.build_db_file(tu)
+    pending_files = db.File.get_pending_filenames(tu, proj_engine)
+    assert not pending_files
+    db_files = proj_engine.get_session().query(db.File).all()
+    actual_file_names = set(_file.name for _file in db_files)
+    eq_(expected_files, actual_file_names)
+    
+    # check file inclusion
+    expected_includes = {'main.cpp': set(['b.h', 'c.h']),
+                         'b.h': set(['a.h']),
+                         'c.h': set(),
+                         'a.h': set()}
+    eq_(len(expected_includes), len(actual_file_names))
+    for _file in db_files:
+        file_name = os.path.basename(_file.name)
+        assert file_name in expected_includes, _file.name
+        eq_(expected_includes[file_name], 
+            set([os.path.basename(included.name)
+                 for included in _file.includes]))
+    
+    # get the new tu for c.h
+    c_tu = get_tu(os.path.join(FILE_TEST_DIR, 'c.h'), is_from_cache_first=False)
+    pending_files = db.File.get_pending_filenames(c_tu, proj_engine)
+    assert not pending_files
+
 
 @with_param_setup(setup_for_test_file)
 def test_cursor_kind(tu, proj_engine):   
@@ -147,4 +185,8 @@ def test_type_kind(tu, proj_engine):
     for kind in _get_clang_type_kinds():
         db_tkind = db.TypeKind.from_clang_type_kind(kind, proj_engine)
         assert_tkind_equal(kind, db_tkind)
+
+@with_param_setup(setup_for_test_file)
+def test_cursor(tu, proj_engine):
+    pass
 
