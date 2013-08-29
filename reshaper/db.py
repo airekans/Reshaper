@@ -129,8 +129,9 @@ class ProjectEngine(object):
             # _session.commit()
 
             child_left = left + 1
-            for child in cursor.get_children():
-                child_left = build_db_cursor(child, db_cursor, child_left) + 1
+            if cursor.kind != ckind.TEMPLATE_TEMPLATE_PARAMETER:
+                for child in cursor.get_children():
+                    child_left = build_db_cursor(child, db_cursor, child_left) + 1
 
             right = child_left
             db_cursor.right = right
