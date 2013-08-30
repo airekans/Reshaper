@@ -74,14 +74,14 @@ int main()
     eq_(expected_file_names, actual_file_names)
     
 
-def with_param_setup(setup):
+def with_param_setup(setup, *args, **kw_args):
     """ util decorator to pass parameters to test functions
     """
     
     def decorate(func):
         
         def wrap_func():
-            param_dict = setup()
+            param_dict = setup(*args, **kw_args)
             func(**param_dict) # test function returns nothing
         
         wrap_func.func_name = func.func_name
@@ -128,12 +128,17 @@ def test_file_from_clang_tu(tu, proj_engine):
 FILE_TEST_DIR = os.path.join(_TEST_DATA_DIR, 'db', 'file')
 
 @nottest
-def setup_for_test_file_with_multiple_files():
-    SOURCE_PATH = os.path.join(FILE_TEST_DIR, 'main.cpp')
-    _tu = get_tu(SOURCE_PATH, is_from_cache_first=False)
+def setup_for_fs_file(_file):
+    _tu = get_tu(_file, is_from_cache_first=False)
     assert _tu
     _proj_engine = db.ProjectEngine('test', is_in_memory = True)
     return {'tu': _tu, 'proj_engine': _proj_engine}
+
+@nottest
+def setup_for_test_file_with_multiple_files():
+    SOURCE_PATH = os.path.join(FILE_TEST_DIR, 'main.cpp')
+    return setup_for_fs_file(SOURCE_PATH)
+
 
 @with_param_setup(setup_for_test_file_with_multiple_files)
 def test_file_get_pending_filenames_with_multiple_files(tu, proj_engine):
@@ -213,7 +218,7 @@ def assert_cursor_equal(cursor, db_cursor):
     eq_(db_cursor.location_end, cursor.extent.end)
     assert_ckind_equal(cursor.kind, db_cursor.kind)
 
-@with_param_setup(partial(setup_for_memory_file, TEST_CURSOR_INPUT))
+@with_param_setup(setup_for_memory_file, TEST_CURSOR_INPUT)
 def test_cursor_ctor(tu, proj_engine):
     A_cursor = get_cursor(tu, 'A')
     db_A_cursor = db.Cursor(A_cursor, proj_engine)
@@ -225,7 +230,7 @@ def is_in_db(cursor, proj_engine):
     return len(proj_engine.get_session().query(db.Cursor).\
                filter(db.Cursor.usr == cursor.get_usr()).all()) > 0
 
-@with_param_setup(partial(setup_for_memory_file, TEST_CURSOR_INPUT))
+@with_param_setup(setup_for_memory_file, TEST_CURSOR_INPUT)
 def test_cursor_from_clang_cursor_with_new_cursor(tu, proj_engine):
     # ensure that this cursor is not in DB
     A_cursor = get_cursor(tu, 'A')
@@ -268,7 +273,7 @@ def fake_build_db_cursor(cursor, proj_engine):
     else:
         build_db_cursor(cursor, None, left)
 
-@with_param_setup(partial(setup_for_memory_file, TEST_CURSOR_INPUT))
+@with_param_setup(setup_for_memory_file, TEST_CURSOR_INPUT)
 def test_cursor_from_clang_cursor_with_db_cursor(tu, proj_engine):
     A_cursor = get_cursor(tu, 'A')
     fake_build_db_cursor(A_cursor, proj_engine)
@@ -291,7 +296,7 @@ Test t;
 
 """
 
-@with_param_setup(partial(setup_for_memory_file, TEST_CURSOR_MACRO_INPUT))
+@with_param_setup(setup_for_memory_file, TEST_CURSOR_MACRO_INPUT)
 def test_cursor_from_clang_cursor_with_tmpl_cursor(tu, proj_engine):
     Test_decl_cursor = get_cursor_if(tu, lambda c: c.spelling == 'Test' and \
                                             not c.is_definition())
@@ -313,4 +318,11 @@ def test_cursor_from_clang_cursor_with_tmpl_cursor(tu, proj_engine):
     db_Test_def_cursor = db.Cursor.from_clang_cursor(Test_def_cursor,
                                                      proj_engine)
     assert_cursor_equal(Test_def_cursor, db_Test_def_cursor)
+
+
+CURSOR_TEST_DIR = os.path.join(_TEST_DATA_DIR, 'db', 'cursor')
+
+@with_param_setup(setup_for_fs_file, os.path.join(CURSOR_TEST_DIR, 'a.cpp'))
+def test_cursor_from_clang_cursor_with_same_spelling(tu, proj_engine):
+    pass
     
