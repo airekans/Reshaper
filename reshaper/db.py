@@ -466,6 +466,7 @@ class Cursor(_Base):
                     filter(Cursor.spelling == cursor.spelling).\
                     filter(Cursor.displayname == cursor.displayname).\
                     filter(CursorKind.name == cursor.kind.name).\
+                    filter(Cursor.is_definition == cursor.is_definition()).\
                     filter(File.name == cursor.location.file.name).\
                     filter(Cursor.offset_start == cursor.location.offset).\
                     filter(Cursor.offset_end == cursor.extent.end.offset).one()
