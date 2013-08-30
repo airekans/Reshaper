@@ -5,7 +5,7 @@ import clang.cindex as cindex
 from nose.tools import eq_, with_setup, nottest
 from .util import get_tu_from_text
 from reshaper.ast import get_tu
-from reshaper.util import get_cursor
+from reshaper.util import get_cursor, get_cursor_if
 import os
 from functools import partial
 from _xmlplus.xpath.XPathParser import PARENT
@@ -220,12 +220,16 @@ def test_cursor_ctor(tu, proj_engine):
     
     assert_cursor_equal(A_cursor, db_A_cursor)
 
+
+def is_in_db(cursor, proj_engine):
+    return len(proj_engine.get_session().query(db.Cursor).\
+               filter(db.Cursor.usr == cursor.get_usr()).all()) > 0
+
 @with_param_setup(partial(setup_for_memory_file, TEST_CURSOR_INPUT))
 def test_cursor_from_clang_cursor_with_new_cursor(tu, proj_engine):
     # ensure that this cursor is not in DB
     A_cursor = get_cursor(tu, 'A')
-    eq_(0, len(proj_engine.get_session().query(db.Cursor).\
-               filter(db.Cursor.usr == A_cursor.get_usr()).all()))
+    assert not is_in_db(A_cursor, proj_engine)
     
     db_A_cursor = db.Cursor.from_clang_cursor(A_cursor, proj_engine)
     
@@ -256,25 +260,57 @@ def fake_build_db_cursor(cursor, proj_engine):
     
         return right
 
-    build_db_cursor(cursor, None, 0)
+    left = 0
+    if cursor.kind == cindex.CursorKind.TRANSLATION_UNIT:
+        for child in cursor.get_children():
+            if child.location.file:
+                left = build_db_cursor(child, None, left) + 1
+    else:
+        build_db_cursor(cursor, None, left)
 
 @with_param_setup(partial(setup_for_memory_file, TEST_CURSOR_INPUT))
 def test_cursor_from_clang_cursor_with_db_cursor(tu, proj_engine):
     A_cursor = get_cursor(tu, 'A')
     fake_build_db_cursor(A_cursor, proj_engine)
     # ensure that the cursor is in db
-    eq_(1, len(proj_engine.get_session().query(db.Cursor).\
-               filter(db.Cursor.usr == A_cursor.get_usr()).all()))
+    assert is_in_db(A_cursor, proj_engine)
     
     db_A_cursor = db.Cursor.from_clang_cursor(A_cursor, proj_engine)
     
     assert_cursor_equal(A_cursor, db_A_cursor)
 
-TEST_CURSOR_TEMPLATE_INPUT = """
+TEST_CURSOR_MACRO_INPUT = """
+#define DECL_AND_DEFINE(name) \
+class name; \
+class name \
+{}
+
+DECL_AND_DEFINE(Test);
+
+Test t;
 
 """
 
-@with_param_setup(partial(setup_for_memory_file, TEST_CURSOR_TEMPLATE_INPUT))
+@with_param_setup(partial(setup_for_memory_file, TEST_CURSOR_MACRO_INPUT))
 def test_cursor_from_clang_cursor_with_tmpl_cursor(tu, proj_engine):
-    pass
+    Test_decl_cursor = get_cursor_if(tu, lambda c: c.spelling == 'Test' and \
+                                            not c.is_definition())
+    Test_def_cursor = get_cursor_if(tu, lambda c: c.spelling == 'Test' and \
+                                            c.is_definition())
+    assert not is_in_db(Test_decl_cursor, proj_engine)
+    assert not is_in_db(Test_def_cursor, proj_engine)
 
+    db_Test_decl_cursor = db.Cursor.from_clang_cursor(Test_decl_cursor,
+                                                      proj_engine)
+    assert_cursor_equal(Test_decl_cursor, db_Test_decl_cursor)
+    
+    fake_build_db_cursor(tu.cursor, proj_engine)
+    # get from db
+    db_Test_decl_cursor = db.Cursor.from_clang_cursor(Test_decl_cursor,
+                                                      proj_engine)
+    assert_cursor_equal(Test_decl_cursor, db_Test_decl_cursor)
+    
+    db_Test_def_cursor = db.Cursor.from_clang_cursor(Test_def_cursor,
+                                                     proj_engine)
+    assert_cursor_equal(Test_def_cursor, db_Test_def_cursor)
+    
