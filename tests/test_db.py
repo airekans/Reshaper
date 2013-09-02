@@ -366,4 +366,64 @@ def test_cursor_from_clang_cursor_with_same_spelling(tu, proj_engine):
         db_cursor = db.Cursor.from_clang_cursor(cursor, proj_engine)
         assert is_db_cursor(db_cursor)
         assert_cursor_equal(cursor, db_cursor)
+
+
+TEST_CURSOR_DEF_INPUT = '''
+class A;
+class A;
+namespace ns {
+class B;
+}
+
+void foo();
+
+class A
+{};
+
+namespace ns {
+class B
+{};
+}
+
+void foo()
+{}
+'''
+
+def verify_db_def_cursor(spelling, expected_decl_len, tu, proj_engine):
+    def_cursor = get_cursor_if(tu, lambda c: c.spelling == spelling and
+                                    c.is_definition())
+    assert is_in_db(def_cursor, proj_engine)
     
+    db_def_cursor = db.Cursor.from_clang_cursor(def_cursor, proj_engine)
+    assert is_db_cursor(db_def_cursor)
+    
+    db_decl_cursors = proj_engine.get_session().query(db.Cursor).\
+        filter(db.Cursor.usr == def_cursor.get_usr()).\
+        filter(db.Cursor.is_definition == False).all()
+    eq_(expected_decl_len, len(db_decl_cursors))
+    
+    # verify that the cursor in DB does not have definition linked to it
+    for db_cur in db_decl_cursors:
+        assert is_db_cursor(db_cur)
+        assert not db_cur.definition
+    
+    db.Cursor.from_definition(db_def_cursor, proj_engine)
+    
+    # verify the cursor in DB has definition
+    db_decl_cursors = proj_engine.get_session().query(db.Cursor).\
+        filter(db.Cursor.usr == def_cursor.get_usr()).\
+        filter(db.Cursor.is_definition == False).all()
+    eq_(expected_decl_len, len(db_decl_cursors))
+    for db_cur in db_decl_cursors:
+        assert is_db_cursor(db_cur)
+        assert db_cur.definition
+        eq_(db_def_cursor, db_cur.definition)
+
+@with_param_setup(setup_for_memory_file, TEST_CURSOR_DEF_INPUT)
+def test_cursor_from_definition(tu, proj_engine):
+    fake_build_db_cursor(tu.cursor, proj_engine)
+    
+    verify_db_def_cursor('A', 2, tu, proj_engine)
+    verify_db_def_cursor('B', 1, tu, proj_engine)
+    verify_db_def_cursor('foo', 1, tu, proj_engine)
+
