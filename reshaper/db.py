@@ -428,16 +428,11 @@ class Cursor(_Base):
     @staticmethod
     def from_definition(cursor, proj_engine):
         assert cursor.is_definition
-        try:
-            _cursors = proj_engine.get_session().query(Cursor).\
-                filter(Cursor.usr == cursor.usr).\
-                filter(Cursor.spelling == cursor.spelling).\
-                filter(Cursor.is_definition == False).all()
-        except MultipleResultsFound, e:
-            print e
-            raise
-        except NoResultFound: # The cursor has not been stored in DB.
-            _cursors = []
+
+        _cursors = proj_engine.get_session().query(Cursor).\
+            filter(Cursor.usr == cursor.usr).\
+            filter(Cursor.spelling == cursor.spelling).\
+            filter(Cursor.is_definition == False).all()
 
         for _cursor in _cursors:
             _cursor.definition = cursor
