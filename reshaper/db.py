@@ -99,10 +99,10 @@ class ProjectEngine(object):
             def_cursor = cursor.get_definition()
             if def_cursor is not None:
                 if cursor.is_definition():
-                    Cursor.from_definition(db_cursor, self)
+                    Cursor.update_declarations(db_cursor, self)
                 else:
                     db_cursor.definition = \
-                        Cursor.from_clang_declaration(def_cursor, self)
+                        Cursor.get_definition(def_cursor, self)
 
             lexical_parent = cursor.lexical_parent
             if lexical_parent is not None and \
@@ -400,7 +400,7 @@ class Cursor(_Base):
     
 
     @staticmethod
-    def from_clang_declaration(cursor, proj_engine):
+    def get_definition(cursor, proj_engine):
         # if the cursor itself is a definition, then find out all the declaration cursors
         # that refer to it.
         # if the cursor is a declaration, then get the definition cursor
@@ -426,7 +426,7 @@ class Cursor(_Base):
         return _cursor
 
     @staticmethod
-    def from_definition(cursor, proj_engine):
+    def update_declarations(cursor, proj_engine):
         assert cursor.is_definition
 
         _cursors = proj_engine.get_session().query(Cursor).\
