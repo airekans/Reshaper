@@ -8,6 +8,7 @@ from reshaper.ast import get_tu
 from reshaper.util import get_cursor, get_cursor_if, get_cursors_if
 import os
 from numpy.ma.testutils import assert_equal
+from Image import NONE
 
 
 _TEST_DATA_DIR = os.path.join(os.path.dirname(__file__), 'test_data')
@@ -407,7 +408,7 @@ def verify_db_def_cursor(spelling, expected_decl_len, tu, proj_engine):
         assert is_db_cursor(db_cur)
         assert not db_cur.definition
     
-    db.Cursor.from_definition(db_def_cursor, proj_engine)
+    db.Cursor.update_declarations(db_def_cursor, proj_engine)
     
     # verify the cursor in DB has definition
     db_decl_cursors = proj_engine.get_session().query(db.Cursor).\
@@ -420,10 +421,40 @@ def verify_db_def_cursor(spelling, expected_decl_len, tu, proj_engine):
         eq_(db_def_cursor, db_cur.definition)
 
 @with_param_setup(setup_for_memory_file, TEST_CURSOR_DEF_INPUT)
-def test_cursor_from_definition(tu, proj_engine):
+def test_cursor_update_declarations(tu, proj_engine):
     fake_build_db_cursor(tu.cursor, proj_engine)
     
     verify_db_def_cursor('A', 2, tu, proj_engine)
     verify_db_def_cursor('B', 1, tu, proj_engine)
     verify_db_def_cursor('foo', 1, tu, proj_engine)
+
+@with_param_setup(setup_for_memory_file, TEST_CURSOR_DEF_INPUT)
+def test_cursor_get_definition_without_def(tu, proj_engine):
+    A_def_cursor = get_cursor_if(tu, lambda c: c.spelling == 'A' and
+                                        c.is_definition())
+    assert not is_in_db(A_def_cursor, proj_engine)
+    
+    assert db.Cursor.get_definition(A_def_cursor, proj_engine) is None
+    
+    # build only declaration into db
+    A_decl_cursor = get_cursor_if(tu, lambda c: c.spelling == 'A' and
+                                        not c.is_definition())
+    fake_build_db_cursor(A_decl_cursor, proj_engine)
+    assert db.Cursor.get_definition(A_def_cursor, proj_engine) is None
+
+@with_param_setup(setup_for_memory_file, TEST_CURSOR_DEF_INPUT)
+def test_cursor_get_definition_with_def(tu, proj_engine):
+    A_def_cursor = get_cursor_if(tu, lambda c: c.spelling == 'A' and
+                                        c.is_definition())
+    assert not is_in_db(A_def_cursor, proj_engine)
+    
+    assert db.Cursor.get_definition(A_def_cursor, proj_engine) is None
+    
+    # build decl and def into db
+    fake_build_db_cursor(tu.cursor, proj_engine)
+    expected_cursor = proj_engine.get_session().query(db.Cursor).\
+        filter(db.Cursor.usr == A_def_cursor.get_usr()).\
+        filter(db.Cursor.is_definition == True).one()
+    eq_(expected_cursor, db.Cursor.get_definition(A_def_cursor, proj_engine))
+
 
