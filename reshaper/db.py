@@ -410,12 +410,7 @@ class Cursor(_Base):
             return None
         
         try:
-            _cursor = proj_engine.get_session().query(Cursor).join(File).\
-                filter(Cursor.usr == cursor.get_usr()).\
-                filter(Cursor.spelling == cursor.spelling).\
-                filter(Cursor.is_definition == True).\
-                filter(File.name == cursor.location.file.name).\
-                filter(Cursor.offset_start == cursor.location.offset).one()
+            _cursor = Cursor._query_one_cursor(cursor, proj_engine)
         except MultipleResultsFound, e:
             print e
             _print_error_cursor(cursor)
