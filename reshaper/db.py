@@ -438,7 +438,20 @@ class Cursor(_Base):
             _cursor.definition = cursor
 
         proj_engine.get_session().add_all(_cursors)
-        
+    
+    @staticmethod
+    def _query_one_cursor(cursor, proj_engine):
+        return proj_engine.get_session().query(Cursor).\
+                    join(File).join(CursorKind).\
+                    filter(Cursor.usr == cursor.get_usr()).\
+                    filter(Cursor.spelling == cursor.spelling).\
+                    filter(Cursor.displayname == cursor.displayname).\
+                    filter(CursorKind.name == cursor.kind.name).\
+                    filter(Cursor.is_definition == cursor.is_definition()).\
+                    filter(File.name == cursor.location.file.name).\
+                    filter(Cursor.offset_start == cursor.location.offset).\
+                    filter(Cursor.offset_end == cursor.extent.end.offset).one()
+    
     @staticmethod
     def from_clang_cursor(cursor, proj_engine):
         """ Static method to create a cursor from libclang's cursor
@@ -455,16 +468,7 @@ class Cursor(_Base):
                 _cursor = proj_engine.get_session().query(Cursor).\
                     filter(Cursor.spelling == cursor.spelling).one()
             else:
-                _cursor = proj_engine.get_session().query(Cursor).\
-                    join(File).join(CursorKind).\
-                    filter(Cursor.usr == cursor.get_usr()).\
-                    filter(Cursor.spelling == cursor.spelling).\
-                    filter(Cursor.displayname == cursor.displayname).\
-                    filter(CursorKind.name == cursor.kind.name).\
-                    filter(Cursor.is_definition == cursor.is_definition()).\
-                    filter(File.name == cursor.location.file.name).\
-                    filter(Cursor.offset_start == cursor.location.offset).\
-                    filter(Cursor.offset_end == cursor.extent.end.offset).one()
+                _cursor = Cursor._query_one_cursor(cursor, proj_engine)
         except MultipleResultsFound, e:
             print e
             _print_error_cursor(cursor)
@@ -481,11 +485,7 @@ class Cursor(_Base):
         
         # because referenced cursor will certainly have spelling, so I use spelling.
         try:
-            _cursor = proj_engine.get_session().query(Cursor).join(File).\
-                filter(Cursor.usr == cursor.get_usr()).\
-                filter(Cursor.spelling == cursor.spelling).\
-                filter(File.name == cursor.location.file.name).\
-                filter(Cursor.offset_start == cursor.location.offset).one()
+            _cursor = Cursor._query_one_cursor(cursor, proj_engine)
         except MultipleResultsFound, e:
             print e
             _print_error_cursor(cursor)
