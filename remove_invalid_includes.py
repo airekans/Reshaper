@@ -25,7 +25,7 @@ def parse_options():
     option_parser.add_option("-d", "--directory", dest = "directory", \
             type = "string", help = "directory to get invalid include list")
     option_parser.add_option("-i", "--in-place", action = "store_true", \
-            dest = "remove", help = \
+            dest = "inplace", help = \
             "if given, will checkout files and remove invalid include files."
             "or else, will generator new files postfix with .header.bak.")
 
@@ -171,13 +171,10 @@ class IncludeHandler(object):
             write_obj = open(tmp_file_name, 'w')
 
             for line in file_obj:
-                if not line:
-                    break
-
                 match_pattern = False
                 ret_search = pattern.search(line)
                 if ret_search :
-                    include_str = ret_search.groupdict()['include_str']
+                    include_str = ret_search.group('include_str')
                     for f in self._invalid_list:
                         if include_str in f:
                             match_pattern = True
@@ -261,13 +258,13 @@ def main():
 
     if options.filename:
         get_used_include_file(options.filename, options.cdb_path, \
-                options.config, options.remove)
+                options.config, options.inplace)
     elif options.directory:
         walkdir(options.directory, \
                 partial(get_used_include_file, \
                     cdb_path = options.cdb_path, \
                     config_path = options.config, \
-                    remove_origin_file = options.remove))
+                    remove_origin_file = options.inplace))
 
 if __name__ == "__main__":
     main()

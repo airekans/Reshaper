@@ -2,6 +2,7 @@
 """
 
 import os, re
+import ConfigParser
 
 from clang.cindex import CursorKind
 from clang.cindex import TypeKind
@@ -337,22 +338,41 @@ def get_source_path_candidates(fpath):
              for sub_dir in sub_dir_candidates \
              for surfix in surfix_candidates ]
 
-def get_lib_name(path):
+def get_lib_name(path, config_path = '~/.reshaper.cfg'):
     """get lib name for path
     """
+    config_parser = ConfigParser.SafeConfigParser()
+    config_parser.read(os.path.expanduser(config_path))
+
+# if special_libname in abs_path, return libname
+    special_libnames = []
+    if config_parser.has_option('GUI Options', 'special_libnames'):
+        libnames = config_parser.get('GUI Options', 'special_libnames')
+        special_libnames = [p for p in libnames.split(',')]
+
     abs_path = os.path.abspath(path)
-    pattern = re.compile(r'.*(GUI/)([a-zA-Z_]*).*')
+    for libname in special_libnames:
+        if libname in abs_path:
+            return libname
+
+# use regex to extract libname
+    libname_regex = None
+    if config_parser.has_option('GUI Options', 'extract_libname_regex'):
+        libname_regex = config_parser.get('GUI Options', 'extract_libname_regex')
+    if not libname_regex:
+        raise ValueError, 'should config extract_libname_regex'
+
+    pattern = re.compile(libname_regex)
+    pattern = re.compile(r'.*(GUI/)(?P<libname>[a-zA-Z_]*).*')
     search_result = pattern.search(abs_path)
-    if search_result and \
-            len(search_result.groups()) > 1:
-       cand_lib_name = search_result.groups()[1]
-       if cand_lib_name.startswith('lib'):
-           return cand_lib_name
-       elif cand_lib_name in _special_lib:
-           return cand_lib_name
-       else:
-           return 'GUI'
-    return ''
+    if not search_result:
+        return ''
+
+    cand_lib_name = search_result.group('libname')
+    if cand_lib_name.startswith('lib'):
+        return cand_lib_name
+    else:
+        return 'GUI'
 
 def is_typeref(cursor):
     return cursor.kind == CursorKind.TYPE_REF

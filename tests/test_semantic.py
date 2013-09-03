@@ -1,6 +1,7 @@
 '''test_find_reference.py -- unittest for semantic.py
 '''
 
+import os
 from clang.cindex import CursorKind
 from reshaper.ast import TUCache, CursorCache
 from nose.tools import eq_
@@ -9,6 +10,8 @@ from reshaper.util import get_cursor_with_location, \
                           get_cursor_if, get_cursor
 from .util import get_tu_from_text
 
+
+INPUT_DIR = os.path.join(os.path.dirname(__file__), 'test_data')
 
 parent_calling_func_test_input = """\
 void TargetFunc()
@@ -408,8 +411,28 @@ def test_get_source_path_candidates():
          '/home/XXX/YYY/src/ZZZ.c'],
          result)
  
+def test_get_lib_name():
+    normal_path = r'/home/xxx/zzz/GUI/libmodRts/xxx.cpp'
+    special_path = r'/home/xxx/zzz/SQL/xxx.cpp'
+    special_path_under_GUI = r'/home/xxx/zzz/GUI/adv_rts/xxxx.cpp'
+    no_name_path = r'/home/xxx/zzz/xxx/ddd/xxxx.cpp'
+    GUI_libname_path = r'/home/xxx/GUI/xxx.cpp'
+
+    config_file = os.path.join(INPUT_DIR, 'libname_config.cfg')
+    normal_libname = sem.get_lib_name(normal_path, config_file)
+    eq_('libmodRts', normal_libname)
+
+    special_libname = sem.get_lib_name(special_path, config_file)
+    eq_('/SQL/', special_libname)
+
+    special_libname_under_GUI = sem.get_lib_name(special_path_under_GUI, config_file)
+    eq_('/adv_rts/', special_libname_under_GUI)
+
+    no_libname = sem.get_lib_name(no_name_path, config_file)
+    assert(not no_libname)
+
+    GUI_libname = sem.get_lib_name(GUI_libname_path, config_file)
+    eq_('GUI', GUI_libname)
 
 
-    
-    
-    
+
