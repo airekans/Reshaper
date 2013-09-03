@@ -216,6 +216,10 @@ def assert_cursor_equal(cursor, db_cursor):
     eq_(db_cursor.location_start, cursor.location)
     eq_(db_cursor.location_end, cursor.extent.end)
     assert_ckind_equal(cursor.kind, db_cursor.kind)
+    
+    if cursor.lexical_parent is not None and \
+        cursor.lexical_parent.kind != ckind.TRANSLATION_UNIT:
+        assert_cursor_equal(cursor.lexical_parent, db_cursor.lexical_parent)
 
 @with_param_setup(setup_for_memory_file, TEST_CURSOR_INPUT)
 def test_cursor_ctor(tu, proj_engine):
@@ -223,6 +227,11 @@ def test_cursor_ctor(tu, proj_engine):
     db_A_cursor = db.Cursor(A_cursor, proj_engine)
     
     assert_cursor_equal(A_cursor, db_A_cursor)
+    
+    # test lexical_parent
+    data_cursor = get_cursor(tu, 'data')
+    db_data_cursor = db.Cursor(data_cursor, proj_engine)
+    assert_cursor_equal(data_cursor, db_data_cursor)
 
 
 def is_in_db(cursor, proj_engine):
@@ -235,14 +244,15 @@ def is_db_cursor(db_cursor):
 @with_param_setup(setup_for_memory_file, TEST_CURSOR_INPUT)
 def test_cursor_from_clang_cursor_with_new_cursor(tu, proj_engine):
     # ensure that this cursor is not in DB
-    A_cursor = get_cursor(tu, 'A')
-    assert not is_in_db(A_cursor, proj_engine)
-    
-    db_A_cursor = db.Cursor.from_clang_cursor(A_cursor, proj_engine)
-    
-    # check if this cursor is in DB.
-    assert not is_db_cursor(db_A_cursor)
-    assert_cursor_equal(A_cursor, db_A_cursor)
+    for spelling in ['A', 'data']:
+        _cursor = get_cursor(tu, spelling)
+        assert not is_in_db(_cursor, proj_engine)
+        
+        db_cursor = db.Cursor.from_clang_cursor(_cursor, proj_engine)
+        
+        # check if this cursor is in DB.
+        assert not is_db_cursor(db_cursor)
+        assert_cursor_equal(_cursor, db_cursor)
 
 
 def fake_build_db_cursor(cursor, proj_engine):
@@ -278,15 +288,18 @@ def fake_build_db_cursor(cursor, proj_engine):
 
 @with_param_setup(setup_for_memory_file, TEST_CURSOR_INPUT)
 def test_cursor_from_clang_cursor_with_db_cursor(tu, proj_engine):
-    A_cursor = get_cursor(tu, 'A')
-    fake_build_db_cursor(A_cursor, proj_engine)
-    # ensure that the cursor is in db
-    assert is_in_db(A_cursor, proj_engine)
-    
-    db_A_cursor = db.Cursor.from_clang_cursor(A_cursor, proj_engine)
-    
-    assert is_db_cursor(db_A_cursor)
-    assert_cursor_equal(A_cursor, db_A_cursor)
+    fake_build_db_cursor(tu.cursor, proj_engine)
+    for spelling in ['A', 'data']:
+        _cursor = get_cursor(tu, spelling)
+
+        # ensure that the cursor is in db
+        assert is_in_db(_cursor, proj_engine)
+        
+        db_cursor = db.Cursor.from_clang_cursor(_cursor, proj_engine)
+        
+        assert is_db_cursor(db_cursor)
+        assert_cursor_equal(_cursor, db_cursor)
+
 
 TEST_CURSOR_MACRO_INPUT = """
 #define DECL_AND_DEFINE(name) \
@@ -308,7 +321,7 @@ int main()
 """
 
 @with_param_setup(setup_for_memory_file, TEST_CURSOR_MACRO_INPUT)
-def test_cursor_from_clang_cursor_with_tmpl_cursor(tu, proj_engine):
+def test_cursor_from_clang_cursor_with_decl_cursor(tu, proj_engine):
     Test_decl_cursor = get_cursor_if(tu, lambda c: c.spelling == 'Test' and \
                                             not c.is_definition())
     Test_def_cursor = get_cursor_if(tu, lambda c: c.spelling == 'Test' and \
@@ -551,7 +564,6 @@ def test_type_from_clang_type(tu, proj_engine):
         assert _type
         db_type = db.Type.from_clang_type(_type, proj_engine)
         proj_engine.get_session().add(db_type)
-    
     
     verify_type(tu, proj_engine, 'a', True)
     verify_type(tu, proj_engine, 'ap', True)
