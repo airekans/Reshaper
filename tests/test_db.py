@@ -1,5 +1,5 @@
 from reshaper import db
-from clang.cindex import CursorKind as ckind
+from clang.cindex import CursorKind as ckind, Type
 from clang.cindex import TypeKind as tkind
 import clang.cindex as cindex
 from nose.tools import eq_, with_setup, nottest
@@ -526,8 +526,15 @@ def verify_type(tu, proj_engine, spelling, is_db):
     db_type = db.Type.from_clang_type(_type, proj_engine)
     if is_db:
         assert is_db_type(db_type)
+        while db_type.kind.name == 'POINTER':
+            print "get pointer"
+            db_type = db_type.pointee
+            assert is_db_type(db_type)
     else:
         assert not is_db_type(db_type)
+        while db_type.kind.name == 'POINTER':
+            db_type = db_type.pointee
+            assert not is_db_type(db_type)
 
 @with_param_setup(setup_for_memory_file, TEST_TYPE_INPUT)
 def test_type_from_clang_type(tu, proj_engine):
@@ -535,6 +542,16 @@ def test_type_from_clang_type(tu, proj_engine):
     verify_type(tu, proj_engine, 'ap', False)
     verify_type(tu, proj_engine, 'app', False)
     
+    # build the types into DB
+    for spelling in ['a', 'ap', 'app']:
+        _cursor = get_cursor(tu, spelling)
+        _type = _cursor.type
+        assert _type
+        db_type = db.Type.from_clang_type(_type, proj_engine)
+        proj_engine.get_session().add(db_type)
     
     
+    verify_type(tu, proj_engine, 'a', True)
+    verify_type(tu, proj_engine, 'ap', True)
+    verify_type(tu, proj_engine, 'app', True)
 
