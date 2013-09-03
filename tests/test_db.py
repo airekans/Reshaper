@@ -515,6 +515,7 @@ class A {};
 
 A a;
 A* ap;
+A *ap2;
 A*** app;
 '''
 
@@ -527,7 +528,6 @@ def verify_type(tu, proj_engine, spelling, is_db):
     if is_db:
         assert is_db_type(db_type)
         while db_type.kind.name == 'POINTER':
-            print "get pointer"
             db_type = db_type.pointee
             assert is_db_type(db_type)
     else:
@@ -540,9 +540,11 @@ def verify_type(tu, proj_engine, spelling, is_db):
 def test_type_from_clang_type(tu, proj_engine):
     verify_type(tu, proj_engine, 'a', False)
     verify_type(tu, proj_engine, 'ap', False)
+    verify_type(tu, proj_engine, 'ap2', False)
     verify_type(tu, proj_engine, 'app', False)
     
     # build the types into DB
+    # we ignore ap2 here because its type is the same as ap
     for spelling in ['a', 'ap', 'app']:
         _cursor = get_cursor(tu, spelling)
         _type = _cursor.type
@@ -553,5 +555,6 @@ def test_type_from_clang_type(tu, proj_engine):
     
     verify_type(tu, proj_engine, 'a', True)
     verify_type(tu, proj_engine, 'ap', True)
+    verify_type(tu, proj_engine, 'ap2', True)
     verify_type(tu, proj_engine, 'app', True)
 
