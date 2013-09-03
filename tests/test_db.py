@@ -7,8 +7,7 @@ from .util import get_tu_from_text
 from reshaper.ast import get_tu
 from reshaper.util import get_cursor, get_cursor_if, get_cursors_if
 import os
-from numpy.ma.testutils import assert_equal
-from Image import NONE
+from sqlalchemy.sql import func
 
 
 _TEST_DATA_DIR = os.path.join(os.path.dirname(__file__), 'test_data')
@@ -457,4 +456,85 @@ def test_cursor_get_definition_with_def(tu, proj_engine):
         filter(db.Cursor.is_definition == True).one()
     eq_(expected_cursor, db.Cursor.get_definition(A_def_cursor, proj_engine))
 
+
+TEST_CURSOR_REF_INPUT = '''
+class A;
+class A {};
+int main()
+{
+    A a;
+    a;
+    return 0;
+}
+'''
+
+@with_param_setup(setup_for_memory_file, TEST_CURSOR_REF_INPUT)
+def test_cursor_from_referenced(tu, proj_engine):
+    a_cursor = get_cursor_if(tu, lambda c: c.displayname == 'a' and
+                                    c.kind == cindex.CursorKind.DECL_REF_EXPR)
+    a_ref_cursor = a_cursor.referenced
+    assert a_ref_cursor
+    assert not is_in_db(a_cursor, proj_engine)
+    
+    db_a_cursor = db.Cursor.from_clang_referenced(a_ref_cursor, proj_engine)
+    assert not is_db_cursor(db_a_cursor)
+    
+    fake_build_db_cursor(tu.cursor, proj_engine)
+    db_a_cursor = db.Cursor.from_clang_referenced(a_ref_cursor, proj_engine)
+    assert is_db_cursor(db_a_cursor)
+
+
+@with_param_setup(setup_for_memory_file, TEST_CURSOR_REF_INPUT)
+def test_cursor_get_max_nested_set_index(tu, proj_engine):
+    eq_(0, db.Cursor.get_max_nested_set_index(proj_engine))
+
+    fake_build_db_cursor(tu.cursor, proj_engine)
+    expected_max = proj_engine.get_session().\
+            query(func.max(db.Cursor.right)).scalar()
+    assert expected_max
+    eq_(expected_max, db.Cursor.get_max_nested_set_index(proj_engine))
+
+@with_param_setup(setup_for_memory_file, TEST_CURSOR_REF_INPUT)
+def test_type_is_valid_type(tu, proj_engine):
+    assert not db.Type.is_valid_clang_type(None)
+    fake_type = lambda: True
+    fake_type.kind = cindex.TypeKind.INVALID
+    assert not db.Type.is_valid_clang_type(fake_type)
+    
+    A_cursor = get_cursor(tu, 'A')
+    A_type = A_cursor.type
+    assert A_type
+    assert db.Type.is_valid_clang_type(A_type)
+
+
+def is_db_type(_type):
+    return _type.id is not None
+
+TEST_TYPE_INPUT = '''
+class A {};
+
+A a;
+A* ap;
+A*** app;
+'''
+
+
+def verify_type(tu, proj_engine, spelling, is_db):
+    _cursor = get_cursor(tu, spelling)
+    _type = _cursor.type
+    assert _type
+    db_type = db.Type.from_clang_type(_type, proj_engine)
+    if is_db:
+        assert is_db_type(db_type)
+    else:
+        assert not is_db_type(db_type)
+
+@with_param_setup(setup_for_memory_file, TEST_TYPE_INPUT)
+def test_type_from_clang_type(tu, proj_engine):
+    verify_type(tu, proj_engine, 'a', False)
+    verify_type(tu, proj_engine, 'ap', False)
+    verify_type(tu, proj_engine, 'app', False)
+    
+    
+    
 
