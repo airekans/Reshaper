@@ -580,7 +580,7 @@ class Type(_Base):
                                post_update=True)
     
 
-    def __init__(self, cursor_type):
+    def __init__(self, cursor_type, proj_engine):
         if cursor_type.kind == clang.cindex.TypeKind.CONSTANTARRAY or \
            cursor_type.kind == clang.cindex.TypeKind.VECTOR:
             self.element_count = cursor_type.element_count
@@ -593,6 +593,7 @@ class Type(_Base):
         else:
             self.is_function_variadic = False
         self.is_pod = cursor_type.is_pod()
+        self.kind = TypeKind.from_clang_type_kind(cursor_type.kind, proj_engine)
 
     @staticmethod
     def is_valid_clang_type(cursor_type):
@@ -611,9 +612,7 @@ class Type(_Base):
             print e
             raise
         except NoResultFound: # The type has not been stored in DB.
-            _type = Type(cursor_type)
-            _type.kind = \
-                TypeKind.from_clang_type_kind(cursor_type.kind, proj_engine)
+            _type = Type(cursor_type, proj_engine)
 
         # take care for the BLOCKPOINTER
         if cursor_type.kind == clang.cindex.TypeKind.POINTER:
