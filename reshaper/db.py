@@ -616,10 +616,10 @@ class Type(_Base):
         except NoResultFound: # The type has not been stored in DB.
             _type = Type(cursor_type, proj_engine)
 
-        # take care for the BLOCKPOINTER
-        if cursor_type.kind == clang.cindex.TypeKind.POINTER:
-            _type.pointee = \
-                Type.from_clang_type(cursor_type.get_pointee(), proj_engine)
+            # take care for the BLOCKPOINTER
+            if cursor_type.kind == clang.cindex.TypeKind.POINTER:
+                _type.pointee = \
+                    Type.from_clang_type(cursor_type.get_pointee(), proj_engine)
             
         return _type
         
