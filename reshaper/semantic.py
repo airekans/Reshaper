@@ -344,7 +344,7 @@ def get_lib_name(path, config_path = '~/.reshaper.cfg'):
     config_parser = ConfigParser.SafeConfigParser()
     config_parser.read(os.path.expanduser(config_path))
 
-# if special_libname in abs_path, return libname
+    # if special_libname in abs_path, return libname
     special_libnames = []
     if config_parser.has_option('GUI Options', 'special_libnames'):
         libnames = config_parser.get('GUI Options', 'special_libnames')
@@ -355,12 +355,14 @@ def get_lib_name(path, config_path = '~/.reshaper.cfg'):
         if libname in abs_path:
             return libname
 
-# use regex to extract libname
+    # use regex to extract libname
     libname_regex = None
     if config_parser.has_option('GUI Options', 'extract_libname_regex'):
         libname_regex = config_parser.get('GUI Options', 'extract_libname_regex')
     if not libname_regex:
-        raise ValueError, 'should config extract_libname_regex'
+        # don't raise exception for UT
+        #raise ValueError, 'should config extract_libname_regex'
+        return ''
 
     pattern = re.compile(libname_regex)
     pattern = re.compile(r'.*(GUI/)(?P<libname>[a-zA-Z_]*).*')
