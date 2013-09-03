@@ -571,8 +571,7 @@ class Type(_Base):
                         backref=backref("pointee", remote_side=id))
 
     kind_id = Column(Integer, ForeignKey("type_kind.id"))
-    kind = relationship('TypeKind',
-                        backref = backref('types', order_by = id))
+    kind = relationship('TypeKind')
 
     declaration_id = Column(Integer,
                             ForeignKey("cursor.id", use_alter=True,
