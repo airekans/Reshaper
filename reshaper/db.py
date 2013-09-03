@@ -559,18 +559,11 @@ class Type(_Base):
     is_pod = Column(Boolean, nullable = False)
 
     pointee_id = Column(Integer, ForeignKey(id))
-    pointer = relationship("Type",
-
-                        # cascade deletions
-                        cascade="all",
-                        
+    pointee = relationship("Type",
                         # One-to-One
                         uselist=False,
-
-                        # many to one + adjacency list - remote_side
-                        # is required to reference the 'remote'
-                        # column in the join condition.
-                        backref=backref("pointee", remote_side=id))
+                        foreign_keys=[pointee_id],
+                        remote_side=[id])
 
     kind_id = Column(Integer, ForeignKey("type_kind.id"))
     kind = relationship('TypeKind')
