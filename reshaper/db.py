@@ -107,12 +107,6 @@ class ProjectEngine(object):
                     db_cursor.definition = \
                         Cursor.get_definition(def_cursor, self)
 
-            semantic_parent = cursor.semantic_parent
-            if semantic_parent is not None and \
-               semantic_parent.kind != ckind.TRANSLATION_UNIT:
-                db_cursor.semantic_parent = \
-                    Cursor.from_clang_cursor(semantic_parent, self)
-
             refer_cursor = cursor.referenced
             if refer_cursor is not None and \
                refer_cursor.location.file is not None and \
@@ -400,6 +394,12 @@ class Cursor(_Base):
            lexical_parent.kind != ckind.TRANSLATION_UNIT:
             self.lexical_parent = \
                 Cursor.from_clang_cursor(lexical_parent, proj_engine)
+        
+        semantic_parent = cursor.semantic_parent
+        if semantic_parent is not None and \
+           semantic_parent.kind != ckind.TRANSLATION_UNIT:
+            self.semantic_parent = \
+                Cursor.from_clang_cursor(semantic_parent, proj_engine)
     
 
     @staticmethod
