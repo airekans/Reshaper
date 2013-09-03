@@ -644,8 +644,7 @@ class TypeKind(_Base):
         - `type_kind`:
         """
 
-        query = proj_engine.get_session().query(TypeKind).\
-            filter(TypeKind.name == type_kind.name)
-        return query.first()
+        return proj_engine.get_session().query(TypeKind).\
+            filter(TypeKind.name == type_kind.name).one()
         
 
