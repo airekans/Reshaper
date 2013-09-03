@@ -54,6 +54,8 @@ class ProjectEngine(object):
         self._session.commit()
 
     def build_db_type_kind(self):
+        # In cindex, TypeKind id is not continuous.
+        # 0 - 29 is the first part, 100 - 113 is the second part.
         all_kinds = [clang.cindex.TypeKind.from_id(_i) for _i in xrange(30)]
         all_kinds += [clang.cindex.TypeKind.from_id(_i)
                       for _i in xrange(100, 114)]
