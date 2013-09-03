@@ -205,7 +205,11 @@ TEST_CURSOR_INPUT = """
 class A
 {
     int data;
+    void foo();
 };
+
+void A::foo()
+{}
 """
 
 def assert_cursor_equal(cursor, db_cursor):
@@ -220,6 +224,10 @@ def assert_cursor_equal(cursor, db_cursor):
     if cursor.lexical_parent is not None and \
         cursor.lexical_parent.kind != ckind.TRANSLATION_UNIT:
         assert_cursor_equal(cursor.lexical_parent, db_cursor.lexical_parent)
+        
+    if cursor.semantic_parent is not None and \
+        cursor.semantic_parent.kind != ckind.TRANSLATION_UNIT:
+        assert_cursor_equal(cursor.semantic_parent, db_cursor.semantic_parent)
 
 @with_param_setup(setup_for_memory_file, TEST_CURSOR_INPUT)
 def test_cursor_ctor(tu, proj_engine):
@@ -232,7 +240,16 @@ def test_cursor_ctor(tu, proj_engine):
     data_cursor = get_cursor(tu, 'data')
     db_data_cursor = db.Cursor(data_cursor, proj_engine)
     assert_cursor_equal(data_cursor, db_data_cursor)
-
+    
+    # test semantic_parent
+    foo_cursor = get_cursor(tu, 'foo')
+    db_foo_cursor = db.Cursor(foo_cursor, proj_engine)
+    assert_cursor_equal(foo_cursor, db_foo_cursor)
+    
+    foo_cursor = get_cursor_if(tu, lambda c: c.spelling == 'foo' and
+                                        c.is_definition())
+    db_foo_cursor = db.Cursor(foo_cursor, proj_engine)
+    assert_cursor_equal(foo_cursor, db_foo_cursor)
 
 def is_in_db(cursor, proj_engine):
     return len(proj_engine.get_session().query(db.Cursor).\
@@ -244,7 +261,7 @@ def is_db_cursor(db_cursor):
 @with_param_setup(setup_for_memory_file, TEST_CURSOR_INPUT)
 def test_cursor_from_clang_cursor_with_new_cursor(tu, proj_engine):
     # ensure that this cursor is not in DB
-    for spelling in ['A', 'data']:
+    for spelling in ['A', 'data', 'foo']:
         _cursor = get_cursor(tu, spelling)
         assert not is_in_db(_cursor, proj_engine)
         
@@ -289,7 +306,7 @@ def fake_build_db_cursor(cursor, proj_engine):
 @with_param_setup(setup_for_memory_file, TEST_CURSOR_INPUT)
 def test_cursor_from_clang_cursor_with_db_cursor(tu, proj_engine):
     fake_build_db_cursor(tu.cursor, proj_engine)
-    for spelling in ['A', 'data']:
+    for spelling in ['A', 'data', 'foo']:
         _cursor = get_cursor(tu, spelling)
 
         # ensure that the cursor is in db
