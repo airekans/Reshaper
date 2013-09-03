@@ -90,6 +90,7 @@ class ProjectEngine(object):
             db_cursor.parent = parent
             print "cursor_id", id(db_cursor), "parent_id", id(parent)
             db_cursor.left = left
+            
             if Type.is_valid_clang_type(cursor.type):
                 db_cursor.type = Type.from_clang_type(cursor.type, self)
                 if db_cursor.type.declaration is None or \
@@ -105,12 +106,6 @@ class ProjectEngine(object):
                 else:
                     db_cursor.definition = \
                         Cursor.get_definition(def_cursor, self)
-
-            lexical_parent = cursor.lexical_parent
-            if lexical_parent is not None and \
-               lexical_parent.kind != ckind.TRANSLATION_UNIT:
-                db_cursor.lexical_parent = \
-                    Cursor.from_clang_cursor(lexical_parent, self)
 
             semantic_parent = cursor.semantic_parent
             if semantic_parent is not None and \
@@ -399,6 +394,12 @@ class Cursor(_Base):
 
         if cursor.location.file:
             self.file = File.from_clang_cursor(cursor, proj_engine)
+        
+        lexical_parent = cursor.lexical_parent
+        if lexical_parent is not None and \
+           lexical_parent.kind != ckind.TRANSLATION_UNIT:
+            self.lexical_parent = \
+                Cursor.from_clang_cursor(lexical_parent, proj_engine)
     
 
     @staticmethod
