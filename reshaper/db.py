@@ -429,6 +429,11 @@ class Cursor(_Base):
 
     @staticmethod
     def update_declarations(cursor, proj_engine):
+        ''' Update the declarations in the DB with the definition.
+        
+        `cursor`: the definition cursor
+        '''
+        
         assert cursor.is_definition
 
         _cursors = proj_engine.get_session().query(Cursor).\
