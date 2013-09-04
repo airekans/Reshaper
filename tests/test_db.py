@@ -107,6 +107,23 @@ int main()
 
     return setup_for_memory_file(TEST_INPUT)
 
+
+FILE_TEST_DIR = os.path.join(_TEST_DATA_DIR, 'db', 'file')
+
+@nottest
+def setup_for_fs_file(_file):
+    _tu = get_tu(_file, is_from_cache_first=False)
+    assert _tu
+    _proj_engine = db.ProjectEngine('test', is_in_memory = True)
+    return {'tu': _tu, 'proj_engine': _proj_engine}
+
+@nottest
+def setup_for_test_file_with_multiple_files():
+    SOURCE_PATH = os.path.join(FILE_TEST_DIR, 'main.cpp')
+    return setup_for_fs_file(SOURCE_PATH)
+
+
+
 @with_param_setup(setup_for_test_file)
 def test_file_get_pending_filenames(tu, proj_engine):
     pending_files = db.File.get_pending_filenames(tu, proj_engine)
@@ -124,19 +141,22 @@ def test_file_from_clang_tu(tu, proj_engine):
     eq_(expected_file.time, _file.time)
 
 
-FILE_TEST_DIR = os.path.join(_TEST_DATA_DIR, 'db', 'file')
+def is_db_file(_file):
+    return _file.id is not None
 
-@nottest
-def setup_for_fs_file(_file):
-    _tu = get_tu(_file, is_from_cache_first=False)
-    assert _tu
-    _proj_engine = db.ProjectEngine('test', is_in_memory = True)
-    return {'tu': _tu, 'proj_engine': _proj_engine}
-
-@nottest
-def setup_for_test_file_with_multiple_files():
-    SOURCE_PATH = os.path.join(FILE_TEST_DIR, 'main.cpp')
-    return setup_for_fs_file(SOURCE_PATH)
+@with_param_setup(setup_for_test_file_with_multiple_files)
+def test_file_from_clang_tu_with_includes(tu, proj_engine):
+    _file = db.File.from_clang_tu(tu, tu.spelling, proj_engine)
+    proj_engine.get_session().commit()
+    
+    assert is_db_file(_file)
+    
+    expected_files = set([inc.source.name for inc in tu.get_includes()])
+    expected_files = \
+        expected_files.union(set([inc.include.name for inc in tu.get_includes()]))
+    
+    actual_files = proj_engine.get_session().query(db.File).all()
+    eq_(expected_files, set([_f.name for _f in actual_files]))
 
 
 @with_param_setup(setup_for_test_file_with_multiple_files)
@@ -392,24 +412,25 @@ def test_cursor_from_clang_cursor_with_non_def_cursor(tu, proj_engine):
 
 
 TEST_NAMESPACE_INPUT = '''
+namespace out_ns {
 namespace ns {
 class A;
 void foo(const A&); // this line will cause problem
 }
+}
 
+namespace out_ns {
 namespace ns {
 class A
 {
     int data;
 };
-
+}
 }
 '''
 
 @with_param_setup(setup_for_memory_file, TEST_NAMESPACE_INPUT)
 def test_cursor_from_clang_cursor_with_same_lex_sem_parent(tu, proj_engine):
-    import ipdb
-    ipdb.set_trace()
     fake_build_db_cursor(tu.cursor, proj_engine)
     
     db_ns_cursors = proj_engine.get_session().query(db.Cursor).\
