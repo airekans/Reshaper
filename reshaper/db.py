@@ -158,19 +158,6 @@ def _print_error_cursor(cursor):
     print "line", err_loc.line, "col", err_loc.column
 
 
-class FileInclusion(_Base):
-
-    __tablename__ = 'file_inclusion'
-    
-    including_id = Column('including_id', Integer,
-                          ForeignKey('file.id'),
-                          primary_key=True)
-    included_id = Column('included_id', Integer,
-                         ForeignKey('file.id'),
-                         primary_key=True)
-
-
-
 class File(_Base):
     """ DB representation for c++ files.
     """
@@ -182,7 +169,7 @@ class File(_Base):
     name = Column(String, nullable = True)
     time = Column(Integer, nullable = False)
 
-    include_table = Table('include', _Base.metadata,
+    include_table = Table('file_inclusion', _Base.metadata,
                               Column('including_id', Integer,
                                      ForeignKey('file.id')),
                               Column('included_id', Integer,
@@ -193,7 +180,6 @@ class File(_Base):
                             primaryjoin = id == include_table.c.including_id,
                             secondaryjoin = id == include_table.c.included_id)
     
-
     
     def __init__(self, clang_file):
         """
