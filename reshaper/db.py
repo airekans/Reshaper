@@ -91,7 +91,7 @@ class ProjectEngine(object):
             print "cursor_id", id(db_cursor), "parent_id", id(parent)
             db_cursor.left = left
             
-#            self._session.add(db_cursor)
+            self._session.add(db_cursor)
             
             if Type.is_valid_clang_type(cursor.type):
                 db_cursor.type = Type.from_clang_type(cursor.type, self)
@@ -118,7 +118,6 @@ class ProjectEngine(object):
                 db_cursor.referenced = \
                     Cursor.from_clang_referenced(refer_cursor, self)
 
-            self._session.add(db_cursor)
             # _session.commit()
 
             child_left = left + 1
