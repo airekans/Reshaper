@@ -275,9 +275,18 @@ def test_cursor_from_clang_cursor_with_new_cursor(tu, proj_engine):
 def fake_build_db_cursor(cursor, proj_engine):
     
     def build_db_cursor(cursor, parent, left):
-        db_cursor = db.Cursor(cursor, proj_engine)
+        db_cursor = db.Cursor.from_clang_cursor(cursor, proj_engine)
         db_cursor.parent = parent
         db_cursor.left = left
+        
+        refer_cursor = cursor.referenced
+        if refer_cursor is not None and \
+           refer_cursor.location.file is not None and \
+           (refer_cursor.location.file.name != cursor.location.file.name or \
+            refer_cursor.location.offset != cursor.location.offset) and \
+           refer_cursor.kind != ckind.TRANSLATION_UNIT:
+            db_cursor.referenced = \
+                db.Cursor.from_clang_referenced(refer_cursor, proj_engine)
         
         proj_engine.get_session().add(db_cursor)
         
@@ -380,6 +389,32 @@ def test_cursor_from_clang_cursor_with_non_def_cursor(tu, proj_engine):
     db_t_cursor = db.Cursor.from_clang_cursor(t_cursor, proj_engine)
     assert not is_db_cursor(db_t_cursor)
     assert_cursor_equal(t_cursor, db_t_cursor)
+
+
+TEST_NAMESPACE_INPUT = '''
+namespace ns {
+class A;
+void foo(const A&); // this line will cause problem
+}
+
+namespace ns {
+class A
+{
+    int data;
+};
+
+}
+'''
+
+@with_param_setup(setup_for_memory_file, TEST_NAMESPACE_INPUT)
+def test_cursor_from_clang_cursor_with_same_lex_sem_parent(tu, proj_engine):
+    import ipdb
+    ipdb.set_trace()
+    fake_build_db_cursor(tu.cursor, proj_engine)
+    
+    db_ns_cursors = proj_engine.get_session().query(db.Cursor).\
+        filter(db.Cursor.spelling == 'ns').all()
+    eq_(2, len(db_ns_cursors))
 
 
 CURSOR_TEST_DIR = os.path.join(_TEST_DATA_DIR, 'db', 'cursor')
@@ -586,4 +621,5 @@ def test_type_from_clang_type(tu, proj_engine):
     verify_type(tu, proj_engine, 'ap', True)
     verify_type(tu, proj_engine, 'ap2', True)
     verify_type(tu, proj_engine, 'app', True)
+
 
