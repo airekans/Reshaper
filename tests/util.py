@@ -19,17 +19,25 @@ def get_tu_from_text(source):
 class RedirectStdStreams(object):
     '''redirect stderr to remove error message during test
     '''
-    def __init__(self, stderr=open(os.devnull, 'w')):
+    def __init__(self, stderr=open(os.devnull, 'w'), stdout=open(os.devnull, 'w')):
         self._stderr = stderr or sys.stderr
+        self._stdout = stdout or sys.stdout
 
     def __enter__(self):
         self.old_stderr = sys.stderr
         self.old_stderr.flush()
         sys.stderr = self._stderr
+        
+        self.old_stdout = sys.stdout
+        self.old_stdout.flush()
+        sys.stdout = self._stdout
 
     def __exit__(self, exc_type, exc_value, traceback):
         self._stderr.flush()
         sys.stderr = self.old_stderr
+        
+        self._stdout.flush()
+        sys.stdout = self.old_stdout
         
 def redirect_stderr(func):
     '''redirect stderr function decorator
@@ -73,14 +81,14 @@ def abnormal_exit(func):
             raise AssertionError(message)
     return test_wrap
         
-def file_equals_str(file_path, string):
+def assert_file_content(file, expected):
     file_str = ''
-    fp = open(file_path, 'r')
+    fp = open(file, 'r')
     for each_line in fp.readlines():
         file_str += each_line
     fp.close()
     
-    if string == file_str:
+    if expected == file_str:
         return True
     else:
         return False

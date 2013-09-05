@@ -2,41 +2,41 @@
 
 import find_call_chain
 import os
-from tests.util import file_equals_str
+from tests.util import assert_file_content
 
 
 def test_find_call_chain():
     '''test find_call_chain.py script
     '''
-    input_dir_path = os.path.join(os.path.dirname(__file__), 
+    INPUT_DIR_PATH = os.path.join(os.path.dirname(__file__), 
                              'test_data', 'call_chain')
-    output_path = os.path.join(input_dir_path, 'out.txt')
+    OUTPUT_PATH = os.path.join(INPUT_DIR_PATH, 'out.txt')
     
-    args = ['-f', os.path.join(input_dir_path, 'b.h'), '-s', 'TargetFunc', \
-            '-d', input_dir_path, '-o', output_path,
+    args = ['-f', os.path.join(INPUT_DIR_PATH, 'b.h'), '-s', 'TargetFunc', \
+            '-d', INPUT_DIR_PATH, '-o', OUTPUT_PATH,
             '-l', '4', '-c', '7']    
     find_call_chain.main(args)
-    assert  file_equals_str(output_path, '''\
+    assert  assert_file_content(OUTPUT_PATH, '''\
 digraph G{
 "callint()" -> "Test::TargetFunc(int)";
 }
 ''')
     
-    args = ['-f', os.path.join(input_dir_path, 'b.h'), '-s', 'TargetFunc', \
-            '-d', input_dir_path, '-o', output_path,
+    args = ['-f', os.path.join(INPUT_DIR_PATH, 'b.h'), '-s', 'TargetFunc', \
+            '-d', INPUT_DIR_PATH, '-o', OUTPUT_PATH,
             '-l', '6', '-c', '7']    
     find_call_chain.main(args)
-    assert  file_equals_str(output_path, '''\
+    assert  assert_file_content(OUTPUT_PATH, '''\
 digraph G{
 "callfloat()" -> "Test::TargetFunc(float)";
 }
 ''')
     
-    args = ['-f', os.path.join(input_dir_path, 'b.h'), '-s', 'TargetFunc', \
-            '-d', input_dir_path, '-o', output_path,
+    args = ['-f', os.path.join(INPUT_DIR_PATH, 'b.h'), '-s', 'TargetFunc', \
+            '-d', INPUT_DIR_PATH, '-o', OUTPUT_PATH,
             '-l', '12', '-c', '7']    
     find_call_chain.main(args)
-    assert  file_equals_str(output_path, '''\
+    assert  assert_file_content(OUTPUT_PATH, '''\
 digraph G{
 "bar()" -> "Test_ns::TargetFunc(int)";
 "foo()" -> "bar()";
