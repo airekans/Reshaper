@@ -145,7 +145,7 @@ class ProjectEngine(object):
         else:
             build_db_cursor(cursor, None, left)
 
-    
+
 def _print_error_cursor(cursor):
     """ print the information about cursor when error occur.
     
@@ -452,7 +452,8 @@ class Cursor(_Base):
         Arguments:
         - `cursor`:
         """
-        if not cursor.spelling and not cursor.get_usr():
+        if not cursor.spelling and not cursor.get_usr() and \
+            cursor.kind != ckind.OVERLOADED_DECL_REF:
             return Cursor(cursor, proj_engine)
 
         try:
@@ -474,9 +475,6 @@ class Cursor(_Base):
 
     @staticmethod
     def from_clang_referenced(cursor, proj_engine):
-        assert(cursor.spelling is not None)
-        
-        # because referenced cursor will certainly have spelling, so I use spelling.
         try:
             _cursor = Cursor._query_one_cursor(cursor, proj_engine)
         except MultipleResultsFound, e:

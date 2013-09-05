@@ -307,6 +307,7 @@ def fake_build_db_cursor(cursor, proj_engine):
            refer_cursor.kind != ckind.TRANSLATION_UNIT:
             db_cursor.referenced = \
                 db.Cursor.from_clang_referenced(refer_cursor, proj_engine)
+            proj_engine.get_session().add(db_cursor.referenced)
         
         proj_engine.get_session().add(db_cursor)
         
@@ -569,6 +570,41 @@ def test_cursor_from_referenced(tu, proj_engine):
     db_a_cursor = db.Cursor.from_clang_referenced(a_ref_cursor, proj_engine)
     assert is_db_cursor(db_a_cursor)
 
+
+TEST_CURSOR_REF_INPUT2 = '''
+namespace ns {
+template<typename T>
+void foo(T t)
+{}
+}
+
+namespace ns2 {
+template<typename T>
+void bar(T t)
+{
+    ns::foo(t);
+}
+}
+'''
+
+@with_param_setup(setup_for_memory_file, TEST_CURSOR_REF_INPUT2)
+def test_cursor_from_referenced_without_spelling(tu, proj_engine):
+    foo_call_cursor = \
+        get_cursor_if(tu, lambda c: c.location.line == 12 and
+                             c.kind == cindex.CursorKind.DECL_REF_EXPR)
+    import ipdb
+    ipdb.set_trace()
+    foo_ref_cursor = foo_call_cursor.referenced
+    assert foo_ref_cursor
+    assert foo_ref_cursor.spelling is None
+    assert not is_in_db(foo_call_cursor, proj_engine)
+    
+    db_a_cursor = db.Cursor.from_clang_referenced(foo_ref_cursor, proj_engine)
+    assert not is_db_cursor(db_a_cursor)
+    
+    fake_build_db_cursor(tu.cursor, proj_engine)
+    db_a_cursor = db.Cursor.from_clang_referenced(foo_ref_cursor, proj_engine)
+    assert is_db_cursor(db_a_cursor)
 
 @with_param_setup(setup_for_memory_file, TEST_CURSOR_REF_INPUT)
 def test_cursor_get_max_nested_set_index(tu, proj_engine):
