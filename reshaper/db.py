@@ -90,10 +90,12 @@ class ProjectEngine(object):
         
         if Type.is_valid_clang_type(cursor.type):
             db_cursor.type = Type.from_clang_type(cursor.type, self)
-            if db_cursor.type.declaration is None or \
-               (db_cursor.is_definition and
-                not db_cursor.type.declaration.is_definition):
-                db_cursor.type.declaration = db_cursor
+            decl_cursor = cursor.type.get_declaration()
+            if (db_cursor.type.declaration is None or \
+                not db_cursor.type.declaration.is_definition) and \
+                decl_cursor.kind != ckind.NO_DECL_FOUND:
+                db_cursor.type.declaration = \
+                    Cursor.from_clang_cursor(decl_cursor, proj_engine)
                 self._session.add(db_cursor.type)
 
         def_cursor = cursor.get_definition()
