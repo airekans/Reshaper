@@ -592,8 +592,6 @@ def test_cursor_from_referenced_without_spelling(tu, proj_engine):
     foo_call_cursor = \
         get_cursor_if(tu, lambda c: c.location.line == 12 and
                              c.kind == cindex.CursorKind.DECL_REF_EXPR)
-    import ipdb
-    ipdb.set_trace()
     foo_ref_cursor = foo_call_cursor.referenced
     assert foo_ref_cursor
     assert foo_ref_cursor.spelling is None
