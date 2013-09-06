@@ -71,68 +71,69 @@ class ProjectEngine(object):
         self._session.add(File.from_clang_tu(tu, tu.spelling, self))
             
         self._session.commit()
+    
+    def build_db_cursor(self, cursor, parent, left):
+        if cursor.kind in [ckind.USING_DIRECTIVE,
+                           ckind.USING_DECLARATION]:
+            print "skip using directive"
+            return left
+        elif cursor.location.file is None:
+            print "skip builtin element"
+            return left
+        
+        db_cursor = Cursor.from_clang_cursor(cursor, self)
+        db_cursor.parent = parent
+        print "cursor_id", id(db_cursor), "parent_id", id(parent)
+        db_cursor.left = left
+        
+        self._session.add(db_cursor)
+        
+        if Type.is_valid_clang_type(cursor.type):
+            db_cursor.type = Type.from_clang_type(cursor.type, self)
+            if db_cursor.type.declaration is None or \
+               (db_cursor.is_definition and
+                not db_cursor.type.declaration.is_definition):
+                db_cursor.type.declaration = db_cursor
+                self._session.add(db_cursor.type)
+
+        def_cursor = cursor.get_definition()
+        if def_cursor is not None:
+            if cursor.is_definition():
+                Cursor.update_declarations(db_cursor, self)
+            else:
+                db_cursor.definition = \
+                    Cursor.get_definition(def_cursor, self)
+
+        refer_cursor = cursor.referenced
+        if refer_cursor is not None and \
+           refer_cursor.location.file is not None and \
+           (refer_cursor.location.file.name != cursor.location.file.name or \
+            refer_cursor.location.offset != cursor.location.offset) and \
+           refer_cursor.kind != ckind.TRANSLATION_UNIT:
+            db_cursor.referenced = \
+                Cursor.from_clang_referenced(refer_cursor, self)
+
+        # _session.commit()
+
+        child_left = left + 1
+        if cursor.kind != ckind.TEMPLATE_TEMPLATE_PARAMETER:
+            for child in cursor.get_children():
+                child_left = \
+                    self.build_db_cursor(child, db_cursor, child_left) + 1
+
+        right = child_left
+        db_cursor.right = right
+
+        self._session.add(db_cursor)
+        self._session.commit()
+        self._session.expire(db_cursor)
+
+        return right
 
     def build_db_tree(self, cursor):
         _tu = cursor.translation_unit
         pending_files = File.get_pending_filenames(_tu, self)
         self.build_db_file(_tu)
-
-        def build_db_cursor(cursor, parent, left):
-            if cursor.kind in [ckind.USING_DIRECTIVE,
-                               ckind.USING_DECLARATION]:
-                print "skip using directive"
-                return left
-            elif cursor.location.file is None:
-                print "skip builtin element"
-                return left
-            
-            db_cursor = Cursor.from_clang_cursor(cursor, self)
-            db_cursor.parent = parent
-            print "cursor_id", id(db_cursor), "parent_id", id(parent)
-            db_cursor.left = left
-            
-            self._session.add(db_cursor)
-            
-            if Type.is_valid_clang_type(cursor.type):
-                db_cursor.type = Type.from_clang_type(cursor.type, self)
-                if db_cursor.type.declaration is None or \
-                   (db_cursor.is_definition and
-                    not db_cursor.type.declaration.is_definition):
-                    db_cursor.type.declaration = db_cursor
-                    self._session.add(db_cursor.type)
-
-            def_cursor = cursor.get_definition()
-            if def_cursor is not None:
-                if cursor.is_definition():
-                    Cursor.update_declarations(db_cursor, self)
-                else:
-                    db_cursor.definition = \
-                        Cursor.get_definition(def_cursor, self)
-
-            refer_cursor = cursor.referenced
-            if refer_cursor is not None and \
-               refer_cursor.location.file is not None and \
-               (refer_cursor.location.file.name != cursor.location.file.name or \
-                refer_cursor.location.offset != cursor.location.offset) and \
-               refer_cursor.kind != ckind.TRANSLATION_UNIT:
-                db_cursor.referenced = \
-                    Cursor.from_clang_referenced(refer_cursor, self)
-
-            # _session.commit()
-
-            child_left = left + 1
-            if cursor.kind != ckind.TEMPLATE_TEMPLATE_PARAMETER:
-                for child in cursor.get_children():
-                    child_left = build_db_cursor(child, db_cursor, child_left) + 1
-
-            right = child_left
-            db_cursor.right = right
-
-            self._session.add(db_cursor)
-            self._session.commit()
-            self._session.expire(db_cursor)
-
-            return right
 
         left = Cursor.get_max_nested_set_index(self)
         if left > 0:
@@ -141,9 +142,9 @@ class ProjectEngine(object):
             for child in cursor.get_children():
                 if child.location.file and \
                         child.location.file.name in pending_files:
-                    left = build_db_cursor(child, None, left) + 1
+                    left = self.build_db_cursor(child, None, left) + 1
         else:
-            build_db_cursor(cursor, None, left)
+            self.build_db_cursor(cursor, None, left)
 
 
 def _print_error_cursor(cursor):
