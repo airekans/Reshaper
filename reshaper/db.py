@@ -177,8 +177,8 @@ class File(_Base):
     includes = relationship("File",
                             secondary = include_table,
                             backref = "included_by",
-                            primaryjoin = id == include_table.c.including_id,
-                            secondaryjoin = id == include_table.c.included_id)
+                            primaryjoin = (id == include_table.c.including_id),
+                            secondaryjoin = (id == include_table.c.included_id))
     
     
     def __init__(self, clang_file):
