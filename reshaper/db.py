@@ -342,10 +342,11 @@ class Cursor(_Base):
                                    remote_side=[id])
 
     # referenced
-    referenced_id = Column(Integer, ForeignKey(id))
+    referenced_id = Column(Integer, ForeignKey(id, use_alter=True,
+                                               name='cursor_ref'))
     referenced = relationship("Cursor",
                               foreign_keys=[referenced_id],
-                              remote_side=[id])
+                              remote_side=[id], post_update=True)
     
     # nested set attributes
     left = Column("left", Integer, nullable=True)
