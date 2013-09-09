@@ -95,7 +95,7 @@ class ProjectEngine(object):
                 not db_cursor.type.declaration.is_definition) and \
                 decl_cursor.kind != ckind.NO_DECL_FOUND:
                 db_cursor.type.declaration = \
-                    Cursor.from_clang_cursor(decl_cursor, proj_engine)
+                    Cursor.from_clang_cursor(decl_cursor, self)
                 self._session.add(db_cursor.type)
 
         def_cursor = cursor.get_definition()
