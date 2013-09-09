@@ -11,6 +11,7 @@ from sqlalchemy.sql import func
 from clang.cindex import CursorKind as ckind
 import clang.cindex
 import os
+from urlgrabber.grabber import _curl_cache
 
 _Base = declarative_base()
 
@@ -461,12 +462,7 @@ class Cursor(_Base):
             return Cursor(cursor, proj_engine)
 
         try:
-            # builtin definitions
-            if cursor.location.file is None:
-                _cursor = proj_engine.get_session().query(Cursor).\
-                    filter(Cursor.spelling == cursor.spelling).one()
-            else:
-                _cursor = Cursor._query_one_cursor(cursor, proj_engine)
+            _cursor = Cursor.get_db_cursor(cursor, proj_engine)
         except MultipleResultsFound, e:
             print e
             _print_error_cursor(cursor)
@@ -475,6 +471,17 @@ class Cursor(_Base):
             print "No result found"
             _cursor = Cursor(cursor, proj_engine)
 
+        return _cursor
+    
+    @staticmethod
+    def get_db_cursor(cursor, proj_engine):
+        # builtin definitions
+        if cursor.location.file is None:
+            _cursor = proj_engine.get_session().query(Cursor).\
+                filter(Cursor.spelling == cursor.spelling).one()
+        else:
+            _cursor = Cursor._query_one_cursor(cursor, proj_engine)
+        
         return _cursor
 
     @staticmethod
