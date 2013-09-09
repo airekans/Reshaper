@@ -8,6 +8,7 @@ from reshaper.ast import get_tu
 from reshaper.util import get_cursor, get_cursor_if, get_cursors_if
 import os
 from sqlalchemy.sql import func
+from tests.util import set_eq
 
 
 _TEST_DATA_DIR = os.path.join(os.path.dirname(__file__), 'test_data')
@@ -686,17 +687,25 @@ def simple_build_db_cursor(cursor, proj_engine):
     else:
         proj_engine.build_db_cursor(cursor, None, left)
 
-@with_param_setup(setup_for_memory_file, 'int a;')
-def test_proj_engine_build_db_cursor_with_simple_stmt(tu, proj_engine):
-    simple_build_db_cursor(tu.cursor, proj_engine)
-    
+def assert_db_states(proj_engine, cursor_num, type_num):
     db_cursors = \
         proj_engine.get_session().query(db.Cursor).all()
-    eq_(1, len(db_cursors))
+    eq_(cursor_num, len(db_cursors))
 
     db_types = proj_engine.get_session().query(db.Type).all()
-    eq_(1, len(db_types))
+    eq_(type_num, len(db_types))
     
+    return db_cursors, db_types
+
+@with_param_setup(setup_for_memory_file, 'int a;')
+def test_proj_engine_build_db_cursor_with_simple_stmt(tu, proj_engine):
+    ''' Test builtin type declaration 
+    '''
+    
+    simple_build_db_cursor(tu.cursor, proj_engine)
+    
+    db_cursors, db_types = assert_db_states(proj_engine, 1, 1)
+
     # verify the relations
     a_cursor = get_cursor(tu, 'a')
     db_a_cursor = db_cursors[0]
@@ -707,5 +716,43 @@ def test_proj_engine_build_db_cursor_with_simple_stmt(tu, proj_engine):
     # because int is a buitin type, its declaration is None in DB.
     assert db_a_cursor.type.declaration is None
 
+@with_param_setup(setup_for_memory_file, 'class A{}; A a;')
+def test_proj_engine_build_db_cursor_with_simple_stmt_2(tu, proj_engine):
+    ''' Test simple type definition and variable definition.
+    '''
+    
+    simple_build_db_cursor(tu.cursor, proj_engine)
+    
+    db_cursors, db_types = assert_db_states(proj_engine, 5, 1)
+    import ipdb
+    ipdb.set_trace()
 
-
+    set_eq(['CLASS_DECL', 'VAR_DECL', 'TYPE_REF', 'CALL_EXPR', 'CONSTRUCTOR'],
+           [c.kind.name for c in db_cursors])
+    
+    # verify declaration of the type
+    A_def_cursor = proj_engine.get_session().\
+        query(db.Cursor).join(db.CursorKind).\
+        filter(db.Cursor.spelling == 'A').\
+        filter(db.CursorKind.name == 'CLASS_DECL').\
+        filter(db.Cursor.is_definition == True).one()
+    assert A_def_cursor
+    A_type = db_types[0]
+    assert A_type
+    eq_(A_def_cursor, A_type.declaration)
+    
+    # verify the type of the cursor
+    def assert_cursor_type(cursor):
+        if cursor.type:
+            db_cursor = db.Cursor.get_db_cursor(cursor, proj_engine)
+            assert db_cursor
+            assert is_db_cursor(db_cursor)
+            eq_(cursor.type.spelling, db_cursor.type.spelling)
+            assert_tkind_equal(cursor.type.kind, db_cursor.type.kind)
+        
+        for child in cursor.get_children():
+            assert_cursor_type(child)
+    
+    for _c in tu.cursor.get_children():
+        if _c.location.file: # skip builtin cursors
+            assert_cursor_type(_c)
