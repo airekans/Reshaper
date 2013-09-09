@@ -724,8 +724,6 @@ def test_proj_engine_build_db_cursor_with_simple_stmt_2(tu, proj_engine):
     simple_build_db_cursor(tu.cursor, proj_engine)
     
     db_cursors, db_types = assert_db_states(proj_engine, 5, 1)
-    import ipdb
-    ipdb.set_trace()
 
     set_eq(['CLASS_DECL', 'VAR_DECL', 'TYPE_REF', 'CALL_EXPR', 'CONSTRUCTOR'],
            [c.kind.name for c in db_cursors])
@@ -756,3 +754,31 @@ def test_proj_engine_build_db_cursor_with_simple_stmt_2(tu, proj_engine):
     for _c in tu.cursor.get_children():
         if _c.location.file: # skip builtin cursors
             assert_cursor_type(_c)
+
+TEST_BUILD_DB_CURSOR_INPUT_1 = '''
+struct B {};
+
+struct A
+{
+    B data;
+};
+
+void foo()
+{
+    A a;
+    a.data;
+}
+'''
+
+@with_param_setup(setup_for_memory_file, TEST_BUILD_DB_CURSOR_INPUT_1)
+def test_proj_engine_build_db_cursor_with_simple_stmt_3(tu, proj_engine):
+    ''' Test more complex type definition and variable definition.
+    '''
+    
+    
+    simple_build_db_cursor(tu.cursor, proj_engine)
+    
+    db_cursors, db_types = assert_db_states(proj_engine, 13, 2)
+    
+    
+    
