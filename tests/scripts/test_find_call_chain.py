@@ -16,30 +16,30 @@ def test_find_call_chain():
             '-d', INPUT_DIR_PATH, '-o', OUTPUT_PATH,
             '-l', '4', '-c', '7']    
     find_call_chain.main(args)
-    assert  assert_file_content(OUTPUT_PATH, '''\
+    assert_file_content('''\
 digraph G{
 "callint()" -> "Test::TargetFunc(int)";
 }
-''')
+''', OUTPUT_PATH)
     
     args = ['-f', os.path.join(INPUT_DIR_PATH, 'b.h'), '-s', 'TargetFunc', \
             '-d', INPUT_DIR_PATH, '-o', OUTPUT_PATH,
             '-l', '6', '-c', '7']    
     find_call_chain.main(args)
-    assert  assert_file_content(OUTPUT_PATH, '''\
+    assert_file_content('''\
 digraph G{
 "callfloat()" -> "Test::TargetFunc(float)";
 }
-''')
+''', OUTPUT_PATH)
     
     args = ['-f', os.path.join(INPUT_DIR_PATH, 'b.h'), '-s', 'TargetFunc', \
             '-d', INPUT_DIR_PATH, '-o', OUTPUT_PATH,
             '-l', '12', '-c', '7']    
     find_call_chain.main(args)
-    assert  assert_file_content(OUTPUT_PATH, '''\
+    assert_file_content('''\
 digraph G{
 "bar()" -> "Test_ns::TargetFunc(int)";
 "foo()" -> "bar()";
 "fooo()" -> "foo()";
 }
-''')
+''', OUTPUT_PATH)

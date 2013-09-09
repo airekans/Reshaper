@@ -81,14 +81,8 @@ def abnormal_exit(func):
             raise AssertionError(message)
     return test_wrap
         
-def assert_file_content(file, expected):
-    file_str = ''
-    fp = open(file, 'r')
-    for each_line in fp.readlines():
-        file_str += each_line
-    fp.close()
+def assert_file_content(expected, file):
+    with open(file, 'r') as fp:
+        file_str = fp.read()
     
-    if expected == file_str:
-        return True
-    else:
-        return False
+    assert(expected == file_str)
