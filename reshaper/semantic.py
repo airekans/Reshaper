@@ -111,7 +111,16 @@ def is_smart_ptr(cursor):
     
 def is_pointer(cursor):
     ''' is pointer type '''
-    if cursor.type.kind == TypeKind.POINTER:
+    def get_underlying_type(cursor_type):
+        '''recursively extract typedef type's underlying type
+        '''
+        if cursor_type.kind == TypeKind.TYPEDEF:
+            result_type = cursor_type.get_declaration().underlying_typedef_type
+            return get_underlying_type(result_type)
+        else:
+            return cursor_type
+        
+    if get_underlying_type(cursor.type).kind == TypeKind.POINTER:
         return True
     
     return is_smart_ptr(cursor)
@@ -145,6 +154,13 @@ def is_class_definition(cursor, class_name = None):
     else:
         return is_class(cursor) and cursor.is_definition()
 
+def is_namespace(cursor):
+    return cursor.kind == CursorKind.NAMESPACE
+
+def is_namespace_definition(cursor, namespace_name = None):
+    return cursor.is_definition() and is_namespace(cursor) and\
+        namespace_name in [None, cursor.spelling, cursor.displayname]
+        
 
 def is_function(cursor):
     """ check whether the cursor is a function.

@@ -67,11 +67,11 @@ def output_to_file(target_cursor, curs, file_path):
     file_handle.write(output_string)
     file_handle.close()
 
-def main():
+def main(argv = sys.argv[1:]):
     '''main function of find reference
     '''
     output_file = "referenceResult.txt"
-    options = parse_find_reference_args(output_file)
+    options = parse_find_reference_args(output_file, args = argv)
     #get target reference info
     tu_source = get_tu(os.path.abspath(options.filename),
                        config_path = options.config,

@@ -10,6 +10,8 @@ from reshaper.util import get_cursor_with_location, \
                           get_cursor_if, get_cursor
 from .util import get_tu_from_text
 
+import os
+from shutil import rmtree
 
 INPUT_DIR = os.path.join(os.path.dirname(__file__), 'test_data')
 
@@ -435,4 +437,26 @@ def test_get_lib_name():
     eq_('GUI', GUI_libname)
 
 
+def test_scan_dir_parse_files():
+    """Test function walkdir()
+    """
+    test_dir = os.path.join(os.path.dirname(__file__), 'test_data', 
+                            'test_scan_dir_parse_files')
+    tmp_dir = os.path.join(test_dir, 'tmp_dir')
+    if os.path.exists(test_dir):
+        rmtree(test_dir)
+        
+    os.makedirs(tmp_dir)
+    for file_name in ('tmp', 'tmp.h', 'tmp.c'):
+        open(os.path.join(test_dir, file_name), 'w').close()
+        open(os.path.join(tmp_dir, file_name), 'w').close()
+        
+    result = []
+    sem.walkdir(test_dir, result.append)
+    rmtree(test_dir)
+    
+    eq_([os.path.join(test_dir, 'tmp.c'),
+         os.path.join(tmp_dir, 'tmp.c')], result)
+    
+    
 
