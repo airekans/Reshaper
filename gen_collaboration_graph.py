@@ -4,12 +4,12 @@ Created on May 30, 2013
 @author: liangzhao
 '''
 from optparse import OptionParser
-import os
+import os, sys
 from reshaper.option import setup_options
 from reshaper.ast import get_tu
 from reshaper.dot_gen_util import gen_class_collaboration_graph
 
-def main():
+def main(argv = sys.argv[1:]):
     ''' main '''
     option_parser = OptionParser(usage = "%prog [options] classes") 
     
@@ -24,7 +24,7 @@ def main():
                              help = "show function names")
     
     setup_options(option_parser)
-    (options, args) = option_parser.parse_args()
+    (options, args) = option_parser.parse_args(args = argv)
     
     file_path = options.file
     

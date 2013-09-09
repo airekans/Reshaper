@@ -9,7 +9,6 @@ from optparse import OptionParser
 from reshaper import semantic as sem, util
 from reshaper.option import setup_options
 import sys
-from clang.cindex import TranslationUnit
 from reshaper.ast import get_tu
 
 def set_all_true_if_no_bool_option(opts):
@@ -27,7 +26,7 @@ def set_all_true_if_no_bool_option(opts):
     for attr, value in vars(opts).iteritems():
         setattr(opts, attr, True)
 
-def _main():
+def _main(argv = sys.argv[1:]):
     ''' main function '''
     option_parser = OptionParser(usage="%prog [options] FILE [CLASSNAMES]")
     setup_options(option_parser)
@@ -38,7 +37,7 @@ def _main():
                              help="generate serialize operator")
     
     
-    options, args = option_parser.parse_args()
+    options, args = option_parser.parse_args(args = argv)
     
     if len(args) < 1:
         option_parser.error("Please input source file and class name.")
@@ -84,14 +83,3 @@ def _main():
          
 if __name__ == '__main__':
     _main()    
-    
-    
-    
-    
-    
-    
-
-    
-    
-   
-     

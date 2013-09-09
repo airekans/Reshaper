@@ -35,8 +35,8 @@ class XMLPrinter(object):
         self._stack.append(end_tag)  
                
         self._level = level
-        
-    def print_cursor(self, level, name, value):
+    
+    def print_attr(self, level, name, value):
         print _SPACE * (level+1) + '<%s>%s</%s>' % (name, value, name)
         
     def print_remaining_end_tags(self):
@@ -57,10 +57,10 @@ def print_tag(level, tag, is_xml, attr_label='', attr = ''):
             attr_str = ': %s=%s' % (attr_label, attr)
         print '****' * level + '%s%s' % (tag, attr_str)
 
-def print_cursor(level, name, value, is_xml):
+def print_attr(level, name, value, is_xml):
     if is_xml:
         value = escape(str(value))
-        _xml_printer.print_cursor(level, name, value)
+        _xml_printer.print_attr(level, name, value)
     else:
         print '****' * (level+1) + name + ':', value
         
@@ -117,7 +117,7 @@ def print_cursor(cursor, level, is_print_ref = False, is_xml = False):
     
     
 
-def main():
+def main(argv = sys.argv[1:]):
     option_parser = OptionParser(usage = "%prog [options] files")
     setup_options(option_parser)
     option_parser.add_option("-l", "--level", dest = "level",
@@ -135,7 +135,7 @@ def main():
                              action="store_true",
                              help = "print with xml format")
     
-    (options, args) = option_parser.parse_args()
+    (options, args) = option_parser.parse_args(args = argv)
        
     if len(args) < 1:
         option_parser.error('Please input files to parse')

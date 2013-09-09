@@ -51,7 +51,6 @@ namespace Outer{
 }
 
 using namespace Outer;
-
 class A
 {
 public:

@@ -112,7 +112,16 @@ def is_smart_ptr(cursor):
     
 def is_pointer(cursor):
     ''' is pointer type '''
-    if cursor.type.kind == TypeKind.POINTER:
+    def get_underlying_type(cursor_type):
+        '''recursively extract typedef type's underlying type
+        '''
+        if cursor_type.kind == TypeKind.TYPEDEF:
+            result_type = cursor_type.get_declaration().underlying_typedef_type
+            return get_underlying_type(result_type)
+        else:
+            return cursor_type
+        
+    if get_underlying_type(cursor.type).kind == TypeKind.POINTER:
         return True
     
     return is_smart_ptr(cursor)
