@@ -677,4 +677,35 @@ def test_type_from_clang_type(tu, proj_engine):
     verify_type(tu, proj_engine, 'ap2', True)
     verify_type(tu, proj_engine, 'app', True)
 
+def simple_build_db_cursor(cursor, proj_engine):
+    left = 0
+    if cursor.kind == ckind.TRANSLATION_UNIT:
+        for child in cursor.get_children():
+            if child.location.file:
+                left = proj_engine.build_db_cursor(child, None, left) + 1
+    else:
+        proj_engine.build_db_cursor(cursor, None, left)
+
+@with_param_setup(setup_for_memory_file, 'int a;')
+def test_proj_engine_build_db_cursor_with_simple_stmt(tu, proj_engine):
+    simple_build_db_cursor(tu.cursor, proj_engine)
+    
+    db_cursors = \
+        proj_engine.get_session().query(db.Cursor).all()
+    eq_(1, len(db_cursors))
+
+    db_types = proj_engine.get_session().query(db.Type).all()
+    eq_(1, len(db_types))
+    
+    # verify the relations
+    a_cursor = get_cursor(tu, 'a')
+    db_a_cursor = db_cursors[0]
+    assert_cursor_equal(a_cursor, db_a_cursor)
+    assert db_a_cursor.type
+    eq_(db_types[0], db_a_cursor.type)
+    eq_('int', db_a_cursor.type.spelling)
+    # because int is a buitin type, its declaration is None in DB.
+    assert db_a_cursor.type.declaration is None
+
+
 
