@@ -360,17 +360,15 @@ def get_lib_name(path, config_path = '~/.reshaper.cfg'):
     if config_parser.has_option('GUI Options', 'extract_libname_regex'):
         libname_regex = config_parser.get('GUI Options', 'extract_libname_regex')
     if not libname_regex:
-        # don't raise exception for UT
-        #raise ValueError, 'should config extract_libname_regex'
         return ''
 
     pattern = re.compile(libname_regex)
-    pattern = re.compile(r'.*(GUI/)(?P<libname>[a-zA-Z_]*).*')
     search_result = pattern.search(abs_path)
     if not search_result:
         return ''
 
     cand_lib_name = search_result.group('libname')
+    print cand_lib_name
     if cand_lib_name.startswith('lib'):
         return cand_lib_name
     else:

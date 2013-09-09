@@ -412,21 +412,21 @@ def test_get_source_path_candidates():
          result)
  
 def test_get_lib_name():
-    normal_path = r'/home/xxx/zzz/GUI/libmodRts/xxx.cpp'
-    special_path = r'/home/xxx/zzz/SQL/xxx.cpp'
-    special_path_under_GUI = r'/home/xxx/zzz/GUI/adv_rts/xxxx.cpp'
+    normal_path = r'/home/xxx/zzz/lib/libname_one/xxx.cpp'
+    special_path = r'/home/xxx/zzz/special_lib/xxx.cpp'
+    special_path_under_GUI = r'/home/xxx/zzz/lib/special_lib2/xxxx.cpp'
     no_name_path = r'/home/xxx/zzz/xxx/ddd/xxxx.cpp'
-    GUI_libname_path = r'/home/xxx/GUI/xxx.cpp'
+    GUI_libname_path = r'/home/xxx/lib/xxx.cpp'
 
     config_file = os.path.join(INPUT_DIR, 'libname_config.cfg')
     normal_libname = sem.get_lib_name(normal_path, config_file)
-    eq_('libmodRts', normal_libname)
+    eq_('libname_one', normal_libname)
 
     special_libname = sem.get_lib_name(special_path, config_file)
-    eq_('/SQL/', special_libname)
+    eq_('/special_lib/', special_libname)
 
     special_libname_under_GUI = sem.get_lib_name(special_path_under_GUI, config_file)
-    eq_('/adv_rts/', special_libname_under_GUI)
+    eq_('/special_lib2/', special_libname_under_GUI)
 
     no_libname = sem.get_lib_name(no_name_path, config_file)
     assert(not no_libname)
