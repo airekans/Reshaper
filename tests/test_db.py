@@ -790,13 +790,96 @@ def test_proj_engine_build_db_cursor_with_simple_stmt_3(tu, proj_engine):
         if db_t.declaration:
             assert db_t.spelling in spel_cursors
             eq_(spel_cursors[db_t.spelling], db_t.declaration)
-            
-        
+    
     # verify the type of the cursor
     for _c in tu.cursor.get_children():
         if _c.location.file: # skip builtin cursors
             assert_cursor_type(_c, proj_engine)
 
 
+TEST_BUILD_DB_CURSOR_INPUT_2 = '''
+class A;
+class A;
+void func();
+'''
 
+@with_param_setup(setup_for_memory_file, TEST_BUILD_DB_CURSOR_INPUT_2)
+def test_proj_engine_build_db_cursor_for_def_cursors_1(tu, proj_engine):
+    ''' Test the logic that when definition cursor has not been stored
+    in the DB, then all declaration cursors will left its 
+    definition field None.
+    '''
+
+    simple_build_db_cursor(tu.cursor, proj_engine)
+    db_cursors, _ = assert_db_states(proj_engine, 3, 2)
+    
+    # verify that all cursors' definition field is None
+    for db_c in db_cursors:
+        assert db_c.spelling in ['A', 'func']
+        assert db_c.definition is None
+
+
+
+def assert_decl_with_def_cursor(tu, proj_engine, cursor_num, type_num):
+    simple_build_db_cursor(tu.cursor, proj_engine)
+    db_cursors, _ = assert_db_states(proj_engine, cursor_num, type_num)
+    db_A_def_cursor = None
+    # get the A definition cursor
+    for db_c in db_cursors:
+        if db_c.spelling == 'A' and db_c.is_definition:
+            db_A_def_cursor = db_c
+    
+    assert db_A_def_cursor
+    for db_c in db_cursors:
+        if db_c.spelling == 'A':
+            if db_c.is_definition:
+                assert db_c.definition is None
+            else:
+                assert db_c.definition
+                eq_(db_A_def_cursor, db_c.definition)
+        else:
+            assert db_c.definition is None # foo
+
+
+TEST_BUILD_DB_CURSOR_INPUT_3 = '''
+class A;
+class A;
+void func();
+
+class A {};
+'''
+
+
+@with_param_setup(setup_for_memory_file, TEST_BUILD_DB_CURSOR_INPUT_3)
+def test_proj_engine_build_db_cursor_for_def_cursors_2(tu, proj_engine):
+    ''' Test the logic that when definition cursor has not been stored
+    in the DB, then all declaration cursors will left its 
+    definition field None. Once the definition cursor is found,
+    then all declaration cursors in DB will be updated with its definition
+    field.
+    '''
+    
+    assert_decl_with_def_cursor(tu, proj_engine, 4, 2)
+
+
+TEST_BUILD_DB_CURSOR_INPUT_4 = '''
+class A;
+class A;
+void func();
+
+class A {};
+class A;
+'''
+
+@with_param_setup(setup_for_memory_file, TEST_BUILD_DB_CURSOR_INPUT_4)
+def test_proj_engine_build_db_cursor_for_def_cursors_3(tu, proj_engine):
+    ''' Test the logic that after the definition cursor has been stored in DB,
+    all declaration cursors will have the definition field pointing to the 
+    same definition.
+    '''
+    
+    assert_decl_with_def_cursor(tu, proj_engine, 5, 2)
+
+
+    
     
