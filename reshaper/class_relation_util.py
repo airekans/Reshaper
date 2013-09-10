@@ -50,6 +50,6 @@ def get_callee_cls_files_in_same_lib(cls_cursor):
         caller_header_path = os.path.abspath(os.path.join(caller_dir, '..'))
         callee_dir = os.path.dirname(callee_path)
         
-        return callee_dir == callee_dir or caller_header_path == callee_dir
+        return caller_dir == callee_dir or caller_header_path == callee_dir
         
     return get_callee_cls_files(cls_cursor, is_in_same_lib)   

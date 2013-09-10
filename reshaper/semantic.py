@@ -250,14 +250,14 @@ def get_func_callees(fun_cursor,
     return hash2decl_cursor
 
 
-#FIXME: is_member_of may have bugs, should not match with spelling
-def is_member_of(cursor, callee_class_name):
+def is_member_of(cursor, class_name):
+    #check whether cursor is a member of class_name
     
     decl_sem_parent = get_semantic_parent_of_decla_cursor(cursor)
     if not decl_sem_parent:
         return False
     
-    return decl_sem_parent.spelling == callee_class_name
+    return  is_class_name_matched(decl_sem_parent, class_name)
 
 def get_func_callee_names(fun_cursor, callee_class):
     """get the class callees of the function named fun_cursor.
