@@ -1,6 +1,7 @@
 from reshaper.ast import    FlyweightBase, \
                             CursorCache, \
-                            LocationCache
+                            LocationCache, \
+                            TUCache
 from .util import get_tu_from_text
                 
 from nose.tools import eq_
@@ -96,18 +97,16 @@ def test_flyweightbase():
 INPUT_DIR = os.path.join(os.path.dirname(__file__), 'test_data')
 def testCursorCache():
     source = os.path.join(INPUT_DIR, 'class.cpp')
-    _tu = TranslationUnit.from_source(source)
+    _tu = TUCache(TranslationUnit.from_source(source), source)
     assert(_tu)
     assert(_tu.cursor)
-    cursor_cache = CursorCache(_tu.cursor, source) 
     
+    cursor_cache = _tu.cursor
+        
     cc_func = get_cursor(cursor_cache, 'result_test_fun')
+    assert(cc_func)
     assert(isinstance(cc_func, CursorCache))
     
-    cc_class = cc_func.semantic_parent
-    assert(cc_class)
-    
-    cursor_cache.update_ref_cursors() 
     cc_class = cc_func.semantic_parent
     assert(isinstance(cc_class, CursorCache)) #ref cursor defined in other file
     

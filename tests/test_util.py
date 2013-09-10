@@ -7,7 +7,6 @@ import os
 from functools import partial
 from nose.tools import eq_, with_setup
 
-
 INPUT_DIR = os.path.join(os.path.dirname(__file__), 'test_data')
 _tu = None
 _cursor_A = None

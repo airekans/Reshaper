@@ -71,7 +71,6 @@ digraph G {
         ''' test gen_class_collaboration_graph'''
         src_path = os.path.join(os.path.dirname(__file__),
                                 'test_data','class_relation.cpp') 
-        save_ast(src_path)
         _tu = get_tu(src_path)
         
         data_dir = os.path.join(os.path.dirname(__file__), 'test_data')
@@ -163,7 +162,6 @@ digraph G {
                          dot_str_filtered)
         self.assertEqual(dot_str_hide_functions_expected, 
                          dot_str_hide_functions, dot_str_hide_functions)
-        
         
         
 if __name__ == "__main__":
