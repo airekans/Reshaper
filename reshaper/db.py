@@ -11,7 +11,6 @@ from sqlalchemy.sql import func
 from clang.cindex import CursorKind as ckind
 import clang.cindex
 import os
-from urlgrabber.grabber import _curl_cache
 
 _Base = declarative_base()
 
