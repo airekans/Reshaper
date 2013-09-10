@@ -716,6 +716,18 @@ def test_proj_engine_build_db_cursor_with_simple_stmt(tu, proj_engine):
     # because int is a buitin type, its declaration is None in DB.
     assert db_a_cursor.type.declaration is None
 
+
+def assert_cursor_type(cursor, proj_engine):
+    if cursor.type and cursor.type.kind != tkind.INVALID:
+        db_cursor = db.Cursor.get_db_cursor(cursor, proj_engine)
+        assert db_cursor
+        assert is_db_cursor(db_cursor)
+        eq_(cursor.type.spelling, db_cursor.type.spelling)
+        assert_tkind_equal(cursor.type.kind, db_cursor.type.kind)
+    
+    for child in cursor.get_children():
+        assert_cursor_type(child, proj_engine)
+
 @with_param_setup(setup_for_memory_file, 'class A{}; A a;')
 def test_proj_engine_build_db_cursor_with_simple_stmt_2(tu, proj_engine):
     ''' Test simple type definition and variable definition.
@@ -740,20 +752,10 @@ def test_proj_engine_build_db_cursor_with_simple_stmt_2(tu, proj_engine):
     eq_(A_def_cursor, A_type.declaration)
     
     # verify the type of the cursor
-    def assert_cursor_type(cursor):
-        if cursor.type:
-            db_cursor = db.Cursor.get_db_cursor(cursor, proj_engine)
-            assert db_cursor
-            assert is_db_cursor(db_cursor)
-            eq_(cursor.type.spelling, db_cursor.type.spelling)
-            assert_tkind_equal(cursor.type.kind, db_cursor.type.kind)
-        
-        for child in cursor.get_children():
-            assert_cursor_type(child)
-    
     for _c in tu.cursor.get_children():
         if _c.location.file: # skip builtin cursors
-            assert_cursor_type(_c)
+            assert_cursor_type(_c, proj_engine)
+
 
 TEST_BUILD_DB_CURSOR_INPUT_1 = '''
 struct B {};
@@ -775,10 +777,26 @@ def test_proj_engine_build_db_cursor_with_simple_stmt_3(tu, proj_engine):
     ''' Test more complex type definition and variable definition.
     '''
     
-    
     simple_build_db_cursor(tu.cursor, proj_engine)
+    db_cursors, db_types = assert_db_states(proj_engine, 13, 3)
     
-    db_cursors, db_types = assert_db_states(proj_engine, 13, 2)
-    
-    
+    spel_cursors = {'A': None, 'B': None}
+    for db_c in db_cursors:
+        if db_c.spelling in spel_cursors and db_c.kind.name == 'STRUCT_DECL':
+            spel_cursors[db_c.spelling] = db_c
+
+    # verify declaration of the type
+    for db_t in db_types:
+        if db_t.declaration:
+            assert db_t.spelling in spel_cursors
+            eq_(spel_cursors[db_t.spelling], db_t.declaration)
+            
+        
+    # verify the type of the cursor
+    for _c in tu.cursor.get_children():
+        if _c.location.file: # skip builtin cursors
+            assert_cursor_type(_c, proj_engine)
+
+
+
     
