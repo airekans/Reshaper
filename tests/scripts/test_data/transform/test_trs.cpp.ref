@@ -1,0 +1,14 @@
+#include "test_trs.h"
+
+int main()
+{
+	A a;
+	B b;
+	A* aa = new A();
+	b.SetI(aa->GetI());
+	a.SetI3(10);
+	a.SetI(a.GetI3() + 3);
+	a.SetI(a.GetI3());
+	int j = a.GetI3();
+	return 0;
+}

@@ -1,0 +1,52 @@
+class A
+{
+public:
+	int GetI()
+	{
+		return this.m_i;
+	};
+	void SetI(int val)
+	{
+		this.m_i= val;
+	};
+	int GetIpu()
+	{
+		return this.m_ipu;
+	};
+	int m_fpu();
+private:
+	int m_i;
+	int m_ipu;
+	int m_i3;
+
+	int m_pri;
+	int m_ipi;
+	int m_fpi();
+public:
+	int GetI3()
+	{
+		return this.m_i3;
+	};
+	void SetI3(int val)
+	{
+		this.m_i3= val;
+	};
+private:
+	int m_i4;
+};
+
+class B
+{
+public:
+	int GetI()
+	{
+		return this.m_i;
+	};
+	void SetI(int val)
+	{
+		this.m_i= val;
+	};
+private:
+	int m_i;
+
+};
