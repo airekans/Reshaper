@@ -300,9 +300,10 @@ def _get_cdb_cmd_for_header(cdb, cdb_path, header_path, ref_source):
             return cmds
     return None
 
+
 def get_tu(source, all_warnings=False, config_path = '~/.reshaper.cfg', 
-           lookup_cache_file_first = True,
-           cdb_path = None, ref_source = None):
+           lookup_cache_file_first = False,
+           cdb_path = None, ref_source = None, options=0):
     """Obtain a translation unit from source and language.
 
     By default, the translation unit is created from source file "t.<ext>"
@@ -367,7 +368,7 @@ def get_tu(source, all_warnings=False, config_path = '~/.reshaper.cfg',
 
     logging.debug(' '.join(args))
     
-    _tu = TranslationUnit.from_source(source, args)
+    _tu = TranslationUnit.from_source(source, args, options=options)
     
     return _tu
 

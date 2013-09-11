@@ -1,7 +1,8 @@
 """util functions for semantic parsing
 """
 
-import os
+import os, re
+import ConfigParser
 
 from clang.cindex import CursorKind
 from clang.cindex import TypeKind
@@ -10,9 +11,7 @@ from reshaper.util import is_cursor_in_file_func
 from functools import partial
 
 _file_types = ('.cpp', '.c', '.cc')
-
-
-
+_special_lib = ('util', 'WCDA', 'ui', 'AutotestFrame', 'adv_rts')
 
 def is_cursor(source):
     return hasattr(source, "get_children")
@@ -68,7 +67,7 @@ def get_methods_from_class(class_cursor, methods = None):
     return member_method_cursors
 
     
-def scan_dir_parse_files(directory, parse_file):
+def walkdir(directory, parse_file):
     '''Scan directory recursivly to 
     get files with file_types
     '''
@@ -126,7 +125,7 @@ def is_pointer(cursor):
     
     return is_smart_ptr(cursor)
     
-def is_non_static_var(cursor):
+def is_cls_non_static_member_var(cursor):
     ''' is non-static member var'''
     return cursor.kind == CursorKind.FIELD_DECL
 
@@ -259,6 +258,7 @@ def get_func_callees(fun_cursor,
     return hash2decl_cursor
 
 
+#FIXME: is_member_of may have bugs, should not match with spelling
 def is_member_of(cursor, callee_class_name):
     
     decl_sem_parent = get_semantic_parent_of_decla_cursor(cursor)
@@ -312,6 +312,7 @@ def get_class_callees(cls_cursor,  \
     all_methods = get_methods_from_class(cls_cursor)
     cursor_dict = {}
     
+    
     keep_func_new = lambda c: keep_func(c) and not is_member_of(c, cls_cursor.spelling)  
        
     for method in all_methods:
@@ -352,6 +353,42 @@ def get_source_path_candidates(fpath):
     return [ os.path.join(dir_name, sub_dir, fname_wo_surfix+surfix) \
              for sub_dir in sub_dir_candidates \
              for surfix in surfix_candidates ]
+
+def get_lib_name(path, config_path = '~/.reshaper.cfg'):
+    """get lib name for path
+    """
+    config_parser = ConfigParser.SafeConfigParser()
+    config_parser.read(os.path.expanduser(config_path))
+
+    # if special_libname in abs_path, return libname
+    special_libnames = []
+    if config_parser.has_option('GUI Options', 'special_libnames'):
+        libnames = config_parser.get('GUI Options', 'special_libnames')
+        special_libnames = [p for p in libnames.split(',')]
+
+    abs_path = os.path.abspath(path)
+    for libname in special_libnames:
+        if libname in abs_path:
+            return libname
+
+    # use regex to extract libname
+    libname_regex = None
+    if config_parser.has_option('GUI Options', 'extract_libname_regex'):
+        libname_regex = config_parser.get('GUI Options', 'extract_libname_regex')
+    if not libname_regex:
+        return ''
+
+    pattern = re.compile(libname_regex)
+    search_result = pattern.search(abs_path)
+    if not search_result:
+        return ''
+
+    cand_lib_name = search_result.group('libname')
+    print cand_lib_name
+    if cand_lib_name.startswith('lib'):
+        return cand_lib_name
+    else:
+        return 'GUI'
 
 def is_typeref(cursor):
     return cursor.kind == CursorKind.TYPE_REF
@@ -424,13 +461,13 @@ def get_children_attrs(cursor, keep_func,
     
 def get_non_static_var_names(cursor):
     ''' get names of non-static members''' 
-    return get_children_attrs(cursor, is_non_static_var) 
+    return get_children_attrs(cursor, is_cls_non_static_member_var) 
 
 
 def get_non_static_nonpt_var_names(cursor):  
     '''get names of all member variables \
     of non-pointer type from a class cursor'''
-    keep_func = lambda c: is_non_static_var(c) and not is_pointer(c)
+    keep_func = lambda c: is_cls_non_static_member_var(c) and not is_pointer(c)
     return get_children_attrs(cursor, keep_func)
    
 
@@ -438,7 +475,7 @@ def get_non_static_pt_var_names(cursor):
     '''get names of all pointers type member variables\
     from a class cursor
     '''
-    keep_func = lambda c: is_non_static_var(c) and is_pointer(c)
+    keep_func = lambda c: is_cls_non_static_member_var(c) and is_pointer(c)
     return get_children_attrs(cursor, keep_func)
 
     
@@ -487,7 +524,7 @@ def get_member_var_classes(cls_cursor, keep_cls_func=lambda c: True):
     assert(is_class(cls_cursor))
     
     member_var_cursors = get_children_attrs(cls_cursor, 
-                                            is_non_static_var, 
+                                            is_cls_non_static_member_var, 
                                             attr_getter=lambda c: c)
     member_with_def_classes = []
     for member_var in member_var_cursors:
