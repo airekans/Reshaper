@@ -57,8 +57,9 @@ def find_reference_to_field(fld_cursor, directory):
     '''
     reference_usr = get_usr_of_declaration_cursor(fld_cursor)
     
+    
     refer_curs = []
-    sem.scan_dir_parse_files(directory, \
+    sem.walkdir(directory, \
             partial(get_cursors_with_name, \
                     name = fld_cursor.spelling, \
                     ref_curs = refer_curs))
