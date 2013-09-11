@@ -18,5 +18,4 @@ class B
 {
 public:
 	int m_i;
-private:
 };

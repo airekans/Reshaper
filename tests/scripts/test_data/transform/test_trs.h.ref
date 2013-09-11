@@ -7,7 +7,7 @@ public:
 	};
 	void SetI(int val)
 	{
-		this.m_i= val;
+		this.m_i = val;
 	};
 	int GetIpu()
 	{
@@ -18,7 +18,6 @@ private:
 	int m_i;
 	int m_ipu;
 	int m_i3;
-
 	int m_pri;
 	int m_ipi;
 	int m_fpi();
@@ -29,7 +28,7 @@ public:
 	};
 	void SetI3(int val)
 	{
-		this.m_i3= val;
+		this.m_i3 = val;
 	};
 private:
 	int m_i4;
@@ -44,9 +43,8 @@ public:
 	};
 	void SetI(int val)
 	{
-		this.m_i= val;
+		this.m_i = val;
 	};
 private:
 	int m_i;
-
 };
