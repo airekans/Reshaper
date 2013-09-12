@@ -82,7 +82,12 @@ def with_param_setup(setup, *args, **kw_args):
         
         def wrap_func():
             param_dict = setup(*args, **kw_args)
-            func(**param_dict) # test function returns nothing
+            if isinstance(param_dict, dict):
+                func(**param_dict) # test function returns nothing
+            elif isinstance(param_dict, list):
+                func(*param_dict)
+            else:
+                func(param_dict) # fall back
         
         wrap_func.func_name = func.func_name
         return wrap_func
@@ -881,5 +886,6 @@ def test_proj_engine_build_db_cursor_for_def_cursors_3(tu, proj_engine):
     assert_decl_with_def_cursor(tu, proj_engine, 5, 2)
 
 
-    
+
+
     
