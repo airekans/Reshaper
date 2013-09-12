@@ -11,7 +11,6 @@ from reshaper.util import is_cursor_in_file_func
 from functools import partial
 
 _file_types = ('.cpp', '.c', '.cc')
-_special_lib = ('util', 'WCDA', 'ui', 'AutotestFrame', 'adv_rts')
 
 def is_cursor(source):
     return hasattr(source, "get_children")
@@ -362,8 +361,8 @@ def get_lib_name(path, config_path = '~/.reshaper.cfg'):
 
     # if special_libname in abs_path, return libname
     special_libnames = []
-    if config_parser.has_option('GUI Options', 'special_libnames'):
-        libnames = config_parser.get('GUI Options', 'special_libnames')
+    if config_parser.has_option('Project Options', 'special_libnames'):
+        libnames = config_parser.get('Project Options', 'special_libnames')
         special_libnames = [p for p in libnames.split(',')]
 
     abs_path = os.path.abspath(path)
@@ -373,8 +372,8 @@ def get_lib_name(path, config_path = '~/.reshaper.cfg'):
 
     # use regex to extract libname
     libname_regex = None
-    if config_parser.has_option('GUI Options', 'extract_libname_regex'):
-        libname_regex = config_parser.get('GUI Options', 'extract_libname_regex')
+    if config_parser.has_option('Project Options', 'extract_libname_regex'):
+        libname_regex = config_parser.get('Project Options', 'extract_libname_regex')
     if not libname_regex:
         return ''
 
@@ -384,7 +383,6 @@ def get_lib_name(path, config_path = '~/.reshaper.cfg'):
         return ''
 
     cand_lib_name = search_result.group('libname')
-    print cand_lib_name
     if cand_lib_name.startswith('lib'):
         return cand_lib_name
     else:
