@@ -4,11 +4,12 @@ int main()
 {
 	A a;
 	B b;
+	int i;
 	A* aa = new A();
 	b.SetI(aa->GetI());
-	a.SetI3(10);
-	a.SetI(a.GetI3() + 3);
-	a.SetI(a.GetI3());
-	int j = a.GetI3();
+	a.SetPint(&i);
+	a.SetI(a.GetC() + *a.GetPint());
+	a.SetB(false);
+	a.SetF(float(a.GetI3()));
 	return 0;
 }

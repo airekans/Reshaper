@@ -1,11 +1,10 @@
 '''
 Created on Aug 30, 2013
 
-@author: jcchentmp
+@author: Jingchuan Chen
 '''
 import reshaper.semantic as sem
-from clang.cindex import CursorKind, CXXAccessSpecifier, Cursor
-from reshaper.util import get_cursors_if    
+from clang.cindex import CursorKind, CXXAccessSpecifier, TypeKind
 from reshaper.find_reference_util import get_usr_of_declaration_cursor
 from reshaper.find_reference_util import get_cursors_with_name
 from reshaper.find_reference_util import filter_cursors_by_usr
@@ -53,10 +52,10 @@ def get_pvt_fld_insert_location(cls_cursor):
     children = cls_cursor.get_children()
     for child in children:
         if child.kind == CursorKind.CXX_ACCESS_SPEC_DECL and not is_public_access_decl(child):
-            child.pvt_fld_location = True
+            child.is_pvt_specfifier = True
             return child
     else:
-        child.pvt_fld_location = False
+        child.is_pvt_specfifier = False
         return child
 
 def find_reference_to_field(fld_cursor, directory):
@@ -84,7 +83,6 @@ def get_binary_operator(cursor):
         for token in tokens:
             if token.cursor.extent == cursor.extent and token.cursor.kind == CursorKind.BINARY_OPERATOR:
                 return token.spelling
-
     return None
 
 def use_set_method(ref_cursor, tu):
@@ -92,9 +90,9 @@ def use_set_method(ref_cursor, tu):
     '''
     if (ref_cursor.parent.kind == CursorKind.BINARY_OPERATOR 
         and get_binary_operator(ref_cursor.parent) == '=' 
-        and ref_cursor.parent.get_children().next() == ref_cursor):
+        and ref_cursor.parent.get_children().next() == ref_cursor): 
+        #get_children().next() indicates left hand side of '=' operator
         return True
-        
     return False
 
 def organize_cursors_by_file(ref_cursors):
@@ -180,8 +178,8 @@ def transform(input_file, class_names, directory):
         with open(afile + '.bak', 'w') as fp:
             fp.write(generate_output_str(afile, cursors_in_files[afile]))
     
-def set_modification_offset(offset, cursor, cursor_list):
-    '''change cursor's extent when it's extent is influenced by change of other cursor
+def change_offset_extent(offset, cursor, cursor_list):
+    '''change cursor's extent when change on other cursor influence its offset
     '''
     for cur in cursor_list:
         if cur.start_offset >= cursor.start_offset and cur.end_offset <= cursor.end_offset \
@@ -198,12 +196,12 @@ def generate_output_str(input_file, cursor_list):
         cur.end_offset - cur.start_offset), reverse = True)
     
     for cursor in cursor_list:
-        if hasattr(cursor, 'pvt_fld_location'):
+        if hasattr(cursor, 'is_pvt_specfifier'):
             transformer.trans_add_private(cursor)
         elif cursor.kind == CursorKind.MEMBER_REF_EXPR:
             if cursor.use_set_method:
                 offset = transformer.trans_set(cursor)                
-                set_modification_offset(offset, cursor, cursor_list)
+                change_offset_extent(offset, cursor, cursor_list)
             else:
                 transformer.trans_get(cursor)
         
@@ -229,11 +227,19 @@ _SET_TEMPLATE = '''\
 {{space}}}'''
         
 class FileTransformer:
+    '''this class transform a file to desirable output by calling methods with cursors
+        each cursor identifies a kind of change
+        cursors should be pass in descending order of cursor's end offset
+    '''
     def __init__(self, input_file):
+        '''init function
+        '''
         with open(input_file, 'r') as fp:
             self.file_str = fp.read()
         
     def trans_set(self, cursor):
+        '''transform member field reference use Set
+        '''
         left_extent = (cursor.extent.start.offset, cursor.extent.end.offset)
         children = cursor.parent.get_children()
         children.next()
@@ -247,12 +253,16 @@ class FileTransformer:
         offset = len(sub_str) -1 - (right_extent[1] - left_extent[0])
         return offset
     
-    def trans_get(self, cursor):      
+    def trans_get(self, cursor): 
+        '''transform member field reference use Get
+        '''     
         sub_str = self.file_str[cursor.start_offset : cursor.end_offset]
         sub_str = sub_str.replace(cursor.displayname, 'Get' + cursor.suffix + '()')
         self.file_str = self.file_str[: cursor.start_offset] + sub_str + self.file_str[cursor.end_offset :]
         
     def trans_decl(self, cursor):
+        '''transform public field declaration to get and set methods 
+        '''
         space = ""
         index = cursor.start_offset - 1
         while self.file_str[index] != '\n':
@@ -263,25 +273,29 @@ class FileTransformer:
             template = Template(_SET_TEMPLATE)
         else:
             template = Template(_GET_TEMPLATE)
-        sub_str = template.render(space = space, type = cursor.type.kind.name.lower(), suffix = cursor.suffix, 
+        sub_str = template.render(space = space, type = cursor.type.spelling, suffix = cursor.suffix, 
                                   name = cursor.displayname)
 
         self.file_str = self.file_str[: cursor.start_offset] + sub_str + self.file_str[cursor.end_offset :]
     
     def trans_add_private(self, cursor):
+        '''add transformed public field under private access specifier
+        '''
         space = "\t"
         index = cursor.end_offset
         while self.file_str[index - 1] != '\n':
             index += 1
         
-        if cursor.pvt_fld_location:
+        if cursor.is_pvt_specfifier:
             sub_str = ''
         else:
             sub_str = 'private:\n'
         
         for field_cur in cursor.fields:
-            sub_str += space + field_cur.type.kind.name.lower() + ' ' + field_cur.displayname + ';\n'
+            sub_str += space + field_cur.type.spelling + ' ' + field_cur.displayname + ';\n'
         self.file_str = self.file_str[:index] + sub_str + self.file_str[index:]
+
+        
     
         
         

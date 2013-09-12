@@ -1,3 +1,5 @@
+typedef int* PINT;
+
 class A
 {
 public:
@@ -9,26 +11,53 @@ public:
 	{
 		this.m_i = val;
 	};
-	int GetIpu()
+	PINT GetPint()
 	{
-		return this.m_ipu;
+		return this.m_pint;
+	};
+	void SetPint(PINT val)
+	{
+		this.m_pint = val;
+	};
+	int * GetPi()
+	{
+		return this.m_pi;
+	};
+	float GetF()
+	{
+		return this.m_f;
+	};
+	void SetF(float val)
+	{
+		this.m_f = val;
+	};
+	char GetC()
+	{
+		return this.m_c;
+	};
+	bool GetB()
+	{
+		return this.m_b;
+	};
+	void SetB(bool val)
+	{
+		this.m_b = val;
 	};
 	int m_fpu();
 private:
 	int m_i;
-	int m_ipu;
+	PINT m_pint;
+	int * m_pi;
+	float m_f;
+	char m_c;
+	bool m_b;
 	int m_i3;
 	int m_pri;
-	int m_ipi;
 	int m_fpi();
 public:
 	int GetI3()
 	{
 		return this.m_i3;
-	};
-	void SetI3(int val)
-	{
-		this.m_i3 = val;
 	};
 private:
 	int m_i4;
