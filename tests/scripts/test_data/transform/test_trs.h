@@ -1,5 +1,14 @@
 typedef int* PINT;
 
+template <class numtype>
+class shareptr
+{
+public:
+	shareptr operator=(const shareptr ptr){
+		return this;
+	}
+};
+
 class A
 {
 public:
@@ -15,12 +24,18 @@ private:
 	int m_fpi();
 public:
 	int m_i3 = 3;
-private:
-	int m_i4;
 };
 
 class B
 {
 public:
 	int m_i;
+	A m_a;
+	struct C m_c;
+	shareptr<int> m_sp1;
+	shareptr<int> m_sp2;
+};
+
+struct C
+{
 };

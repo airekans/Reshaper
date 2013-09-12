@@ -1,5 +1,14 @@
 typedef int* PINT;
 
+template <class numtype>
+class shareptr
+{
+public:
+	shareptr operator=(const shareptr ptr){
+		return this;
+	}
+};
+
 class A
 {
 public:
@@ -59,8 +68,10 @@ public:
 	{
 		return this.m_i3;
 	};
-private:
-	int m_i4;
+	void SetI3(int val)
+	{
+		this.m_i3 = val;
+	};
 };
 
 class B
@@ -70,10 +81,38 @@ public:
 	{
 		return this.m_i;
 	};
-	void SetI(int val)
+	const A& GetA()
 	{
-		this.m_i = val;
+		return this.m_a;
+	};
+	void SetA(A val)
+	{
+		this.m_a = val;
+	};
+	const struct C& GetC()
+	{
+		return this.m_c;
+	};
+	const shareptr<int>& GetSp1()
+	{
+		return this.m_sp1;
+	};
+	void SetSp1(shareptr<int> val)
+	{
+		this.m_sp1 = val;
+	};
+	const shareptr<int>& GetSp2()
+	{
+		return this.m_sp2;
 	};
 private:
 	int m_i;
+	A m_a;
+	struct C m_c;
+	shareptr<int> m_sp1;
+	shareptr<int> m_sp2;
+};
+
+struct C
+{
 };

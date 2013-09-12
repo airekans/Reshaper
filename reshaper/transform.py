@@ -93,6 +93,10 @@ def use_set_method(ref_cursor, tu):
         and ref_cursor.parent.get_children().next() == ref_cursor): 
         #get_children().next() indicates left hand side of '=' operator
         return True
+    elif (ref_cursor.parent.kind == CursorKind.CALL_EXPR
+          and ref_cursor.parent.displayname == 'operator='
+          and ref_cursor.parent.get_children().next() == ref_cursor):
+        return True
     return False
 
 def organize_cursors_by_file(ref_cursors):
@@ -162,10 +166,12 @@ def transform(input_file, class_names, directory):
         class_cursor = get_cursor_if(tu, lambda cur: sem.is_class(cur) \
             and sem.is_class_name_matched(cur, class_name))
         class_public_fields = find_public_fields(class_cursor)
-        pvt_acc_cursor = get_pvt_fld_insert_location(class_cursor)
-        pvt_acc_cursor.fields = class_public_fields
-        ref_cursors += [pvt_acc_cursor]
         public_fields += class_public_fields
+        
+        if class_public_fields:
+            pvt_acc_cursor = get_pvt_fld_insert_location(class_cursor)
+            pvt_acc_cursor.fields = class_public_fields
+            ref_cursors += [pvt_acc_cursor]
     
     for field in public_fields:
         ref_cursors = ref_cursors + find_reference_to_field(field, directory)
@@ -175,6 +181,7 @@ def transform(input_file, class_names, directory):
     cursors_in_files = organize_cursors_by_file(ref_cursors)
     
     for afile in cursors_in_files:
+#        print generate_output_str(afile, cursors_in_files[afile])
         with open(afile + '.bak', 'w') as fp:
             fp.write(generate_output_str(afile, cursors_in_files[afile]))
     
@@ -211,17 +218,17 @@ def generate_output_str(input_file, cursor_list):
     return transformer.file_str
         
 _GET_TEMPLATE = '''\
-{{type}} Get{{suffix}}()
+{{type1}} Get{{suffix}}()
 {{space}}{
 {{space}}\treturn this.{{name}};
 {{space}}}'''
         
 _SET_TEMPLATE = '''\
-{{type}} Get{{suffix}}()
+{{type1}} Get{{suffix}}()
 {{space}}{
 {{space}}\treturn this.{{name}};
 {{space}}};
-{{space}}void Set{{suffix}}({{type}} val)
+{{space}}void Set{{suffix}}({{type2}} val)
 {{space}}{
 {{space}}\tthis.{{name}} = val;
 {{space}}}'''
@@ -240,12 +247,12 @@ class FileTransformer:
     def trans_set(self, cursor):
         '''transform member field reference use Set
         '''
-        left_extent = (cursor.extent.start.offset, cursor.extent.end.offset)
-        children = cursor.parent.get_children()
-        children.next()
-        right_cursor = children.next()
+        for right_cursor in cursor.parent.get_children():
+            #get last element of children list
+            pass 
         right_extent = (right_cursor.extent.start.offset, right_cursor.extent.end.offset)
-                
+        left_extent = (cursor.extent.start.offset, cursor.extent.end.offset)
+        
         sub_str = self.file_str[left_extent[0] : left_extent[1]].replace(cursor.displayname,
             'Set' + cursor.suffix + '(') + self.file_str[right_extent[0] : right_extent[1]] + ')'
         self.file_str = self.file_str[: cursor.start_offset] + sub_str + self.file_str[cursor.end_offset :]
@@ -273,7 +280,8 @@ class FileTransformer:
             template = Template(_SET_TEMPLATE)
         else:
             template = Template(_GET_TEMPLATE)
-        sub_str = template.render(space = space, type = cursor.type.spelling, suffix = cursor.suffix, 
+        sub_str = template.render(space = space, type1 = self.get_type_str(cursor, for_get_obj = True), 
+                                  type2 = self.get_type_str(cursor), suffix = cursor.suffix, 
                                   name = cursor.displayname)
 
         self.file_str = self.file_str[: cursor.start_offset] + sub_str + self.file_str[cursor.end_offset :]
@@ -292,10 +300,19 @@ class FileTransformer:
             sub_str = 'private:\n'
         
         for field_cur in cursor.fields:
-            sub_str += space + field_cur.type.spelling + ' ' + field_cur.displayname + ';\n'
+            sub_str += space + self.get_type_str(field_cur) + ' ' + field_cur.displayname + ';\n'
         self.file_str = self.file_str[:index] + sub_str + self.file_str[index:]
 
+    def get_type_str(self, cursor, for_get_obj = False):
+        if cursor.type.kind == TypeKind.RECORD and for_get_obj:
+            #class and struct
+            return 'const ' + cursor.type.spelling + '&'
         
+        elif cursor.type.kind == TypeKind.UNEXPOSED and for_get_obj:
+            #class template
+            return 'const ' + cursor.type.spelling + '&'
+        
+        return cursor.type.spelling
     
         
         
