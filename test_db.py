@@ -2,7 +2,6 @@ from reshaper import db
 from reshaper.ast import get_tu
 from clang.cindex import TranslationUnit
 import sys
-import ipdb
 from optparse import OptionParser
 from reshaper.option import setup_options
 
@@ -28,8 +27,6 @@ def main():
         _tu = get_tu(filename, config_path = options.config,
                      cdb_path = options.cdb_path, is_from_cache_first = False)
         proj_engine.build_db_tree(_tu.cursor)
-        
-    ipdb.set_trace()
 
 
 if __name__ == '__main__':
