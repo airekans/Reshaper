@@ -731,6 +731,11 @@ def assert_cursor_type(cursor, proj_engine):
     if cursor.type and cursor.type.kind != tkind.INVALID:
         eq_(cursor.type.spelling, db_cursor.type.spelling)
         assert_tkind_equal(cursor.type.kind, db_cursor.type.kind)
+        decl = cursor.type.get_declaration()
+        if decl and decl.kind != ckind.NO_DECL_FOUND:
+            assert_cursor_equal(decl, db_cursor.type.declaration)
+        else:
+            assert db_cursor.type.declaration is None
     else:
         assert db_cursor.type is None
     
@@ -955,4 +960,13 @@ void bar() { foo(1); }
 @with_param_setup(setup_for_memory_file, TEST_BUILD_DB_CURSOR_INPUT_7)
 def test_proj_engine_build_db_cursor_for_ref_cursor_4(tu, proj_engine):
     assert_db_states_and_ref_cursors(tu, proj_engine, 15, 7)
+
+TEST_BUILD_DB_CURSOR_INPUT_8 = '''
+class A;
+A* foo(A* a) { return a; }
+'''
+
+@with_param_setup(setup_for_memory_file, TEST_BUILD_DB_CURSOR_INPUT_8)
+def test_proj_engine_build_db_cursor_for_ref_cursor_5(tu, proj_engine):
+    assert_db_states_and_ref_cursors(tu, proj_engine, 9, 3)
 
