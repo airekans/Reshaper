@@ -115,8 +115,6 @@ class ProjectEngine(object):
             db_cursor.referenced = \
                 Cursor.from_clang_referenced(refer_cursor, self)
 
-        # _session.commit()
-
         child_left = left + 1
         if cursor.kind != ckind.TEMPLATE_TEMPLATE_PARAMETER:
             for child in cursor.get_children():
@@ -127,15 +125,15 @@ class ProjectEngine(object):
         db_cursor.right = right
 
         self._session.add(db_cursor)
-        self._session.commit()
-        self._session.expire(db_cursor)
+#        self._session.commit()
+#        self._session.expire(db_cursor)
 
         return right
 
     def build_db_tree(self, cursor):
         _tu = cursor.translation_unit
         pending_files = File.get_pending_filenames(_tu, self)
-        self.build_db_file(_tu)
+        self.build_db_file(_tu) # TODO: This can be improved.
 
         left = Cursor.get_max_nested_set_index(self)
         if left > 0:
@@ -145,8 +143,10 @@ class ProjectEngine(object):
                 if child.location.file and \
                         child.location.file.name in pending_files:
                     left = self.build_db_cursor(child, None, left) + 1
+                    self._session.commit()
         else:
             self.build_db_cursor(cursor, None, left)
+            self._session.commit()
 
 
 def _print_error_cursor(cursor):
@@ -190,7 +190,7 @@ class File(_Base):
         Arguments:
         - `clang_file`:
         """
-        self.name = clang_file.name
+        self.name = clang_file.name # should normpath here.
         self.time = clang_file.time
 
     @staticmethod
