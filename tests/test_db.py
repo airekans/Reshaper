@@ -918,7 +918,7 @@ def assert_db_states_and_ref_cursors(tu, proj_engine, cursor_num, type_num):
     # verify the type of the cursor
     for _c in tu.cursor.get_children():
         if _c.location.file: # skip builtin cursors
-            assert_ref_cursor(_c, proj_engine)    
+            assert_ref_cursor(_c, proj_engine)
 
 TEST_BUILD_DB_CURSOR_INPUT_5 = '''
 void foo()
@@ -970,3 +970,39 @@ A* foo(A* a) { return a; }
 def test_proj_engine_build_db_cursor_for_ref_cursor_5(tu, proj_engine):
     assert_db_states_and_ref_cursors(tu, proj_engine, 9, 3)
 
+
+def assert_left_right(tu, proj_engine):
+    
+    def impl(cursor, left):
+        db_cursor = db.Cursor.get_db_cursor(cursor, proj_engine)
+        assert db_cursor
+        assert is_db_cursor(db_cursor)
+        eq_(left, db_cursor.left)
+        
+        left += 1
+        for child in cursor.get_children():
+            left = impl(child, left) + 1
+    
+        right = left
+        eq_(right, db_cursor.right)
+        return right
+    
+    left = 0
+    for _c in tu.cursor.get_children():
+        if _c.location.file:
+            left = impl(_c, left) + 1
+
+@with_param_setup(setup_for_memory_file, TEST_BUILD_DB_CURSOR_INPUT_6)
+def test_proj_engine_build_db_cursor_for_left_right(tu, proj_engine):
+    simple_build_db_cursor(tu.cursor, proj_engine)
+    assert_db_states(proj_engine, 8, 3)
+    assert_left_right(tu, proj_engine)
+    
+
+TEST_BUILD_DB_TREE_1 = '''
+int a = 1;
+'''
+
+@with_param_setup(setup_for_memory_file, TEST_BUILD_DB_TREE_1)
+def test_proj_engine_build_db_tree(tu, proj_engine):
+    pass
