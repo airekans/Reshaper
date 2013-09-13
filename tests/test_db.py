@@ -691,6 +691,8 @@ def simple_build_db_cursor(cursor, proj_engine):
                 left = proj_engine.build_db_cursor(child, None, left) + 1
     else:
         proj_engine.build_db_cursor(cursor, None, left)
+    
+    proj_engine.get_session().commit()
 
 def assert_db_states(proj_engine, cursor_num, type_num):
     db_cursors = \
@@ -886,6 +888,67 @@ def test_proj_engine_build_db_cursor_for_def_cursors_3(tu, proj_engine):
     assert_decl_with_def_cursor(tu, proj_engine, 5, 2)
 
 
+def assert_ref_cursor(cursor, proj_engine):
+    if cursor.referenced:
+        db_cursor = db.Cursor.get_db_cursor(cursor, proj_engine)
+        assert db_cursor
+        assert is_db_cursor(db_cursor)
+        if cursor == cursor.referenced:
+            assert db_cursor.referenced is None
+        else:
+            assert db_cursor.referenced
+            assert_cursor_equal(cursor.referenced, db_cursor.referenced)
+
+    for child in cursor.get_children():
+        assert_ref_cursor(child, proj_engine)
+
+def assert_db_states_and_ref_cursors(tu, proj_engine, cursor_num, type_num):
+    simple_build_db_cursor(tu.cursor, proj_engine)
+    assert_db_states(proj_engine, cursor_num, type_num)
+
+    # verify the type of the cursor
+    for _c in tu.cursor.get_children():
+        if _c.location.file: # skip builtin cursors
+            assert_ref_cursor(_c, proj_engine)    
+
+TEST_BUILD_DB_CURSOR_INPUT_5 = '''
+void foo()
+{
+    int a = 1;
+    int b = a;
+}
+'''
+
+@with_param_setup(setup_for_memory_file, TEST_BUILD_DB_CURSOR_INPUT_5)
+def test_proj_engine_build_db_cursor_for_ref_cursor_1(tu, proj_engine):
+    assert_db_states_and_ref_cursors(tu, proj_engine, 9, 2)
 
 
-    
+TEST_BUILD_DB_CURSOR_INPUT_6 = '''
+class A
+{
+    int m_i;
+    void memfun()
+    {
+        int b = m_i;
+    }
+};
+'''
+
+@with_param_setup(setup_for_memory_file, TEST_BUILD_DB_CURSOR_INPUT_6)
+def test_proj_engine_build_db_cursor_for_ref_cursor_2(tu, proj_engine):
+    assert_db_states_and_ref_cursors(tu, proj_engine, 8, 3)
+
+@with_param_setup(setup_for_memory_file, TEST_CURSOR_REF_INPUT2)
+def test_proj_engine_build_db_cursor_for_ref_cursor_3(tu, proj_engine):
+    assert_db_states_and_ref_cursors(tu, proj_engine, 17, 4)
+
+TEST_BUILD_DB_CURSOR_INPUT_7 = '''
+template<typename T> T foo(T t) { return t; }
+void bar() { foo(1); }
+'''
+
+@with_param_setup(setup_for_memory_file, TEST_BUILD_DB_CURSOR_INPUT_7)
+def test_proj_engine_build_db_cursor_for_ref_cursor_4(tu, proj_engine):
+    assert_db_states_and_ref_cursors(tu, proj_engine, 15, 7)
+
