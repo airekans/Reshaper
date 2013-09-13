@@ -725,12 +725,14 @@ def test_proj_engine_build_db_cursor_with_simple_stmt(tu, proj_engine):
 
 
 def assert_cursor_type(cursor, proj_engine):
+    db_cursor = db.Cursor.get_db_cursor(cursor, proj_engine)
+    assert db_cursor
+    assert is_db_cursor(db_cursor)
     if cursor.type and cursor.type.kind != tkind.INVALID:
-        db_cursor = db.Cursor.get_db_cursor(cursor, proj_engine)
-        assert db_cursor
-        assert is_db_cursor(db_cursor)
         eq_(cursor.type.spelling, db_cursor.type.spelling)
         assert_tkind_equal(cursor.type.kind, db_cursor.type.kind)
+    else:
+        assert db_cursor.type is None
     
     for child in cursor.get_children():
         assert_cursor_type(child, proj_engine)
@@ -889,15 +891,17 @@ def test_proj_engine_build_db_cursor_for_def_cursors_3(tu, proj_engine):
 
 
 def assert_ref_cursor(cursor, proj_engine):
+    db_cursor = db.Cursor.get_db_cursor(cursor, proj_engine)
+    assert db_cursor
+    assert is_db_cursor(db_cursor)
     if cursor.referenced:
-        db_cursor = db.Cursor.get_db_cursor(cursor, proj_engine)
-        assert db_cursor
-        assert is_db_cursor(db_cursor)
         if cursor == cursor.referenced:
             assert db_cursor.referenced is None
         else:
             assert db_cursor.referenced
             assert_cursor_equal(cursor.referenced, db_cursor.referenced)
+    else:
+        assert db_cursor.referenced is None
 
     for child in cursor.get_children():
         assert_ref_cursor(child, proj_engine)
