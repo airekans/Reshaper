@@ -12,15 +12,6 @@ from functools import partial
 from reshaper.ast import get_tu
 from reshaper.util import get_cursor_if
 from jinja2 import Template
-
-
-def is_public_access_decl(cursor):
-    '''access if an access specifier decleration is public
-    '''
-    if cursor.get_access_specifier() == CXXAccessSpecifier.PUBLIC:
-        return True
-    else:
-        return False
     
 def find_public_fields(cls_cursor):
     '''find public field inside a class
@@ -36,7 +27,7 @@ def find_public_fields(cls_cursor):
     children = cls_cursor.get_children()
     for child in children:
         if child.kind == CursorKind.CXX_ACCESS_SPEC_DECL:
-            is_public = is_public_access_decl(child)
+            is_public = sem.is_public_access_decl(child)
         elif child.kind == CursorKind.FIELD_DECL and is_public:
             public_fields.append(child)
         else:
@@ -44,14 +35,14 @@ def find_public_fields(cls_cursor):
         
     return public_fields
 
-def get_pvt_fld_insert_location(cls_cursor):
+def get_prvt_fld_insert_location(cls_cursor):
     '''return first 'private:' specifier in class
         if the class has no 'private:' specifier
         the last cursor will be returned
     '''
     children = cls_cursor.get_children()
     for child in children:
-        if child.kind == CursorKind.CXX_ACCESS_SPEC_DECL and not is_public_access_decl(child):
+        if child.kind == CursorKind.CXX_ACCESS_SPEC_DECL and not sem.is_public_access_decl(child):
             child.is_pvt_specfifier = True
             return child
     else:
@@ -73,7 +64,7 @@ def find_reference_to_field(fld_cursor, directory):
     return refer_curs
 
 
-def get_binary_operator(cursor):
+def get_binary_operator_opt(cursor):
     '''get operator of a 'CursorKind.BINARY_OPERATOR' cursor
     '''
     if cursor.kind != CursorKind.BINARY_OPERATOR:
@@ -85,11 +76,12 @@ def get_binary_operator(cursor):
                 return token.spelling
     return None
 
-def use_set_method(ref_cursor, tu):
-    '''decide if a cursor uses set method
+def is_lhs_value(ref_cursor, tu):
+    '''decide if a cursor is in the left hand side of operator
+        left hand side value of '=' operator need to transformed to Set method
     '''
     if (ref_cursor.parent.kind == CursorKind.BINARY_OPERATOR 
-        and get_binary_operator(ref_cursor.parent) == '=' 
+        and get_binary_operator_opt(ref_cursor.parent) == '=' 
         and ref_cursor.parent.get_children().next() == ref_cursor): 
         #get_children().next() indicates left hand side of '=' operator
         return True
@@ -125,7 +117,7 @@ def add_fields(cursors, tu):
     for cursor in cursors:
         #setup use_set_methdo, it indicate which method to use when transforming
         if cursor.kind == CursorKind.MEMBER_REF_EXPR:
-            cursor.use_set_method = use_set_method(cursor, tu)
+            cursor.use_set_method = is_lhs_value(cursor, tu)
         else:
             cursor.use_set_method = None
             
@@ -169,7 +161,7 @@ def transform(input_file, class_names, directory):
         public_fields += class_public_fields
         
         if class_public_fields:
-            pvt_acc_cursor = get_pvt_fld_insert_location(class_cursor)
+            pvt_acc_cursor = get_prvt_fld_insert_location(class_cursor)
             pvt_acc_cursor.fields = class_public_fields
             ref_cursors += [pvt_acc_cursor]
     
