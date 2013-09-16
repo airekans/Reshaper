@@ -988,9 +988,12 @@ def assert_left_right(tu, proj_engine, left = 0):
         return right
     
     child_left = left
-    for _c in tu.cursor.get_children():
-        if _c.location.file:
-            child_left = impl(_c, child_left) + 1
+    if isinstance(tu, cindex.TranslationUnit):
+        for _c in tu.cursor.get_children():
+            if _c.location.file:
+                child_left = impl(_c, child_left) + 1
+    else:
+        child_left = impl(tu, child_left) + 1
     
     return child_left - 1 if child_left != left else left
 
@@ -1025,6 +1028,29 @@ def test_proj_engine_build_db_tree(tu, proj_engine):
             assert_cursor_type(_c, proj_engine)
             assert_ref_cursor(_c, proj_engine)
 
+
+def assert_build_db_cursor(proj_engine, tus, expecteds):
+    eq_(len(tus), len(expecteds))
+    
+    right = 0
+    for tu, expected in zip(tus, expecteds):
+        pending_files = db.File.get_pending_filenames(tu, proj_engine)
+        proj_engine.build_db_tree(tu.cursor)
+    
+        actual_file_names = set(_file.name for _file in
+                                proj_engine.get_session().query(db.File).all())
+        set_eq(expected[0], actual_file_names)
+        
+        assert_db_states(proj_engine, expected[1], expected[2])
+        for _c in tu.cursor.get_children():
+            _file = _c.location.file
+            if (_file or _c.location.line > 0) and _file.name in pending_files:
+                right = assert_left_right(_c, proj_engine, right) + 1
+                assert_cursor_type(_c, proj_engine)
+                assert_ref_cursor(_c, proj_engine)
+        
+        right += 19
+
 def test_proj_engine_build_db_tree_with_multiple_files():
     SOURCE_1 = '''
 char a = 'a';
@@ -1039,43 +1065,25 @@ int bar() { return b; }
     t1_tu = get_tu_from_text(SOURCE_1, 't1.cpp')
     t2_tu = get_tu_from_text(SOURCE_2, 't2.cpp')
     
-    # build t1.cpp
-    proj_engine.build_db_tree(t1_tu.cursor)
-    
-    actual_file_names = set(_file.name for _file in
-                            proj_engine.get_session().query(db.File).all())
-    set_eq(['t1.cpp'], actual_file_names)
-    
-    assert_db_states(proj_engine, 7, 2)
-    right = assert_left_right(t1_tu, proj_engine)
-    for _c in t1_tu.cursor.get_children():
-        if _c.location.file:
-            assert_cursor_type(_c, proj_engine)
-            assert_ref_cursor(_c, proj_engine)
-    
-    # build t2.cpp
-    proj_engine.build_db_tree(t2_tu.cursor)
-    
-    actual_file_names = set(_file.name for _file in
-                            proj_engine.get_session().query(db.File).all())
-    set_eq(['t1.cpp', 't2.cpp'], actual_file_names)
-    
-    assert_db_states(proj_engine, 14, 4)
-    assert_left_right(t2_tu, proj_engine, right + 20)
-    
-    for _c in t2_tu.cursor.get_children():
-        if _c.location.file:
-            assert_cursor_type(_c, proj_engine)
-            assert_ref_cursor(_c, proj_engine)
+    assert_build_db_cursor(proj_engine, [t1_tu, t2_tu],
+                           [(['t1.cpp'], 7, 2),
+                            (['t1.cpp', 't2.cpp'], 14, 4)])
 
-#def test_proj_engine_build_db_tree_with_multiple_files_2():
-#    PROJ_ENG_TEST_DIR = os.path.join(_TEST_DATA_DIR, 'db', 'proj_engine')
-#    main1_path = os.path.join(PROJ_ENG_TEST_DIR, 'main1.cpp')
-#    main2_path = os.path.join(PROJ_ENG_TEST_DIR, 'main2.cpp')
-#    
-#    proj_engine = db.ProjectEngine('test', is_in_memory = True)
-#    main1_tu = get_tu(main1_path, is_from_cache_first = False)
-#    main2_tu = get_tu(main2_path, is_from_cache_first = False)
-#    
-    # build main1.cpp
+
+def test_proj_engine_build_db_tree_with_multiple_files_2():
+    PROJ_ENG_TEST_DIR = os.path.join(_TEST_DATA_DIR, 'db', 'proj_engine')
+    main1_path = os.path.join(PROJ_ENG_TEST_DIR, 'main1.cpp')
+    main2_path = os.path.join(PROJ_ENG_TEST_DIR, 'main2.cpp')
+    
+    proj_engine = db.ProjectEngine('test', is_in_memory = True)
+    main1_tu = get_tu(main1_path, is_from_cache_first = False)
+    main2_tu = get_tu(main2_path, is_from_cache_first = False)
+    
+    expecteds = [([os.path.join(PROJ_ENG_TEST_DIR, _f) 
+                   for _f in ['A.h', 'B.h', 'main1.cpp']], 
+                  43, 15),
+                 ([os.path.join(PROJ_ENG_TEST_DIR, _f)
+                   for _f in ['A.h', 'B.h', 'main1.cpp', 'main2.cpp']],
+                  62, 18)]
+    assert_build_db_cursor(proj_engine, [main1_tu, main2_tu], expecteds)
     
