@@ -18,3 +18,8 @@ private:
 class C{
 	int m_i;
 };
+
+class D{
+public:
+	C m_c;
+};

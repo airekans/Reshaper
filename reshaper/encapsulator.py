@@ -33,7 +33,7 @@ def find_public_fields(cls_cursor):
         else:
             continue
         
-    return public_fields
+    return public_fields    
 
 def get_prvt_fld_insert_location(cls_cursor):
     '''return first 'private:' specifier in class
@@ -76,8 +76,9 @@ def get_binary_operator_opt(cursor):
                 return token.spelling
     return None
 
-def is_lhs_value(ref_cursor, tu):
-    '''decide if a cursor is in the left hand side of operator
+def is_l_value(ref_cursor, tu):
+    '''l value is the kind of value on the left hand side of '=' operator
+        for example, in "i = 1;", "i" is l value
         left hand side value of '=' operator need to transformed to Set method
     '''
     if (ref_cursor.parent.kind == CursorKind.BINARY_OPERATOR 
@@ -111,13 +112,31 @@ def get_func_name_suffix(name):
     else:
         return name.capitalize()
 
+def filter_reference_in_cls_method(cls_cursor, ref_cursors):
+    '''remove references inside class method
+    '''
+    methods = sem.get_methods_from_class(cls_cursor)
+    extents = []
+    for method in methods:
+        def_cur = method.get_definition()
+        if def_cur:
+            extents += [(def_cur.extent.start.offset,
+                           def_cur.extent.end.offset)]
+    
+    for cur in ref_cursors:
+        for extent in extents:
+            if cur.location.offset >= extent[0] \
+                and cur.location.offset <= extent[1]:
+                ref_cursors.remove(cur)
+                break
+
 def add_fields(cursors, tu):
     '''add necessary attributes to cursor
     '''
     for cursor in cursors:
         #setup use_set_methdo, it indicate which method to use when transforming
         if cursor.kind == CursorKind.MEMBER_REF_EXPR:
-            cursor.use_set_method = is_lhs_value(cursor, tu)
+            cursor.use_set_method = is_l_value(cursor, tu)
         else:
             cursor.use_set_method = None
             
@@ -145,37 +164,55 @@ def add_fields(cursors, tu):
                 cursor.has_set_method = False
         else:
             cursor.has_set_method = None
-        
-def transform(input_file, class_names, directory):
-    '''major function to transform public variables
+
+def filter_fields_has_get_set(fields, cls_cursor):
+    '''remove the fields that already has getter or setter
+    '''
+    methods = sem.get_methods_from_class(cls_cursor)
+    names = [cur.displayname[:-2] for cur in methods]
+    
+    for field in fields:
+        suffix = get_func_name_suffix(field.displayname)
+        if 'Get' + suffix in names \
+            or 'Set' + suffix in names:
+            fields.remove(field)
+
+def encapsulate(input_file, class_names, directory):
+    '''major function to encapsulate public variables
     '''
     tu = get_tu(input_file)
     
     ref_cursors = []
-    public_fields = []
     
-    for class_name in class_names:    
+    for class_name in class_names:
         class_cursor = get_cursor_if(tu, lambda cur: sem.is_class(cur) \
             and sem.is_class_name_matched(cur, class_name))
         class_public_fields = find_public_fields(class_cursor)
-        public_fields += class_public_fields
         
         if class_public_fields:
             pvt_acc_cursor = get_prvt_fld_insert_location(class_cursor)
             pvt_acc_cursor.fields = class_public_fields
             ref_cursors += [pvt_acc_cursor]
-    
-    for field in public_fields:
-        ref_cursors = ref_cursors + find_reference_to_field(field, directory)
+        
+        filter_fields_has_get_set(class_public_fields, class_cursor)
+        
+        class_ref_cursors = []
+        for field in class_public_fields:
+            class_ref_cursors += find_reference_to_field(field, directory)
+        filter_reference_in_cls_method(class_cursor, class_ref_cursors)
+        
+        ref_cursors += class_ref_cursors
+        
+        
         
     add_fields(ref_cursors, tu)
                 
     cursors_in_files = organize_cursors_by_file(ref_cursors)
     
     for afile in cursors_in_files:
-#        print generate_output_str(afile, cursors_in_files[afile])
-        with open(afile + '.bak', 'w') as fp:
-            fp.write(generate_output_str(afile, cursors_in_files[afile]))
+        print generate_output_str(afile, cursors_in_files[afile])
+#        with open(afile + '.bak', 'w') as fp:
+#            fp.write(generate_output_str(afile, cursors_in_files[afile]))
     
 def change_offset_extent(offset, cursor, cursor_list):
     '''change cursor's extent when change on other cursor influence its offset
@@ -210,23 +247,47 @@ def generate_output_str(input_file, cursor_list):
     return transformer.file_str
         
 _GET_TEMPLATE = '''\
-{{type1}} Get{{suffix}}()
+{{type}} Get{{suffix}}()
 {{space}}{
 {{space}}\treturn this.{{name}};
 {{space}}}'''
-        
-_SET_TEMPLATE = '''\
-{{type1}} Get{{suffix}}()
+
+_GET_TEMPLATE2 = '''\
+const {{type}}& Get{{suffix}}() const
 {{space}}{
 {{space}}\treturn this.{{name}};
 {{space}}};
-{{space}}void Set{{suffix}}({{type2}} val)
+{{space}}{{type}}& Get{{suffix}}()
+{{space}}{
+{{space}}\treturn this.{{name}};
+{{space}}}'''
+
+_SET_TEMPLATE = '''\
+{{type}} Get{{suffix}}()
+{{space}}{
+{{space}}\treturn this.{{name}};
+{{space}}};
+{{space}}void Set{{suffix}}({{type}} val)
 {{space}}{
 {{space}}\tthis.{{name}} = val;
 {{space}}}'''
-        
+
+_SET_TEMPLATE2 = '''\
+const {{type}}& Get{{suffix}}() const
+{{space}}{
+{{space}}\treturn this.{{name}};
+{{space}}};
+{{space}}{{type}}& Get{{suffix}}()
+{{space}}{
+{{space}}\treturn this.{{name}};
+{{space}}};
+{{space}}void Set{{suffix}}({{type}} val)
+{{space}}{
+{{space}}\tthis.{{name}} = val;
+{{space}}}'''
+
 class FileTransformer:
-    '''this class transform a file to desirable output by calling methods with cursors
+    '''this class encapsulate a file to desirable output by calling methods with cursors
         each cursor identifies a kind of change
         cursors should be pass in descending order of cursor's end offset
     '''
@@ -237,7 +298,7 @@ class FileTransformer:
             self.file_str = fp.read()
         
     def trans_set(self, cursor):
-        '''transform member field reference use Set
+        '''encapsulate member field reference use Set
         '''
         for right_cursor in cursor.parent.get_children():
             #get last element of children list
@@ -253,14 +314,14 @@ class FileTransformer:
         return offset
     
     def trans_get(self, cursor): 
-        '''transform member field reference use Get
+        '''encapsulate member field reference use Get
         '''     
         sub_str = self.file_str[cursor.start_offset : cursor.end_offset]
         sub_str = sub_str.replace(cursor.displayname, 'Get' + cursor.suffix + '()')
         self.file_str = self.file_str[: cursor.start_offset] + sub_str + self.file_str[cursor.end_offset :]
         
     def trans_decl(self, cursor):
-        '''transform public field declaration to get and set methods 
+        '''encapsulate public field declaration to get and set methods 
         '''
         space = ""
         index = cursor.start_offset - 1
@@ -268,13 +329,13 @@ class FileTransformer:
             space += self.file_str[index]
             index -= 1
         
-        if cursor.has_set_method:
-            template = Template(_SET_TEMPLATE)
-        else:
-            template = Template(_GET_TEMPLATE)
-        sub_str = template.render(space = space, type1 = self.get_type_str(cursor, for_get_obj = True), 
-                                  type2 = self.get_type_str(cursor), suffix = cursor.suffix, 
-                                  name = cursor.displayname)
+        template = Template(self.get_template_str(cursor))
+#        if cursor.has_set_method:
+#            template = Template(_SET_TEMPLATE)
+#        else:
+#            template = Template(_GET_TEMPLATE)
+        sub_str = template.render(space = space, type = cursor.type.spelling, 
+                                  suffix = cursor.suffix, name = cursor.displayname)
 
         self.file_str = self.file_str[: cursor.start_offset] + sub_str + self.file_str[cursor.end_offset :]
     
@@ -295,6 +356,19 @@ class FileTransformer:
             sub_str += space + self.get_type_str(field_cur) + ' ' + field_cur.displayname + ';\n'
         self.file_str = self.file_str[:index] + sub_str + self.file_str[index:]
 
+    def get_template_str(self, cursor):
+        if cursor.has_set_method:
+            if cursor.type.kind in [TypeKind.RECORD, TypeKind.UNEXPOSED]:
+                return _SET_TEMPLATE2
+            else:
+                return _SET_TEMPLATE
+        else:
+            if cursor.type.kind in [TypeKind.RECORD, TypeKind.UNEXPOSED]:
+                return _GET_TEMPLATE2
+            else:
+                return _GET_TEMPLATE
+        
+        
     def get_type_str(self, cursor, for_get_obj = False):
         if cursor.type.kind == TypeKind.RECORD and for_get_obj:
             #class and struct

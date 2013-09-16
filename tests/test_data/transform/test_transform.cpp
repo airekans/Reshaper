@@ -9,3 +9,9 @@ int foo(){
 	return a.m_i2;
 };
 
+void bar(){
+	C c;
+	D d;
+	d.m_c = c;
+	c = d.m_c;
+}

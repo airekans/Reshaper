@@ -5,7 +5,7 @@ class shareptr
 {
 public:
 	shareptr operator=(const shareptr ptr){
-		return this;
+		return *this;
 	}
 };
 
@@ -18,12 +18,17 @@ public:
 	float m_f;
 	char m_c;
 	bool m_b;
-	int m_fpu();
+	bool GetB();
+	int foo();
 private:
 	int m_pri;
-	int m_fpi();
+	int bar();
 public:
 	int m_i3 = 3;
+};
+
+struct C
+{
 };
 
 class B
@@ -36,6 +41,14 @@ public:
 	shareptr<int> m_sp2;
 };
 
-struct C
+class D
 {
+	int foo();
 };
+
+int D::foo()
+{
+	int i = 1;
+	i+=1;
+	return 1;
+}

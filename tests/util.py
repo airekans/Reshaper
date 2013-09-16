@@ -66,7 +66,7 @@ def assert_stdout (expected_str):
     return outer_wrap
 
 def abnormal_exit(func):
-    '''assert abnormal sys.exit is called
+    '''decorator function that assert abnormal sys.exit is called
     '''
     def test_wrap(*arg, **kw):
         try:
@@ -82,7 +82,20 @@ def abnormal_exit(func):
     return test_wrap
         
 def assert_file_content(expected, file):
+    '''assert file content equals to expected string
+    '''
     with open(file, 'r') as fp:
         file_str = fp.read()
     
     assert(expected == file_str)
+
+def assert_file_equal(file1, file2):
+    '''assert file1 content equals file2 content
+    '''
+    with open(file1, 'r') as fp:
+        file1_str = fp.read()
+        
+    with open(file2, 'r') as fp:
+        fiel2_str = fp.read()
+        
+    assert file1_str == fiel2_str

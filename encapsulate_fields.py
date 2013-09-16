@@ -7,7 +7,7 @@ Created on Sep 11, 2013
 import sys, os.path
 from optparse import OptionParser 
 from reshaper.option import setup_options
-import reshaper.transform as trs
+import reshaper.encapsulator as encap
 
 def main(argv = sys.argv[1:]):
     '''main function
@@ -33,7 +33,7 @@ def main(argv = sys.argv[1:]):
     else:
         directory = os.path.dirname(file_name)
     
-    trs.transform(file_name, class_names, directory)
+    encap.encapsulate(file_name, class_names, directory)
     
     
 if __name__ == '__main__':

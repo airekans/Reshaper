@@ -1,5 +1,9 @@
 #include "test_trs.h"
 
+int A::foo(){
+	return m_i;
+}
+
 int main()
 {
 	int i;
