@@ -4,12 +4,12 @@ Created on May 30, 2013
 @author: liangzhao
 '''
 from optparse import OptionParser
-import os
+import os, sys
 from reshaper.option import setup_options
 from reshaper.ast import get_tu
 import reshaper.dot_gen_util as dgu
 
-def main():
+def main(argv = sys.argv[1:]):
     ''' main '''
     option_parser = OptionParser(usage = "%prog [options] classes") 
     
@@ -26,8 +26,13 @@ def main():
                              action="store_true", \
                              help = "generate internal relationship graph")
     
+    option_parser.add_option("-o", "--output", dest = "output", \
+                             type="string", \
+                             help = "output file path")
+    
+    
     setup_options(option_parser)
-    (options, args) = option_parser.parse_args()
+    (options, args) = option_parser.parse_args(args = argv)
     
     file_path = options.file
     
@@ -51,9 +56,12 @@ def main():
         dot_str = dgu.gen_class_collaboration_graph(tu_source, class_names, 
                                         options.dir, options.show_func)
         
-    source_wo_ext = os.path.splitext(file_path)[0]     
-    dot_file = source_wo_ext + '.dot'
-    image_file = source_wo_ext + '.png'
+    if options.output:
+        image_file = options.output    
+    else:        
+        image_file = file_path + '.png'
+    
+    dot_file = image_file + '.dot'
 
     print 'Generating dot file %s' % dot_file
     with open(dot_file,'w') as f:
