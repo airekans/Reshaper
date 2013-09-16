@@ -11,6 +11,7 @@ from sqlalchemy.sql import func
 from clang.cindex import CursorKind as ckind
 import clang.cindex
 import os
+from clang import cindex
 
 _Base = declarative_base()
 
@@ -131,7 +132,12 @@ class ProjectEngine(object):
         return right
 
     def build_db_tree(self, cursor):
-        _tu = cursor.translation_unit
+        if isinstance(cursor, clang.cindex.TranslationUnit):
+            cursor = cursor.cursor
+            _tu = cursor
+        else: # cursor
+            _tu = cursor.translation_unit
+        
         pending_files = File.get_pending_filenames(_tu, self)
         self.build_db_file(_tu) # TODO: This can be improved.
 
