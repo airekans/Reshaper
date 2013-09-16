@@ -971,7 +971,7 @@ def test_proj_engine_build_db_cursor_for_ref_cursor_5(tu, proj_engine):
     assert_db_states_and_ref_cursors(tu, proj_engine, 9, 3)
 
 
-def assert_left_right(tu, proj_engine):
+def assert_left_right(tu, proj_engine, left = 0):
     
     def impl(cursor, left):
         db_cursor = db.Cursor.get_db_cursor(cursor, proj_engine)
@@ -987,10 +987,12 @@ def assert_left_right(tu, proj_engine):
         eq_(right, db_cursor.right)
         return right
     
-    left = 0
+    child_left = left
     for _c in tu.cursor.get_children():
         if _c.location.file:
-            left = impl(_c, left) + 1
+            child_left = impl(_c, child_left) + 1
+    
+    return child_left - 1 if child_left != left else left
 
 @with_param_setup(setup_for_memory_file, TEST_BUILD_DB_CURSOR_INPUT_6)
 def test_proj_engine_build_db_cursor_for_left_right(tu, proj_engine):
@@ -1001,8 +1003,79 @@ def test_proj_engine_build_db_cursor_for_left_right(tu, proj_engine):
 
 TEST_BUILD_DB_TREE_1 = '''
 int a = 1;
+int main()
+{
+    int b = a;
+    return 0;
+}
 '''
 
 @with_param_setup(setup_for_memory_file, TEST_BUILD_DB_TREE_1)
 def test_proj_engine_build_db_tree(tu, proj_engine):
-    pass
+    proj_engine.build_db_tree(tu.cursor)
+    
+    actual_file_names = set(_file.name for _file in
+                            proj_engine.get_session().query(db.File).all())
+    set_eq(['t.cpp'], actual_file_names)
+    
+    assert_db_states(proj_engine, 10, 2)
+    assert_left_right(tu, proj_engine)
+    for _c in tu.cursor.get_children():
+        if _c.location.file:
+            assert_cursor_type(_c, proj_engine)
+            assert_ref_cursor(_c, proj_engine)
+
+def test_proj_engine_build_db_tree_with_multiple_files():
+    SOURCE_1 = '''
+char a = 'a';
+char foo() { return a; }
+'''
+    SOURCE_2 = '''
+int b = 1;
+int bar() { return b; }
+'''
+    
+    proj_engine = db.ProjectEngine('test', is_in_memory = True)
+    t1_tu = get_tu_from_text(SOURCE_1, 't1.cpp')
+    t2_tu = get_tu_from_text(SOURCE_2, 't2.cpp')
+    
+    # build t1.cpp
+    proj_engine.build_db_tree(t1_tu.cursor)
+    
+    actual_file_names = set(_file.name for _file in
+                            proj_engine.get_session().query(db.File).all())
+    set_eq(['t1.cpp'], actual_file_names)
+    
+    assert_db_states(proj_engine, 7, 2)
+    right = assert_left_right(t1_tu, proj_engine)
+    for _c in t1_tu.cursor.get_children():
+        if _c.location.file:
+            assert_cursor_type(_c, proj_engine)
+            assert_ref_cursor(_c, proj_engine)
+    
+    # build t2.cpp
+    proj_engine.build_db_tree(t2_tu.cursor)
+    
+    actual_file_names = set(_file.name for _file in
+                            proj_engine.get_session().query(db.File).all())
+    set_eq(['t1.cpp', 't2.cpp'], actual_file_names)
+    
+    assert_db_states(proj_engine, 14, 4)
+    assert_left_right(t2_tu, proj_engine, right + 20)
+    
+    for _c in t2_tu.cursor.get_children():
+        if _c.location.file:
+            assert_cursor_type(_c, proj_engine)
+            assert_ref_cursor(_c, proj_engine)
+
+#def test_proj_engine_build_db_tree_with_multiple_files_2():
+#    PROJ_ENG_TEST_DIR = os.path.join(_TEST_DATA_DIR, 'db', 'proj_engine')
+#    main1_path = os.path.join(PROJ_ENG_TEST_DIR, 'main1.cpp')
+#    main2_path = os.path.join(PROJ_ENG_TEST_DIR, 'main2.cpp')
+#    
+#    proj_engine = db.ProjectEngine('test', is_in_memory = True)
+#    main1_tu = get_tu(main1_path, is_from_cache_first = False)
+#    main2_tu = get_tu(main2_path, is_from_cache_first = False)
+#    
+    # build main1.cpp
+    
