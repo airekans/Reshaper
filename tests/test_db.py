@@ -198,7 +198,7 @@ def test_file_get_pending_filenames_with_multiple_files(tu, proj_engine):
     assert not pending_files
 
 def test_file_get_pending_filenames_with_multiple_files_2():
-    ''' tests the following cases
+    ''' tests get_pending_filenames with the ".." cases
     test1/test1.cpp and test2/test2.cpp both reference a.h by using -I.. option
     This will cause clang returns the "test1/../a.h" and "test2/../a.h".
     But they are actually the same file.
@@ -219,6 +219,9 @@ def test_file_get_pending_filenames_with_multiple_files_2():
     eq_(expected_files, pending_files)
     
     proj_engine.build_db_file(test1_tu)
+    
+    all_db_files = proj_engine.get_session().query(db.File).all()
+    set_eq(expected_files, [_f.name for _f in all_db_files])
     
     pending_files = db.File.get_pending_filenames(test2_tu, proj_engine)
     expected_files = set([TEST2_PATH])

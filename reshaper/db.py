@@ -196,7 +196,7 @@ class File(_Base):
         Arguments:
         - `clang_file`:
         """
-        self.name = clang_file.name # should normpath here.
+        self.name = os.path.normpath(clang_file.name)
         self.time = clang_file.time
 
     @staticmethod
@@ -208,19 +208,20 @@ class File(_Base):
     @staticmethod
     def from_clang_tu(tu, name, proj_engine):
         clang_file = tu.get_file(name)
+        file_name = os.path.normpath(clang_file.name)
         try:
             _file = proj_engine.get_session().query(File).\
-                filter(File.name == clang_file.name).one()
+                filter(File.name == file_name).one()
         except MultipleResultsFound, e:
             print e
             raise
         except NoResultFound: # The file has not been stored in DB.
             _file = File(clang_file)
-            print "adding file %s to DB" % clang_file.name
+            print "adding file %s to DB" % file_name
             proj_engine.get_session().add(_file)
             _file.includes = []
             for include in tu.get_includes():
-                if include.source.name == _file.name:
+                if os.path.normpath(include.source.name) == _file.name:
                     _file.includes.append(
                         File.from_clang_tu(
                             tu, include.include.name, proj_engine))
@@ -231,7 +232,7 @@ class File(_Base):
     def _is_file_in_db(file_name, proj_engine):
         try:
             files = proj_engine.get_session().query(File).\
-                filter(File.name == file_name).all()
+                filter(File.name == os.path.normpath(file_name)).all()
             return len(files) > 0
         except:
             return False
@@ -242,10 +243,10 @@ class File(_Base):
         for include in tu.get_includes():
             for file_name in [include.source.name, include.include.name]:
                 if not File._is_file_in_db(file_name, proj_engine):
-                    pending_files.add(file_name)
+                    pending_files.add(os.path.normpath(file_name))
 
         if not File._is_file_in_db(tu.spelling, proj_engine):
-            pending_files.add(tu.spelling)
+            pending_files.add(os.path.normpath(tu.spelling))
 
         return pending_files
         
