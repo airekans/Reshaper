@@ -169,7 +169,7 @@ def test_file_from_clang_tu_with_includes(tu, proj_engine):
 def test_file_get_pending_filenames_with_multiple_files(tu, proj_engine):
     pending_files = db.File.get_pending_filenames(tu, proj_engine)
     expected_files = set(os.path.join(FILE_TEST_DIR, _file) 
-                         for _file in ['main.cpp', 'c.h', 'b.h', 'a.h'] )
+                         for _file in ['main.cpp', 'c.h', 'b.h', 'a.h'])
     eq_(expected_files, pending_files)
     
     proj_engine.build_db_file(tu)
@@ -196,6 +196,33 @@ def test_file_get_pending_filenames_with_multiple_files(tu, proj_engine):
     c_tu = get_tu(os.path.join(FILE_TEST_DIR, 'c.h'), is_from_cache_first=False)
     pending_files = db.File.get_pending_filenames(c_tu, proj_engine)
     assert not pending_files
+
+def test_file_get_pending_filenames_with_multiple_files_2():
+    ''' tests the following cases
+    test1/test1.cpp and test2/test2.cpp both reference a.h by using -I.. option
+    This will cause clang returns the "test1/../a.h" and "test2/../a.h".
+    But they are actually the same file.
+    '''
+    TEST1_DIR = os.path.join(FILE_TEST_DIR, 'test1')
+    TEST2_DIR = os.path.join(FILE_TEST_DIR, 'test2')
+    TEST1_PATH = os.path.join(TEST1_DIR, 'test1.cpp')
+    TEST2_PATH = os.path.join(TEST2_DIR, 'test2.cpp')
+    
+    test1_tu = get_tu(TEST1_PATH, is_from_cache_first=False,
+                      args=['-I', os.path.join(TEST1_DIR, '..')])
+    test2_tu = get_tu(TEST2_PATH, is_from_cache_first=False,
+                      args=['-I', os.path.join(TEST2_DIR, '..')])
+    proj_engine = db.ProjectEngine('test', is_in_memory = True)
+    
+    pending_files = db.File.get_pending_filenames(test1_tu, proj_engine)
+    expected_files = set([os.path.join(FILE_TEST_DIR, 'a.h'), TEST1_PATH])
+    eq_(expected_files, pending_files)
+    
+    proj_engine.build_db_file(test1_tu)
+    
+    pending_files = db.File.get_pending_filenames(test2_tu, proj_engine)
+    expected_files = set([TEST2_PATH])
+    eq_(expected_files, pending_files)
 
 
 def assert_ckind_equal(ckind, db_ckind):
