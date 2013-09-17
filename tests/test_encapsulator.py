@@ -4,6 +4,7 @@
 from reshaper.util import get_cursor_if, get_cursors_if, get_cursor_with_location
 from reshaper.ast import get_tu
 from clang.cindex import CursorKind
+from tests.util import redirect_stderr
 import reshaper.semantic as sem
 import reshaper.encapsulator as encap
 import os
@@ -13,7 +14,6 @@ _INPUT_FILE = os.path.join(os.path.dirname(__file__), 'test_data', 'encapsulate'
 _INPUT_PATH = os.path.join(os.path.dirname(__file__), 'test_data', 'encapsulate')
 _HEADER_FILE = os.path.join(os.path.dirname(__file__), 'test_data', 'encapsulate', 'test_encap.h')
 _TU = get_tu(_INPUT_FILE)
-
 
 def test_find_public_fields():
     '''test find_public_fields() 

@@ -4,11 +4,17 @@ int A::foo(){
 	return m_i;
 }
 
+int foo(int a, int b)
+{
+	return a + b;
+}
+
 int main()
 {
 	int i;
 	A a;
 	A* aa = new A();
+	foo(a.m_i3, a.m_i);
 	a.m_i3 = 10;
 	a.m_pint = &i;
 	a.m_i = a.m_c + *a.m_pint;

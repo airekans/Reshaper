@@ -4,7 +4,7 @@ Created on Aug 30, 2013
 @author: Jingchuan Chen
 '''
 import reshaper.semantic as sem
-from clang.cindex import CursorKind, CXXAccessSpecifier, TypeKind
+from clang.cindex import CursorKind, TypeKind
 from reshaper.find_reference_util import get_usr_of_declaration_cursor
 from reshaper.find_reference_util import get_cursors_with_name
 from reshaper.find_reference_util import filter_cursors_by_usr
@@ -24,24 +24,26 @@ def find_public_fields(cls_cursor, fields = None):
     else:
         return []
     
+    
     public_fields = []
     children = cls_cursor.get_children()
     if fields:
+        fields_copy = fields[:]
         for child in children:
             if child.kind == CursorKind.CXX_ACCESS_SPEC_DECL:
                 is_public = sem.is_public_access_decl(child)
             elif child.kind == CursorKind.FIELD_DECL\
                 and is_public\
-                and child.displayname in fields:
+                and child.displayname in fields_copy:
                 
-                fields.remove(child.displayname)
+                fields_copy.remove(child.displayname)
                 public_fields.append(child)
             else:
                 continue
         
-        if fields:
+        if fields_copy:
             logging.warning("Cannot find public field %s in class %s" % \
-                            (', '.join(fields), cls_cursor.displayname))
+                            (', '.join(fields_copy), cls_cursor.displayname))
     else:
         for child in children:
             if child.kind == CursorKind.CXX_ACCESS_SPEC_DECL:
@@ -226,15 +228,12 @@ def encapsulate(input_file, class_names, directory, fields):
         
         ref_cursors += class_ref_cursors
         
-        
-        
     add_fields(ref_cursors, tu)
                 
     cursors_in_files = organize_cursors_by_file(ref_cursors)
     
     for afile in cursors_in_files:
         file_str = generate_output_str(afile, cursors_in_files[afile])
-#        print file_str
         with open(afile + '.bak', 'w') as fp:
             fp.write(file_str)
     
