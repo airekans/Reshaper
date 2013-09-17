@@ -77,14 +77,12 @@ digraph G {
         src_path = os.path.join(data_dir, 
                                 'class_relation.cpp') 
                 
-        print src_path
                 
         _tu = get_tu(src_path)
         
         
         dot_str = gen_class_collaboration_graph(_tu, 'A')
         
-        print data_dir
         dot_str_filtered = gen_class_collaboration_graph(_tu, 'A', data_dir)
         
         dot_str_hide_functions = gen_class_collaboration_graph(_tu, 'A', show_functions = False)
@@ -178,7 +176,6 @@ digraph G {
                                 'test_data','class_relation.cpp') 
         _tu = get_tu(src_path)
         
-        print src_path
         dot_str = dgu.gen_class_internal_relation_graph(_tu, 'A')    
         
         expected_dot_str = \

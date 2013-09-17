@@ -19,7 +19,8 @@ class Test(unittest.TestCase):
         
         argv = ['-f', _INPUT_PATH,  'A', '-o', output_path] 
         gcg.main(argv)
-              
+        
+           
         
     def test_gen_internal_relationship(self):
         ''' test generate class internal relationship graph'''
@@ -32,3 +33,4 @@ class Test(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+    

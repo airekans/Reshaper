@@ -5,7 +5,8 @@ Created on May 30, 2013
 '''
 
 from jinja2 import Template
-import semantic as sem, util
+import semantic as sem
+import util
 
 _NODE_TEMPLATE = \
 '''
@@ -93,13 +94,19 @@ digraph G {
         return head  + self._dot_str + tail
 
 
-def walk_all_methods_def(_tu, class_name, func, on_no_callee):
+def walk_all_methods_and_callee(_tu, class_name, func, on_no_callee):
     '''
     walk definition of all methods of class_name in _tu with func,
     signature of func is func(method_def_cursor, callee_decl_cursor),
     when a method has no callee, will pass it to on_no_callee 
     '''
-    cls_cursor = sem.get_classes_with_names(_tu, class_name)[0]
+    cls_cursors = sem.get_classes_with_names(_tu, class_name)
+    if len(cls_cursors) == 0:
+        print 'Failed to get cursor for %s' % class_name
+        return
+    
+    
+    cls_cursor = cls_cursors[0]
     all_methods = sem.get_methods_from_class(cls_cursor)
     
     for method_cursor in all_methods:
@@ -108,7 +115,12 @@ def walk_all_methods_def(_tu, class_name, func, on_no_callee):
             cursors = util.get_cursors_if(method_def, \
                                          lambda c: c != method_def and \
                                          sem.is_member_of(c, cls_cursor.spelling))
-            found_hash = set([]) 
+            found_hash = set() 
+            
+            if not cursors:
+                on_no_callee(method_def)
+                continue
+            
             for cursor in cursors:
                 decl_cusor = util.get_declaration(cursor)
                 if decl_cusor == method_def or \
@@ -118,9 +130,6 @@ def walk_all_methods_def(_tu, class_name, func, on_no_callee):
                 func(method_def, decl_cusor)
                 found_hash.add(decl_cusor.hash)
                 
-            if not cursors:
-                on_no_callee(method_def)
-
 
 def gen_class_internal_relation_graph(_tu, class_name):
     dot_gen = DotGenerator()
@@ -129,10 +138,10 @@ def gen_class_internal_relation_graph(_tu, class_name):
         dot_gen.add_callee_class(method_def_cursor.spelling, '', 
                                  callee_decl_cursor.spelling)
     
-    on_no_callee_cursor = lambda method_def_cursor: \
-                            dot_gen.add_denpendency(method_def_cursor.spelling)
+    def on_no_callee_cursor(method_def_cursor): 
+        dot_gen.add_denpendency(method_def_cursor.spelling)
                         
-    walk_all_methods_def(_tu, class_name, walk_func, on_no_callee_cursor)
+    walk_all_methods_and_callee(_tu, class_name, walk_func, on_no_callee_cursor)
                 
     return dot_gen.get_dot_str()
 
