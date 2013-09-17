@@ -12,8 +12,9 @@ from functools import partial
 from reshaper.ast import get_tu
 from reshaper.util import get_cursor_if
 from jinja2 import Template
+import logging
     
-def find_public_fields(cls_cursor):
+def find_public_fields(cls_cursor, fields = None):
     '''find public field inside a class
     '''
     if cls_cursor.kind == CursorKind.CLASS_DECL:
@@ -25,15 +26,32 @@ def find_public_fields(cls_cursor):
     
     public_fields = []
     children = cls_cursor.get_children()
-    for child in children:
-        if child.kind == CursorKind.CXX_ACCESS_SPEC_DECL:
-            is_public = sem.is_public_access_decl(child)
-        elif child.kind == CursorKind.FIELD_DECL and is_public:
-            public_fields.append(child)
-        else:
-            continue
+    if fields:
+        for child in children:
+            if child.kind == CursorKind.CXX_ACCESS_SPEC_DECL:
+                is_public = sem.is_public_access_decl(child)
+            elif child.kind == CursorKind.FIELD_DECL\
+                and is_public\
+                and child.displayname in fields:
+                
+                fields.remove(child.displayname)
+                public_fields.append(child)
+            else:
+                continue
         
-    return public_fields    
+        if fields:
+            logging.warning("Cannot find public field %s in class %s" % \
+                            (', '.join(fields), cls_cursor.displayname))
+    else:
+        for child in children:
+            if child.kind == CursorKind.CXX_ACCESS_SPEC_DECL:
+                is_public = sem.is_public_access_decl(child)
+            elif child.kind == CursorKind.FIELD_DECL and is_public:
+                public_fields.append(child)
+            else:
+                continue
+        
+    return public_fields
 
 def get_prvt_fld_insert_location(cls_cursor):
     '''return first 'private:' specifier in class
@@ -112,7 +130,7 @@ def get_func_name_suffix(name):
     else:
         return name.capitalize()
 
-def filter_reference_in_cls_method(cls_cursor, ref_cursors):
+def filter_reference_in_cls_method(ref_cursors, cls_cursor):
     '''remove references inside class method
     '''
     methods = sem.get_methods_from_class(cls_cursor)
@@ -175,9 +193,11 @@ def filter_fields_has_get_set(fields, cls_cursor):
         suffix = get_func_name_suffix(field.displayname)
         if 'Get' + suffix in names \
             or 'Set' + suffix in names:
+            logging.warning('Method %s in class %s already have Set/Get method, it will not be processed' \
+                            % (field.displayname, cls_cursor.displayname))
             fields.remove(field)
 
-def encapsulate(input_file, class_names, directory):
+def encapsulate(input_file, class_names, directory, fields):
     '''major function to encapsulate public variables
     '''
     tu = get_tu(input_file)
@@ -187,7 +207,10 @@ def encapsulate(input_file, class_names, directory):
     for class_name in class_names:
         class_cursor = get_cursor_if(tu, lambda cur: sem.is_class(cur) \
             and sem.is_class_name_matched(cur, class_name))
-        class_public_fields = find_public_fields(class_cursor)
+        if not class_cursor:
+            logging.error('Cannot find class %s in input file' % class_name)
+        
+        class_public_fields = find_public_fields(class_cursor, fields)
         
         if class_public_fields:
             pvt_acc_cursor = get_prvt_fld_insert_location(class_cursor)
@@ -199,7 +222,7 @@ def encapsulate(input_file, class_names, directory):
         class_ref_cursors = []
         for field in class_public_fields:
             class_ref_cursors += find_reference_to_field(field, directory)
-        filter_reference_in_cls_method(class_cursor, class_ref_cursors)
+        filter_reference_in_cls_method(class_ref_cursors, class_cursor)
         
         ref_cursors += class_ref_cursors
         
@@ -210,9 +233,10 @@ def encapsulate(input_file, class_names, directory):
     cursors_in_files = organize_cursors_by_file(ref_cursors)
     
     for afile in cursors_in_files:
-        print generate_output_str(afile, cursors_in_files[afile])
-#        with open(afile + '.bak', 'w') as fp:
-#            fp.write(generate_output_str(afile, cursors_in_files[afile]))
+        file_str = generate_output_str(afile, cursors_in_files[afile])
+#        print file_str
+        with open(afile + '.bak', 'w') as fp:
+            fp.write(file_str)
     
 def change_offset_extent(offset, cursor, cursor_list):
     '''change cursor's extent when change on other cursor influence its offset

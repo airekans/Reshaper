@@ -14,11 +14,13 @@ def main(argv = sys.argv[1:]):
         This script takes file name and class names as arguments.
         Directory name is optional. File directory will be used by default
     '''
-    option_parser = OptionParser(usage="%prog [options] FILE CLASSNAMES")
+    option_parser = OptionParser(usage="%prog [options] FILE CLASSNAMES [fieldnames]")
     setup_options(option_parser)
     
-    option_parser.add_option("-d", "--directory", dest = "directory", \
-                             action = "store_true", help = "set directory")
+    option_parser.add_option("-d", "--directory", dest = "directory",
+                             help = "set directory")
+    option_parser.add_option("-f", "--field", dest = "fields", 
+                             action = "append", help = "set fields to encapsulate")
     
     options, args = option_parser.parse_args(args = argv)
     
@@ -33,7 +35,7 @@ def main(argv = sys.argv[1:]):
     else:
         directory = os.path.dirname(file_name)
     
-    encap.encapsulate(file_name, class_names, directory)
+    encap.encapsulate(file_name, class_names, directory, options.fields)
     
     
 if __name__ == '__main__':

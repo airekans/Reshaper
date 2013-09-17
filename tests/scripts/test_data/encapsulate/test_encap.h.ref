@@ -5,7 +5,7 @@ class shareptr
 {
 public:
 	shareptr operator=(const shareptr ptr){
-		return this;
+		return *this;
 	}
 };
 
@@ -44,25 +44,18 @@ public:
 	{
 		return this.m_c;
 	};
-	bool GetB()
-	{
-		return this.m_b;
-	};
-	void SetB(bool val)
-	{
-		this.m_b = val;
-	};
-	int m_fpu();
+	bool m_b;
+	bool GetB();
+	int foo();
 private:
 	int m_i;
 	PINT m_pint;
 	int * m_pi;
 	float m_f;
 	char m_c;
-	bool m_b;
 	int m_i3;
 	int m_pri;
-	int m_fpi();
+	int bar();
 public:
 	int GetI3()
 	{
@@ -74,6 +67,10 @@ public:
 	};
 };
 
+struct C
+{
+};
+
 class B
 {
 public:
@@ -81,7 +78,11 @@ public:
 	{
 		return this.m_i;
 	};
-	const A& GetA()
+	const A& GetA() const
+	{
+		return this.m_a;
+	};
+	A& GetA()
 	{
 		return this.m_a;
 	};
@@ -89,11 +90,19 @@ public:
 	{
 		this.m_a = val;
 	};
-	const struct C& GetC()
+	struct C * GetC()
 	{
 		return this.m_c;
 	};
-	const shareptr<int>& GetSp1()
+	void SetC(struct C * val)
+	{
+		this.m_c = val;
+	};
+	const shareptr<int>& GetSp1() const
+	{
+		return this.m_sp1;
+	};
+	shareptr<int>& GetSp1()
 	{
 		return this.m_sp1;
 	};
@@ -101,18 +110,30 @@ public:
 	{
 		this.m_sp1 = val;
 	};
-	const shareptr<int>& GetSp2()
+	const shareptr<int>& GetSp2() const
+	{
+		return this.m_sp2;
+	};
+	shareptr<int>& GetSp2()
 	{
 		return this.m_sp2;
 	};
 private:
 	int m_i;
 	A m_a;
-	struct C m_c;
+	struct C * m_c;
 	shareptr<int> m_sp1;
 	shareptr<int> m_sp2;
 };
 
-struct C
+class D
 {
+	int foo();
 };
+
+int D::foo()
+{
+	int i = 1;
+	i+=1;
+	return 1;
+}

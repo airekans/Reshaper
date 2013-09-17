@@ -1,4 +1,4 @@
-#include "test_trs.h"
+#include "test_encap.h"
 
 int A::foo(){
 	return m_i;
@@ -16,7 +16,9 @@ int main()
 	a.m_f = float(a.m_i3);
 
 	B b;
+	C* pc;
 	b.m_a = a;
+	b.m_c = pc;
 	b.m_sp1 = b.m_sp2;
 	return 0;
 }

@@ -36,7 +36,7 @@ class B
 public:
 	int m_i;
 	A m_a;
-	struct C m_c;
+	struct C* m_c;
 	shareptr<int> m_sp1;
 	shareptr<int> m_sp2;
 };
