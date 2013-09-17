@@ -1,5 +1,5 @@
 # This file provides common utility functions for the test suite.
-import os
+import os, sys
 from functools import partial
 from clang.cindex import CursorKind
 from clang.cindex import Config
@@ -58,8 +58,8 @@ def check_diagnostics(diagnostics):
     '''
     error_num = len(diagnostics)
     if error_num > 0:
-        print "Source file has the following errors(%d):" % error_num
-        print get_diagnostics_str(diagnostics)
+        sys.stderr.write("Source file has the following errors(%d):\n" % error_num)
+        sys.stderr.write(get_diagnostics_str(diagnostics))
 
     return error_num > 0
 

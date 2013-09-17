@@ -3,6 +3,7 @@
 from reshaper.ast import save_ast
 from optparse import OptionParser
 from reshaper.option import setup_options
+import sys.stderr
 
 
 def main():
@@ -29,7 +30,7 @@ def main():
                      cdb_path = options.cdb_path,
                      ref_source = options.ref_source)
         except Exception, excep:
-            print "Can't parse %s:%s" % (file_path, excep) 
+            sys.stderr.write("Can't parse %s:%s\n" % (file_path, excep))
         
         
         

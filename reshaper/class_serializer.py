@@ -32,7 +32,9 @@ friend bool operator == (const {{ class_name }}& a, const {{ class_name }}& b)
 import reshaper.semantic as sem
 from jinja2 import Template
 from reshaper import util
+
 import logging
+import reshaper.log
 
 
 class ClassSerializer(object):

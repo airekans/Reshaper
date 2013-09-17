@@ -92,8 +92,7 @@ def main(argv = sys.argv[1:]):
     assert(semantic_util.is_tu(tu_source))
 
     if check_diagnostics(tu_source.diagnostics):
-        print "Error"
-        print
+        sys.stderr.write("Error\n")
         sys.exit(-1)
     target_cursor = get_cursor_with_location(tu_source, \
             options.spelling, \

@@ -6,9 +6,12 @@ from clang.cindex import Config
 from clang.cindex import CompilationDatabase as CDB
 from reshaper.util import get_cursor_if, is_cursor_in_file_func, check_diagnostics
 import ConfigParser
-import logging, os
+import os, sys
 from reshaper.semantic import get_source_path_candidates, is_header
 from reshaper import util
+
+import logging
+import reshaper.log
 
 _CONF = Config()
 
@@ -381,7 +384,7 @@ def save_ast(file_path, output_path=None , is_xml=False, \
                  ref_source = ref_source)
     
     if not _tu:
-        print "unable to load %s" % file_path
+        sys.stderr.write("unable to load %s\n" % file_path)
         return False
     
     check_diagnostics(_tu.diagnostics)
