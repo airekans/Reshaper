@@ -207,16 +207,16 @@ def test_file_get_pending_filenames_with_multiple_files_2():
     eq_(expected_files, pending_files)
 
 
-def assert_ckind_equal(ckind, db_ckind):
-    eq_(ckind.name, db_ckind.name)
-    eq_(ckind.is_declaration(), db_ckind.is_declaration)
-    eq_(ckind.is_reference(), db_ckind.is_reference)
-    eq_(ckind.is_expression(), db_ckind.is_expression)
-    eq_(ckind.is_statement(), db_ckind.is_statement)
-    eq_(ckind.is_attribute(), db_ckind.is_attribute)
-    eq_(ckind.is_translation_unit(), db_ckind.is_translation_unit)
-    eq_(ckind.is_preprocessing(), db_ckind.is_preprocessing)
-    eq_(ckind.is_unexposed(), db_ckind.is_unexposed)
+def assert_ckind_equal(_ckind, db_ckind):
+    eq_(_ckind.name, db_ckind.name)
+    eq_(_ckind.is_declaration(), db_ckind.is_declaration)
+    eq_(_ckind.is_reference(), db_ckind.is_reference)
+    eq_(_ckind.is_expression(), db_ckind.is_expression)
+    eq_(_ckind.is_statement(), db_ckind.is_statement)
+    eq_(_ckind.is_attribute(), db_ckind.is_attribute)
+    eq_(_ckind.is_translation_unit(), db_ckind.is_translation_unit)
+    eq_(_ckind.is_preprocessing(), db_ckind.is_preprocessing)
+    eq_(_ckind.is_unexposed(), db_ckind.is_unexposed)
 
 @with_param_setup(setup_for_test_file)
 def test_cursor_kind(tu, proj_engine):
@@ -225,12 +225,12 @@ def test_cursor_kind(tu, proj_engine):
         assert_ckind_equal(kind, db_ckind)
 
 
-def assert_tkind_equal(tkind, db_tkind):
-    eq_(tkind.name, db_tkind.name)
-    eq_(tkind.spelling, db_tkind.spelling)
+def assert_tkind_equal(_tkind, db_tkind):
+    eq_(_tkind.name, db_tkind.name)
+    eq_(_tkind.spelling, db_tkind.spelling)
 
 @with_param_setup(setup_for_test_file)
-def test_type_kind(tu, proj_engine):
+def test_type_kind(_, proj_engine):
     for kind in _get_clang_type_kinds():
         db_tkind = db.TypeKind.from_clang_type_kind(kind, proj_engine)
         assert_tkind_equal(kind, db_tkind)
@@ -630,7 +630,7 @@ def test_cursor_get_max_nested_set_index(tu, proj_engine):
     eq_(expected_max, db.Cursor.get_max_nested_set_index(proj_engine))
 
 @with_param_setup(setup_for_memory_file, TEST_CURSOR_REF_INPUT)
-def test_type_is_valid_type(tu, proj_engine):
+def test_type_is_valid_type(tu, _):
     assert not db.Type.is_valid_clang_type(None)
     fake_type = lambda: True
     fake_type.kind = cindex.TypeKind.INVALID
