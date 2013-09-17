@@ -33,8 +33,7 @@ import reshaper.semantic as sem
 from jinja2 import Template
 from reshaper import util
 
-import logging
-import reshaper.log
+from reshaper.log import logger
 
 
 class ClassSerializer(object):
@@ -52,7 +51,7 @@ class ClassSerializer(object):
                 all_val_empty = False
                 break
         if all_val_empty:
-            logging.info('no member found for %s' % self._class_name)
+            logger.info('no member found for %s' % self._class_name)
             return "" 
         
         kwargs['class_name'] = self._class_name
