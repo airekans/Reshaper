@@ -32,13 +32,13 @@ def with_param_setup(setup, *args, **kw_args):
     def decorate(func):
         
         def wrap_func():
-            param_dict = setup(*args, **kw_args)
-            if isinstance(param_dict, dict):
-                func(**param_dict) # test function returns nothing
-            elif isinstance(param_dict, list):
-                func(*param_dict)
+            params = setup(*args, **kw_args)
+            if isinstance(params, dict):
+                func(**params) # test function returns nothing
+            elif isinstance(params, (list, tuple)):
+                func(*params)
             else:
-                func(param_dict) # fall back
+                func(params) # fall back
         
         wrap_func.func_name = func.func_name
         return wrap_func

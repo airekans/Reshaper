@@ -78,7 +78,7 @@ int main()
 def setup_for_memory_file(source):
     _tu = get_tu_from_text(source, 't.cpp')
     _proj_engine = db.ProjectEngine('test', is_in_memory = True)
-    return {'tu': _tu, 'proj_engine': _proj_engine}
+    return _tu, _proj_engine
 
 @nottest
 def setup_for_test_file():
@@ -100,7 +100,7 @@ def setup_for_fs_file(_file):
     _tu = get_tu(_file, is_from_cache_first=False)
     assert _tu
     _proj_engine = db.ProjectEngine('test', is_in_memory = True)
-    return {'tu': _tu, 'proj_engine': _proj_engine}
+    return _tu, _proj_engine
 
 @nottest
 def setup_for_test_file_with_multiple_files():
