@@ -14,7 +14,7 @@ def main(argv = sys.argv[1:]):
         This script takes file name and class names as arguments.
         Directory name is optional. File directory will be used by default
     '''
-    option_parser = OptionParser(usage="%prog [-d dir] [-f field1.field2...] FILE CLASSNAMES")
+    option_parser = OptionParser(usage="%prog [-d dir] [-f field1,field2...] FILE CLASSNAMES")
     setup_options(option_parser)
     
     option_parser.add_option("-d", "--directory", dest = "directory",

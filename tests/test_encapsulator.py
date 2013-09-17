@@ -104,6 +104,8 @@ def test_add_fields():
     assert [cur.end_offset - cur.start_offset for cur in refs] == [9, 5, 5]
 
 def test_filter_reference_in_cls_method():
+    '''test filter_reference_in_cls_method()
+    '''
     cls = get_cursor_if(_TU, lambda cur: sem.is_class(cur) \
             and sem.is_class_name_matched(cur, 'E'))
     fields = encap.find_public_fields(cls)
@@ -117,6 +119,8 @@ def test_filter_reference_in_cls_method():
     assert len(ref_cur) == 3
 
 def test_filter_fields_has_get_set():
+    '''test filter_fields_has_get_set()
+    '''
     cls = get_cursor_if(_TU, lambda cur: sem.is_class(cur) \
             and sem.is_class_name_matched(cur, 'E'))
     fields = encap.find_public_fields(cls)

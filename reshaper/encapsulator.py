@@ -376,10 +376,12 @@ class FileTransformer:
             sub_str = 'private:\n'
         
         for field_cur in cursor.fields:
-            sub_str += space + self.get_type_str(field_cur) + ' ' + field_cur.displayname + ';\n'
+            sub_str += space + field_cur.type.spelling + ' ' + field_cur.displayname + ';\n'
         self.file_str = self.file_str[:index] + sub_str + self.file_str[index:]
 
     def get_template_str(self, cursor):
+        '''select template based on cursor's attribute
+        '''
         if cursor.has_set_method:
             if cursor.type.kind in [TypeKind.RECORD, TypeKind.UNEXPOSED]:
                 return _SET_TEMPLATE2
@@ -390,18 +392,6 @@ class FileTransformer:
                 return _GET_TEMPLATE2
             else:
                 return _GET_TEMPLATE
-        
-        
-    def get_type_str(self, cursor, for_get_obj = False):
-        if cursor.type.kind == TypeKind.RECORD and for_get_obj:
-            #class and struct
-            return 'const ' + cursor.type.spelling + '&'
-        
-        elif cursor.type.kind == TypeKind.UNEXPOSED and for_get_obj:
-            #class template
-            return 'const ' + cursor.type.spelling + '&'
-        
-        return cursor.type.spelling
     
         
         
