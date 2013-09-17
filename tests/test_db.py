@@ -1,8 +1,8 @@
 from reshaper import db
-from clang.cindex import CursorKind as ckind, Type
+from clang.cindex import CursorKind as ckind
 from clang.cindex import TypeKind as tkind
 import clang.cindex as cindex
-from nose.tools import eq_, with_setup, nottest
+from nose.tools import eq_, nottest
 from .util import get_tu_from_text
 from reshaper.ast import get_tu
 from reshaper.util import get_cursor, get_cursor_if, get_cursors_if
