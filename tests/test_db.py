@@ -8,7 +8,7 @@ from reshaper.ast import get_tu
 from reshaper.util import get_cursor, get_cursor_if, get_cursors_if
 import os
 from sqlalchemy.sql import func
-from tests.util import set_eq
+from tests.util import set_eq, with_param_setup
 
 
 _TEST_DATA_DIR = os.path.join(os.path.dirname(__file__), 'test_data')
@@ -73,27 +73,6 @@ int main()
                             proj_engine.get_session().query(db.File).all())
     eq_(expected_file_names, actual_file_names)
     
-
-def with_param_setup(setup, *args, **kw_args):
-    """ util decorator to pass parameters to test functions
-    """
-    
-    def decorate(func):
-        
-        def wrap_func():
-            param_dict = setup(*args, **kw_args)
-            if isinstance(param_dict, dict):
-                func(**param_dict) # test function returns nothing
-            elif isinstance(param_dict, list):
-                func(*param_dict)
-            else:
-                func(param_dict) # fall back
-        
-        wrap_func.func_name = func.func_name
-        return wrap_func
-    
-    return decorate
-
 
 @nottest
 def setup_for_memory_file(source):
