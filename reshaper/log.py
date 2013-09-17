@@ -4,15 +4,15 @@ to use:
 from reshaper.log import logger
 '''
 import logging
-import logging.config
-import os
+#import logging.config
 
 
 try:
     config_file = '~/.reshaper.cfg'
     logging.config.fileConfig(config_file)
 except:
-    config_file = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'sample_logging.conf')
-    logging.config.fileConfig(config_file)
+    fmt = '%(asctime)s %(filename)s: L%(lineno)d : %(levelname)s: %(message)s'
+    datefmt = '%Y-%m-%d %H:%M:%S'
+    logging.basicConfig(level = logging.NOTSET, format = fmt, datefmt = datefmt)
     
 logger = logging.getLogger()
