@@ -247,7 +247,7 @@ def encapsulate(input_file, class_names, directory, fields, inplace):
                 print 'File %s has been transformed to file %s' \
                     % (file_name, file_name + '.bak')
         except IOError:
-            sys.stderr.write('IOError, Unable to write file.')
+            sys.stderr.write('IOError, Unable to write file %s\n.' % file_name)
             sys.exit(-1)
     
 def change_offset_extent(offset, trig_cursor, cursor_list):
