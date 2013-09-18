@@ -12,8 +12,6 @@ from functools import partial
 from reshaper.ast import get_tu
 from reshaper.util import get_cursor_if
 from jinja2 import Template
-import logging
-
 import sys
     
 def find_public_fields(cls_cursor, fields = None):
@@ -44,7 +42,7 @@ def find_public_fields(cls_cursor, fields = None):
                 continue
         
         if fields_copy:
-            logging.warning("Cannot find public field %s in class %s" % \
+            sys.stderr.write("Cannot find public field %s in class %s" % \
                             (', '.join(fields_copy), cls_cursor.displayname))
     else:
         for child in children:
@@ -197,7 +195,7 @@ def filter_fields_has_get_set(fields, cls_cursor):
         suffix = get_func_name_suffix(field.displayname)
         if 'Get' + suffix in names \
             or 'Set' + suffix in names:
-            logging.warning('Method %s in class %s already have Set/Get method, it will not be processed' \
+            sys.stderr.write('Method %s in class %s already have Set/Get method, it will not be processed' \
                             % (field.displayname, cls_cursor.displayname))
             fields.remove(field)
 
@@ -212,7 +210,7 @@ def encapsulate(input_file, class_names, directory, fields):
         class_cursor = get_cursor_if(tu, lambda cur: sem.is_class(cur) \
             and sem.is_class_name_matched(cur, class_name))
         if not class_cursor:
-            logging.error('Cannot find class %s in input file' % class_name)
+            sys.stderr.write('Cannot find class %s in input file' % class_name)
         
         class_public_fields = find_public_fields(class_cursor, fields)
         
