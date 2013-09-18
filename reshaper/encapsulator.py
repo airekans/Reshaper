@@ -13,6 +13,8 @@ from reshaper.ast import get_tu
 from reshaper.util import get_cursor_if
 from jinja2 import Template
 import logging
+
+import sys
     
 def find_public_fields(cls_cursor, fields = None):
     '''find public field inside a class
@@ -63,10 +65,10 @@ def get_prvt_fld_insert_location(cls_cursor):
     children = cls_cursor.get_children()
     for child in children:
         if child.kind == CursorKind.CXX_ACCESS_SPEC_DECL and not sem.is_public_access_decl(child):
-            child.is_pvt_specfifier = True
+            child.is_prvt_specfifier = True
             return child
     else:
-        child.is_pvt_specfifier = False
+        child.is_prvt_specfifier = False
         return child
 
 def find_reference_to_field(fld_cursor, directory):
@@ -230,32 +232,41 @@ def encapsulate(input_file, class_names, directory, fields):
         
     add_fields(ref_cursors, tu)
                 
-    cursors_in_files = organize_cursors_by_file(ref_cursors)
+    file2cursors = organize_cursors_by_file(ref_cursors)
     
-    for afile in cursors_in_files:
-        file_str = generate_output_str(afile, cursors_in_files[afile])
+    for afile, cursors in file2cursors.items():
+        file_str = generate_output_str(afile, cursors)
         with open(afile + '.bak', 'w') as fp:
             fp.write(file_str)
+        file_name = afile.split('/')[-1]
+        print 'File %s has been transformed to file %s' \
+            % (file_name, file_name + '.bak')
     
-def change_offset_extent(offset, cursor, cursor_list):
-    '''change cursor's extent when change on other cursor influence its offset
+def change_offset_extent(offset, trig_cursor, cursor_list):
+    '''change cursor's offset extent if it influenced by offset triggered by trig_cursor
     '''
     for cur in cursor_list:
-        if cur.start_offset >= cursor.start_offset and cur.end_offset <= cursor.end_offset \
-            and cur != cursor:
+        if cur.start_offset >= trig_cursor.start_offset and cur.end_offset <= trig_cursor.end_offset \
+            and cur != trig_cursor:
             cur.start_offset += offset
             cur.end_offset += offset
         
 def generate_output_str(input_file, cursor_list):
     '''generate output for each file based on its cursors
+        each cursor correspond to a kind of change
+        cursors are processed one by one
     '''
     transformer = FileTransformer(input_file)
         
+    #sort by end offset and size reversely 
+    #sort end offset so that modification on cursor won't influence cursor in front
+    #sort by size to handle cursors with same end offset. cursors with larger extent 
+    #will be processed first
     cursor_list = sorted(cursor_list, key = lambda cur: (cur.end_offset, \
         cur.end_offset - cur.start_offset), reverse = True)
     
     for cursor in cursor_list:
-        if hasattr(cursor, 'is_pvt_specfifier'):
+        if hasattr(cursor, 'is_prvt_specfifier'):
             transformer.trans_add_private(cursor)
         elif cursor.kind == CursorKind.MEMBER_REF_EXPR:
             if cursor.use_set_method:
@@ -269,13 +280,13 @@ def generate_output_str(input_file, cursor_list):
                 
     return transformer.file_str
         
-_GET_TEMPLATE = '''\
-{{type}} Get{{suffix}}()
+_SIMP_TYPE_GET_ONLY = '''\
+{{type}} Get{{suffix}}() const
 {{space}}{
 {{space}}\treturn this.{{name}};
 {{space}}}'''
 
-_GET_TEMPLATE2 = '''\
+_CMPLX_TYPE_GET_ONLY = '''\
 const {{type}}& Get{{suffix}}() const
 {{space}}{
 {{space}}\treturn this.{{name}};
@@ -285,17 +296,17 @@ const {{type}}& Get{{suffix}}() const
 {{space}}\treturn this.{{name}};
 {{space}}}'''
 
-_SET_TEMPLATE = '''\
-{{type}} Get{{suffix}}()
+_SIMP_TYPE_GET_SET = '''\
+{{type}} Get{{suffix}}() const
 {{space}}{
 {{space}}\treturn this.{{name}};
 {{space}}};
-{{space}}void Set{{suffix}}({{type}} val)
+{{space}}void Set{{suffix}}(const {{type}}& val)
 {{space}}{
 {{space}}\tthis.{{name}} = val;
 {{space}}}'''
 
-_SET_TEMPLATE2 = '''\
+_CMPLX_TYPE_GET_SET = '''\
 const {{type}}& Get{{suffix}}() const
 {{space}}{
 {{space}}\treturn this.{{name}};
@@ -304,7 +315,7 @@ const {{type}}& Get{{suffix}}() const
 {{space}}{
 {{space}}\treturn this.{{name}};
 {{space}}};
-{{space}}void Set{{suffix}}({{type}} val)
+{{space}}void Set{{suffix}}(const {{type}}& val)
 {{space}}{
 {{space}}\tthis.{{name}} = val;
 {{space}}}'''
@@ -353,10 +364,6 @@ class FileTransformer:
             index -= 1
         
         template = Template(self.get_template_str(cursor))
-#        if cursor.has_set_method:
-#            template = Template(_SET_TEMPLATE)
-#        else:
-#            template = Template(_GET_TEMPLATE)
         sub_str = template.render(space = space, type = cursor.type.spelling, 
                                   suffix = cursor.suffix, name = cursor.displayname)
 
@@ -370,7 +377,7 @@ class FileTransformer:
         while self.file_str[index - 1] != '\n':
             index += 1
         
-        if cursor.is_pvt_specfifier:
+        if cursor.is_prvt_specfifier:
             sub_str = ''
         else:
             sub_str = 'private:\n'
@@ -384,14 +391,14 @@ class FileTransformer:
         '''
         if cursor.has_set_method:
             if cursor.type.kind in [TypeKind.RECORD, TypeKind.UNEXPOSED]:
-                return _SET_TEMPLATE2
+                return _CMPLX_TYPE_GET_SET
             else:
-                return _SET_TEMPLATE
+                return _SIMP_TYPE_GET_SET
         else:
             if cursor.type.kind in [TypeKind.RECORD, TypeKind.UNEXPOSED]:
-                return _GET_TEMPLATE2
+                return _CMPLX_TYPE_GET_ONLY
             else:
-                return _GET_TEMPLATE
+                return _SIMP_TYPE_GET_ONLY
     
         
         

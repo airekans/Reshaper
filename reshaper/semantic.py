@@ -542,7 +542,7 @@ def get_base_cls_cursors(cls_cursor):
                           transform_fun = get_class_definition)
 
 def is_public_access_decl(cursor):
-    '''access if an access specifier decleration is public
+    '''return true if an access specifier decleration is public
     '''
     if cursor.get_access_specifier() == CXXAccessSpecifier.PUBLIC:
         return True

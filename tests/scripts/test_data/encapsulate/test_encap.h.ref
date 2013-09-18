@@ -12,35 +12,35 @@ public:
 class A
 {
 public:
-	int GetI()
+	int GetI() const
 	{
 		return this.m_i;
 	};
-	void SetI(int val)
+	void SetI(const int& val)
 	{
 		this.m_i = val;
 	};
-	PINT GetPint()
+	PINT GetPint() const
 	{
 		return this.m_pint;
 	};
-	void SetPint(PINT val)
+	void SetPint(const PINT& val)
 	{
 		this.m_pint = val;
 	};
-	int * GetPi()
+	int * GetPi() const
 	{
 		return this.m_pi;
 	};
-	float GetF()
+	float GetF() const
 	{
 		return this.m_f;
 	};
-	void SetF(float val)
+	void SetF(const float& val)
 	{
 		this.m_f = val;
 	};
-	char GetC()
+	char GetC() const
 	{
 		return this.m_c;
 	};
@@ -57,11 +57,11 @@ private:
 	int m_pri;
 	int bar();
 public:
-	int GetI3()
+	int GetI3() const
 	{
 		return this.m_i3;
 	};
-	void SetI3(int val)
+	void SetI3(const int& val)
 	{
 		this.m_i3 = val;
 	};
@@ -74,7 +74,7 @@ struct C
 class B
 {
 public:
-	int GetI()
+	int GetI() const
 	{
 		return this.m_i;
 	};
@@ -86,15 +86,15 @@ public:
 	{
 		return this.m_a;
 	};
-	void SetA(A val)
+	void SetA(const A& val)
 	{
 		this.m_a = val;
 	};
-	struct C * GetC()
+	struct C * GetC() const
 	{
 		return this.m_c;
 	};
-	void SetC(struct C * val)
+	void SetC(const struct C *& val)
 	{
 		this.m_c = val;
 	};
@@ -106,7 +106,7 @@ public:
 	{
 		return this.m_sp1;
 	};
-	void SetSp1(shareptr<int> val)
+	void SetSp1(const shareptr<int>& val)
 	{
 		this.m_sp1 = val;
 	};

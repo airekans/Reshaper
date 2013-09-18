@@ -12,18 +12,18 @@ public:
 class A
 {
 public:
-	int GetI()
+	int GetI() const
 	{
 		return this.m_i;
 	};
-	void SetI(int val)
+	void SetI(const int& val)
 	{
 		this.m_i = val;
 	};
 	PINT m_pint;
 	int* m_pi;
 	float m_f;
-	char GetC()
+	char GetC() const
 	{
 		return this.m_c;
 	};
@@ -46,16 +46,16 @@ struct C
 class B
 {
 public:
-	int GetI()
+	int GetI() const
 	{
 		return this.m_i;
 	};
 	A m_a;
-	struct C * GetC()
+	struct C * GetC() const
 	{
 		return this.m_c;
 	};
-	void SetC(struct C * val)
+	void SetC(const struct C *& val)
 	{
 		this.m_c = val;
 	};

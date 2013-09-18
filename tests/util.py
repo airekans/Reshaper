@@ -2,6 +2,8 @@
 
 from clang.cindex import  TranslationUnit
 from reshaper.ast import TUCache
+from nose.tools import eq_
+from contextlib import nested
 
 import sys, os, StringIO
 
@@ -90,12 +92,8 @@ def assert_file_content(expected, file):
     assert(expected == file_str)
 
 def assert_file_equal(file1, file2):
-    '''assert file1 content equals file2 content
+    '''assert file1 content equals file2 content line by line
     '''
-    with open(file1, 'r') as fp:
-        file1_str = fp.read()
-        
-    with open(file2, 'r') as fp:
-        fiel2_str = fp.read()
-        
-    assert file1_str == fiel2_str
+    with nested(open(file1, 'r'), open(file2, 'r')) as (fp1, fp2):
+        for (str1, str2) in zip(fp1, fp2):
+            eq_(str1, str2)
