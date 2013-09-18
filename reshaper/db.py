@@ -77,10 +77,10 @@ class ProjectEngine(object):
     def build_cursor_tree(self, cursor, parent, left):
         if cursor.kind in [ckind.USING_DIRECTIVE, ckind.USING_DECLARATION]:
             print "skip using directive"
-            return left
+            return left, None
         elif cursor.location.file is None:
             print "skip builtin element"
-            return left
+            return left, None
         
         db_cursor = Cursor(cursor, self)
         db_cursor.parent = parent
@@ -103,14 +103,32 @@ class ProjectEngine(object):
         ''' Try to get db cursor from cache first.
         If the cursor is not in the cache, then get it from DB.
         '''
-        pass
+        for c_cursor in cache:
+            if cursor == c_cursor:
+                return c_cursor.db_cursor
+        
+        db_cursor = Cursor.get_db_cursor(cursor, self)
+        cursor.db_cursor = db_cursor
+        if len(cache) > 10: # threshold
+            cache.pop()
+        cache.appendleft(cursor)
+        return db_cursor
     
     def build_cursor_attr(self, cursor, db_cursor):
+
+        
         from collections import deque
         lex_parents = deque()
         sem_parents = deque()
         
         def impl(cursor, db_cursor):
+            if cursor.kind in [ckind.USING_DIRECTIVE, ckind.USING_DECLARATION]:
+                print "skip using directive"
+                return
+            elif cursor.location.file is None:
+                print "skip builtin element"
+                return
+            
             cursor.db_cursor = db_cursor
             
             # add lexical parent and semantic parent           
@@ -131,10 +149,13 @@ class ProjectEngine(object):
                 else:
                     db_cursor.semantic_parent = \
                         self.get_db_cursor(semantic_parent, sem_parents)
+                
+                assert db_cursor.semantic_parent
             
-            # add referenced 
+            # add referenced
             
-            self.get_session().add(db_cursor)
+            
+            self._session.add(db_cursor)
             
             has_child = False
             
@@ -148,6 +169,39 @@ class ProjectEngine(object):
         
             if has_child:
                 lex_parents.popleft()
+    
+    def build_db_tree2(self, cursor):
+        if isinstance(cursor, clang.cindex.TranslationUnit):
+            cursor = cursor.cursor
+            _tu = cursor
+        else: # cursor
+            _tu = cursor.translation_unit
+        
+        pending_files = File.get_pending_filenames(_tu, self)
+        self.build_db_file(_tu) # TODO: This can be improved.
+
+        left = Cursor.get_max_nested_set_index(self)
+        if left > 0:
+            left += 20
+        if cursor.kind == clang.cindex.CursorKind.TRANSLATION_UNIT:
+            for child in cursor.get_children():
+                if child.location.file and \
+                        child.location.file.name in pending_files:
+                    left = self.build_cursor_tree(child, None, left) + 1
+                    self._session.commit()
+        else:
+            self.build_cursor_tree(cursor, None, left)
+            self._session.commit()
+        
+        if cursor.kind == clang.cindex.CursorKind.TRANSLATION_UNIT:
+            for child in cursor.get_children():
+                if child.location.file and \
+                        child.location.file.name in pending_files:
+                    left = self.build_cursor_tree(child, None, left) + 1
+                    self._session.commit()
+        else:
+            self.build_cursor_tree(cursor, None, left)
+            self._session.commit()
     
     def build_db_cursor(self, cursor, parent, left):
         if cursor.kind in [ckind.USING_DIRECTIVE,
@@ -166,7 +220,7 @@ class ProjectEngine(object):
         
         self._session.add(db_cursor)
         
-        if Type.is_valid_clang_type(cursor.type):
+        if Type.is_valid_clang_type(cursor.type): # this can be improved
             db_cursor.type = Type.from_clang_type(cursor.type, self)
             decl_cursor = cursor.type.get_declaration()
             if (db_cursor.type.declaration is None or \
