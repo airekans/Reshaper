@@ -12,6 +12,7 @@ from clang.cindex import CursorKind as ckind
 import clang.cindex
 import os
 from clang import cindex
+from itertools import izip, izip_longest
 
 _Base = declarative_base()
 
@@ -70,8 +71,83 @@ class ProjectEngine(object):
                 File.from_clang_tu(tu, include.source.name, self))
 
         self._session.add(File.from_clang_tu(tu, tu.spelling, self))
-            
+        
         self._session.commit()
+    
+    def build_cursor_tree(self, cursor, parent, left):
+        if cursor.kind in [ckind.USING_DIRECTIVE, ckind.USING_DECLARATION]:
+            print "skip using directive"
+            return left
+        elif cursor.location.file is None:
+            print "skip builtin element"
+            return left
+        
+        db_cursor = Cursor(cursor, self)
+        db_cursor.parent = parent
+        db_cursor.left = left
+        
+        self._session.add(db_cursor)
+        
+        child_left = left + 1
+        if cursor.kind != ckind.TEMPLATE_TEMPLATE_PARAMETER:
+            for child in cursor.get_children():
+                child_left = \
+                    self.build_cursor_tree(child, db_cursor, child_left) + 1
+        
+        right = child_left
+        db_cursor.right = right
+
+        return right
+    
+    def get_db_cursor(self, cursor, cache):
+        ''' Try to get db cursor from cache first.
+        If the cursor is not in the cache, then get it from DB.
+        '''
+        pass
+    
+    def build_cursor_attr(self, cursor, db_cursor):
+        from collections import deque
+        lex_parents = deque()
+        sem_parents = deque()
+        
+        def impl(cursor, db_cursor):
+            cursor.db_cursor = db_cursor
+            
+            # add lexical parent and semantic parent           
+            lexical_parent = cursor.lexical_parent
+            if lexical_parent is not None and \
+               lexical_parent.kind != ckind.TRANSLATION_UNIT:
+                for lex_pa in lex_parents:
+                    if lex_pa == lexical_parent:
+                        db_cursor.lexical_parent = lex_pa.db_cursor
+                
+                assert db_cursor.lexical_parent
+            
+            semantic_parent = cursor.semantic_parent
+            if semantic_parent is not None and \
+               semantic_parent.kind != ckind.TRANSLATION_UNIT:
+                if lexical_parent and semantic_parent == lexical_parent:
+                    db_cursor.semantic_parent = db_cursor.lexical_parent
+                else:
+                    db_cursor.semantic_parent = \
+                        self.get_db_cursor(semantic_parent, sem_parents)
+            
+            # add referenced 
+            
+            self.get_session().add(db_cursor)
+            
+            has_child = False
+            
+            for child, db_child in izip(cursor.get_children(),
+                                        db_cursor.children):
+                if not has_child:
+                    lex_parents.appendleft(cursor)
+                    has_child = True
+                    
+                self.build_cursor_attr(child, db_child)
+        
+            if has_child:
+                lex_parents.popleft()
     
     def build_db_cursor(self, cursor, parent, left):
         if cursor.kind in [ckind.USING_DIRECTIVE,
@@ -82,7 +158,8 @@ class ProjectEngine(object):
             print "skip builtin element"
             return left
         
-        db_cursor = Cursor.from_clang_cursor(cursor, self)
+        db_cursor = Cursor.from_clang_cursor(cursor, self) # this can be skipped
+        # lexical parent and semantic parent?
         db_cursor.parent = parent
         print "cursor_id", id(db_cursor), "parent_id", id(parent)
         db_cursor.left = left
@@ -99,6 +176,7 @@ class ProjectEngine(object):
                     Cursor.from_clang_cursor(decl_cursor, self)
                 self._session.add(db_cursor.type)
 
+        # this happens very little, so no need to change
         def_cursor = cursor.get_definition()
         if def_cursor is not None:
             if cursor.is_definition():
@@ -107,6 +185,7 @@ class ProjectEngine(object):
                 db_cursor.definition = \
                     Cursor.get_definition(def_cursor, self)
 
+        # this needs to be cached.
         refer_cursor = cursor.referenced
         if refer_cursor is not None and \
            refer_cursor.location.file is not None and \
