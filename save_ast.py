@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+#pylint: disable-all
 
 from reshaper.ast import save_ast
 from optparse import OptionParser

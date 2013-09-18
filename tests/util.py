@@ -2,6 +2,8 @@
 
 from clang.cindex import  TranslationUnit
 from reshaper.ast import TUCache
+from nose.tools import eq_
+from contextlib import nested
 
 import sys, os, StringIO
 
@@ -66,7 +68,7 @@ def assert_stdout (expected_str):
     return outer_wrap
 
 def abnormal_exit(func):
-    '''assert abnormal sys.exit is called
+    '''decorator function that assert abnormal sys.exit is called
     '''
     def test_wrap(*arg, **kw):
         try:
@@ -82,7 +84,16 @@ def abnormal_exit(func):
     return test_wrap
         
 def assert_file_content(expected, file):
+    '''assert file content equals to expected string
+    '''
     with open(file, 'r') as fp:
         file_str = fp.read()
     
     assert(expected == file_str)
+
+def assert_file_equal(file1, file2):
+    '''assert file1 content equals file2 content line by line
+    '''
+    with nested(open(file1, 'r'), open(file2, 'r')) as (fp1, fp2):
+        for (str1, str2) in zip(fp1, fp2):
+            eq_(str1, str2)

@@ -6,6 +6,7 @@ import ConfigParser
 
 from clang.cindex import CursorKind
 from clang.cindex import TypeKind
+from clang.cindex import CXXAccessSpecifier
 from reshaper import util 
 from reshaper.util import is_cursor_in_file_func
 from functools import partial
@@ -540,3 +541,10 @@ def get_base_cls_cursors(cls_cursor):
     return util.get_cursors_if(cls_cursor, is_base_sepcifier,
                           transform_fun = get_class_definition)
 
+def is_public_access_decl(cursor):
+    '''return true if an access specifier decleration is public
+    '''
+    if cursor.get_access_specifier() == CXXAccessSpecifier.PUBLIC:
+        return True
+    else:
+        return False
