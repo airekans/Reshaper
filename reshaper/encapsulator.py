@@ -236,15 +236,19 @@ def encapsulate(input_file, class_names, directory, fields, inplace):
         file_str = generate_output_str(afile, cursors)
         file_name = afile.split('/')[-1]
         
-        if inplace:
-            with open(afile, 'w') as fp:
-                fp.write(file_str)
-            print 'File %s has been transformed' % file_name
-        else:
-            with open(afile + '.bak', 'w') as fp:
-                fp.write(file_str)
-            print 'File %s has been transformed to file %s' \
-                % (file_name, file_name + '.bak')
+        try:
+            if inplace:
+                with open(afile, 'w') as fp:
+                    fp.write(file_str)
+                print 'File %s has been transformed' % file_name
+            else:
+                with open(afile + '.bak', 'w') as fp:
+                    fp.write(file_str)
+                print 'File %s has been transformed to file %s' \
+                    % (file_name, file_name + '.bak')
+        except IOError:
+            sys.stderr.write('IOError, Unable to write file.')
+            sys.exit(-1)
     
 def change_offset_extent(offset, trig_cursor, cursor_list):
     '''change cursor's offset extent if it influenced by offset triggered by trig_cursor
