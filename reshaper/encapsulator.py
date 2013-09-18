@@ -199,7 +199,7 @@ def filter_fields_has_get_set(fields, cls_cursor):
                             % (field.displayname, cls_cursor.displayname))
             fields.remove(field)
 
-def encapsulate(input_file, class_names, directory, fields):
+def encapsulate(input_file, class_names, directory, fields, inplace):
     '''major function to encapsulate public variables
     '''
     tu = get_tu(input_file)
@@ -234,11 +234,17 @@ def encapsulate(input_file, class_names, directory, fields):
     
     for afile, cursors in file2cursors.items():
         file_str = generate_output_str(afile, cursors)
-        with open(afile + '.bak', 'w') as fp:
-            fp.write(file_str)
         file_name = afile.split('/')[-1]
-        print 'File %s has been transformed to file %s' \
-            % (file_name, file_name + '.bak')
+        
+        if inplace:
+            with open(afile, 'w') as fp:
+                fp.write(file_str)
+            print 'File %s has been transformed' % file_name
+        else:
+            with open(afile + '.bak', 'w') as fp:
+                fp.write(file_str)
+            print 'File %s has been transformed to file %s' \
+                % (file_name, file_name + '.bak')
     
 def change_offset_extent(offset, trig_cursor, cursor_list):
     '''change cursor's offset extent if it influenced by offset triggered by trig_cursor

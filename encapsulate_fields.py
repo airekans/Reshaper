@@ -21,6 +21,10 @@ def main(argv = sys.argv[1:]):
                              help = "set directory")
     option_parser.add_option("-f", "--field", dest = "fields", 
                              help = "set fields to encapsulate")
+    option_parser.add_option("-i", "--in-place", action = "store_true", \
+            dest = "inplace", help = \
+            "if given, will checkout files and encapsulate fields."
+            "or else, will generator new files suffixed with .bak.")
     
     options, args = option_parser.parse_args(args = argv)
     
@@ -41,7 +45,7 @@ def main(argv = sys.argv[1:]):
     else:
         fields = None
     
-    encap.encapsulate(file_name, class_names, directory, fields)
+    encap.encapsulate(file_name, class_names, directory, fields, options.inplace)
     
     
 if __name__ == '__main__':
