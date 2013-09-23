@@ -133,21 +133,6 @@ class ProjectEngine(object):
 
         return right
     
-    def get_db_cursor(self, cursor, cache):
-        ''' Try to get db cursor from cache first.
-        If the cursor is not in the cache, then get it from DB.
-        '''
-        for c_cursor in cache:
-            if cursor == c_cursor:
-                return c_cursor.db_cursor
-        
-        db_cursor = Cursor.get_db_cursor(cursor, self)
-        cursor.db_cursor = db_cursor
-        if len(cache) > 10: # threshold
-            cache.pop()
-        cache.appendleft(cursor)
-        return db_cursor
-    
     def build_db_cursor(self, cursor, parent, left):
         if cursor.kind in [ckind.USING_DIRECTIVE,
                            ckind.USING_DECLARATION]:
