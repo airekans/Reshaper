@@ -61,7 +61,7 @@ def _main(argv = sys.argv[1:]):
         if cls.is_definition():
             tmp_classes.append(cls)
         else:
-            print "class %s is not defined and will not be generated" % cls.spelling
+            sys.stderr.write("class %s is not defined and will not be generated\n" % cls.spelling)
         
     classes = tmp_classes
         
@@ -69,7 +69,7 @@ def _main(argv = sys.argv[1:]):
     
     def do_print(code, class_name, function_name):
         if not code:
-            print '%s not generated for %s' % (function_name, class_name)
+            sys.stderr.write('%s not generated for %s\n' % (function_name, class_name))
         else:
             print code
         print

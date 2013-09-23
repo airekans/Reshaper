@@ -1,7 +1,7 @@
 """util functions for semantic parsing
 """
 
-import os, re
+import os, re, sys
 import ConfigParser
 
 from clang.cindex import CursorKind
@@ -322,8 +322,8 @@ def get_class_callees(cls_cursor,  \
                                             transform_func)
             cursor_dict.update(used_methods)
         else:
-            print "Cannot find definition of %s::%s" % \
-                (cls_cursor.spelling, method.spelling)
+            sys.stderr.write("Cannot find definition of %s::%s\n" % \
+                (cls_cursor.spelling, method.spelling))
         
     
     def compare_name(c1,c2):

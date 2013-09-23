@@ -228,17 +228,17 @@ def main():
     options, args = parse_options()
 
     if len(args) < 1:
-        print 'Error : Please input file to parse'
+        sys.stderr.write('Error : Please input file to parse')
         sys.exit(-1)
 
     for file_path in args:
         file_name = os.path.abspath(file_path)
         if not os.path.isfile(file_name):
-            print 'Error : No such file, %s' % file_path
+            sys.stderr.write('Error : No such file, %s' % file_path)
             continue
         lib_name = get_lib_name(file_name)
         if not lib_name:
-            print "Error : Can't get lib name, %s" % file_path
+            sys.stderr.write("Error : Can't get lib name, %s" % file_path)
             continue
 
         file_handler = MoveFileHandler(\

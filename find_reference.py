@@ -79,17 +79,17 @@ def main(argv = sys.argv[1:]):
     assert(semantic_util.is_tu(tu_source))
 
     if check_diagnostics(tu_source.diagnostics):
-        print "Warning : file %s, diagnostics occurs" % options.filename,
-        print " parse result may be incorrect!"
+        sys.stderr.write("Warning : file %s, diagnostics occurs parse result may be incorrect!\n"\
+                         % options.filename)
 
     target_cursor = get_cursor_with_location(tu_source, \
             options.spelling, \
             options.line, options.column)
     if not target_cursor:
-        print "Error : Can't get source cursor" 
-        print "please check file:%s, name:%s, line:%s, column:%s "\
+        sys.stderr.write("Error : Can't get source cursor\n")
+        sys.stderr.write("please check file:%s, name:%s, line:%s, column:%s\n"\
                 % (options.filename, options.spelling,\
-                options.line, options.column)
+                options.line, options.column))
         sys.exit(-1)
 
     reference_usr = get_usr_of_declaration_cursor(target_cursor)

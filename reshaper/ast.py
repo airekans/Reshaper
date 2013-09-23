@@ -6,9 +6,11 @@ from clang.cindex import Config
 from clang.cindex import CompilationDatabase as CDB
 from reshaper.util import get_cursor_if, is_cursor_in_file_func, check_diagnostics
 import ConfigParser
-import logging, os
+import os, sys
 from reshaper.semantic import get_source_path_candidates, is_header
 from reshaper import util
+
+from reshaper.log import logger
 
 _CONF = Config()
 
@@ -314,7 +316,7 @@ def get_tu(source, all_warnings=False, config_path = '~/.reshaper.cfg',
     """  
     
     if not os.path.isfile(source):
-        logging.error('File %s dose not exist', source)
+        logger.error('File %s dose not exist', source)
         return None
     
     full_path = os.path.abspath(source)
@@ -366,7 +368,7 @@ def get_tu(source, all_warnings=False, config_path = '~/.reshaper.cfg',
         filter_options = ['clang', 'clang++', '-MMD', '-MP']
         args += [arg for arg in cmds[0].arguments if arg not in filter_options]
 
-    logging.debug(' '.join(args))
+    logger.debug(' '.join(args))
     
     _tu = TranslationUnit.from_source(source, args, options=options)
     
@@ -381,7 +383,7 @@ def save_ast(file_path, output_path=None , is_xml=False, \
                  ref_source = ref_source)
     
     if not _tu:
-        print "unable to load %s" % file_path
+        sys.stderr.write("unable to load %s\n" % file_path)
         return False
     
     check_diagnostics(_tu.diagnostics)

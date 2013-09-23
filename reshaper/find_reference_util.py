@@ -9,7 +9,6 @@ from reshaper.semantic import get_cursors_add_parent, is_cursor
 from reshaper.option import setup_find_reference_options
 from optparse import OptionParser
 from functools import partial
-import reshaper.option
 
 _class_mem_cursorkind = \
         ("CONSTRUCTOR", "DESTRUCTOR", "CXX_METHOD", "FIELD_DECL")
@@ -305,12 +304,12 @@ def get_cursors_with_name(file_name, name, ref_curs):
        to parse files
     """
     if not os.path.exists(file_name):
-        print "file %s don't exists\n" % file_name
+        sys.stderr.write("file %s don't exists\n" % file_name)
         return
     current_tu = get_tu(file_name)
     if check_diagnostics(current_tu.diagnostics):
-        print "Warning : diagnostics occurs, skip file %s" % file_name
-       # return
+        sys.stderr.write("Warning : diagnostics occurs, skip file %s\n" % file_name)
+        # return
 
     cursors = get_cursors_add_parent(current_tu, name)
     #don't forget to define global _refer_curs'

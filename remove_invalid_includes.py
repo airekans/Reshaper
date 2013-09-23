@@ -205,18 +205,18 @@ class IncludeHandler(object):
         if not self._temp_file:
             self.gen_clean_include_file()
         if os.remove(self._file_name):
-            print "remove %s error!" % self._file_name
+            sys.stderr.write("remove %s error!\n" % self._file_name)
             sys.exit(-1)
 
         if os.rename(self._temp_file, self._file_name):
-            print "rename %s to %s error!" % (self._temp_file, self._file_name)
+            sys.stderr.write("rename %s to %s error!\n" % (self._temp_file, self._file_name))
             sys.exit(-1)
 
     def checkout(self, cmd = "p4 edit"):
         """checkout in p4
         """
         if os.system("%s %s" % (cmd, self._file_name)):
-            print "checkout %s error!" % self._file_name
+            sys.stderr.write("checkout %s error!\n" % self._file_name)
             sys.exit(-1)
 
 def get_used_include_file(filename, \
@@ -227,15 +227,15 @@ def get_used_include_file(filename, \
             config_path = config_path)
     tmp_file = file_obj.get_clean_include_file()
     if not tmp_file:
-        print 'Info: %s has no invalid includes' % filename
+        sys.stderr.write('Info: %s has no invalid includes\n' % filename)
         return
 
     if remove_origin_file:
         file_obj.checkout()
         file_obj.remove_invalid_includes()
     else:
-        print 'Info: %s finished, result file is %s' % \
-                (filename, tmp_file)
+        sys.stderr.write('Info: %s finished, result file is %s\n' % \
+                (filename, tmp_file))
 
 def main():
     """main function
@@ -243,17 +243,17 @@ def main():
     options, args = parse_options()
 
     if not options.filename and not options.directory:
-        print "Error : please input filename or directory."
+        sys.stderr.write("Error : please input filename or directory.\n")
         sys.exit(-1)
 
     if options.filename is not None and \
             not os.path.isfile(options.filename):
-        print "Error : %s, no such file." % options.filename
+        sys.stderr.write("Error : %s, no such file.\n" % options.filename)
         sys.exit(-1)
 
     if options.directory is not None and \
             not os.path.isdir(options.directory):
-        print "Error : %s, no such directory." % options.directory
+        sys.stderr.write("Error : %s, no such directory.\n" % options.directory)
         sys.exit(-1)
 
     if options.filename:
