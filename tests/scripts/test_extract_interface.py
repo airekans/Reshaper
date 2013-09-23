@@ -1,13 +1,12 @@
-'''unit tests for scripts'''
+'''test script extract interface'''
 
 from tests.util import assert_stdout, abnormal_exit
 import extract_interface
-
 import os
 
 _INPUT_PATH = os.path.join(os.path.dirname(__file__), 
-                       'test_data', 'test_scripts.c')
-_EXP_OUT = '''\
+                       'test_data', 'test_ext_interface.c')
+_EXP_OUT1 = '''\
 class IA
 {
 public:
@@ -32,7 +31,7 @@ public:
     virtual int outer_b_d() = 0;
 };'''
 
-@assert_stdout(_EXP_OUT)
+@assert_stdout(_EXP_OUT1)
 def test_extract_interface():
     '''test script extract_interface 
     '''

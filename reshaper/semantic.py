@@ -1,18 +1,17 @@
 """util functions for semantic parsing
 """
 
-import os
+import os, re, sys
+import ConfigParser
 
 from clang.cindex import CursorKind
 from clang.cindex import TypeKind
+from clang.cindex import CXXAccessSpecifier
 from reshaper import util 
 from reshaper.util import is_cursor_in_file_func
 from functools import partial
 
 _file_types = ('.cpp', '.c', '.cc')
-
-
-
 
 def is_cursor(source):
     return hasattr(source, "get_children")
@@ -68,7 +67,7 @@ def get_methods_from_class(class_cursor, methods = None):
     return member_method_cursors
 
     
-def scan_dir_parse_files(directory, parse_file):
+def walkdir(directory, parse_file):
     '''Scan directory recursivly to 
     get files with file_types
     '''
@@ -112,7 +111,16 @@ def is_smart_ptr(cursor):
     
 def is_pointer(cursor):
     ''' is pointer type '''
-    if cursor.type.kind == TypeKind.POINTER:
+    def get_underlying_type(cursor_type):
+        '''recursively extract typedef type's underlying type
+        '''
+        if cursor_type.kind == TypeKind.TYPEDEF:
+            result_type = cursor_type.get_declaration().underlying_typedef_type
+            return get_underlying_type(result_type)
+        else:
+            return cursor_type
+        
+    if get_underlying_type(cursor.type).kind == TypeKind.POINTER:
         return True
     
     return is_smart_ptr(cursor)
@@ -314,8 +322,8 @@ def get_class_callees(cls_cursor,  \
                                             transform_func)
             cursor_dict.update(used_methods)
         else:
-            print "Cannot find definition of %s::%s" % \
-                (cls_cursor.spelling, method.spelling)
+            sys.stderr.write("Cannot find definition of %s::%s\n" % \
+                (cls_cursor.spelling, method.spelling))
         
     
     def compare_name(c1,c2):
@@ -345,6 +353,41 @@ def get_source_path_candidates(fpath):
     return [ os.path.join(dir_name, sub_dir, fname_wo_surfix+surfix) \
              for sub_dir in sub_dir_candidates \
              for surfix in surfix_candidates ]
+
+def get_lib_name(path, config_path = '~/.reshaper.cfg'):
+    """get lib name for path
+    """
+    config_parser = ConfigParser.SafeConfigParser()
+    config_parser.read(os.path.expanduser(config_path))
+
+    # if special_libname in abs_path, return libname
+    special_libnames = []
+    if config_parser.has_option('Project Options', 'special_libnames'):
+        libnames = config_parser.get('Project Options', 'special_libnames')
+        special_libnames = [p for p in libnames.split(',')]
+
+    abs_path = os.path.abspath(path)
+    for libname in special_libnames:
+        if libname in abs_path:
+            return libname
+
+    # use regex to extract libname
+    libname_regex = None
+    if config_parser.has_option('Project Options', 'extract_libname_regex'):
+        libname_regex = config_parser.get('Project Options', 'extract_libname_regex')
+    if not libname_regex:
+        return ''
+
+    pattern = re.compile(libname_regex)
+    search_result = pattern.search(abs_path)
+    if not search_result:
+        return ''
+
+    cand_lib_name = search_result.group('libname')
+    if cand_lib_name.startswith('lib'):
+        return cand_lib_name
+    else:
+        return 'GUI'
 
 def is_typeref(cursor):
     return cursor.kind == CursorKind.TYPE_REF
@@ -498,3 +541,10 @@ def get_base_cls_cursors(cls_cursor):
     return util.get_cursors_if(cls_cursor, is_base_sepcifier,
                           transform_fun = get_class_definition)
 
+def is_public_access_decl(cursor):
+    '''return true if an access specifier decleration is public
+    '''
+    if cursor.get_access_specifier() == CXXAccessSpecifier.PUBLIC:
+        return True
+    else:
+        return False

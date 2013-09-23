@@ -75,8 +75,8 @@ def main(argv = sys.argv[1:]):
             sys.exit(1)
             
     if curr_cursor is None or not semantic.is_class_definition(curr_cursor):
-        print "source file %s does not contain any class named %s" % \
-            (src, class_to_extract)
+        sys.stderr.write("source file %s does not contain any class named %s\n" % \
+            (src, class_to_extract))
         sys.exit(1)
 
 
@@ -100,7 +100,6 @@ def main(argv = sys.argv[1:]):
     # print out the interface class
     class_printer = extract_interface(curr_cursor, methods)
     print class_printer.get_definition()
-        
 
 if __name__ == '__main__':
     main()

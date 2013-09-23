@@ -17,6 +17,7 @@ def setup():
     
     _tu = get_tu(source, config_path = None)
 
+
     assert(_tu is not None)
     
     global _cursor_A

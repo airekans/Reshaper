@@ -2,6 +2,8 @@
 
 from clang.cindex import  TranslationUnit
 from reshaper.ast import TUCache
+from nose.tools import eq_
+from contextlib import nested
 
 import sys, os, StringIO
 
@@ -19,17 +21,25 @@ def get_tu_from_text(source):
 class RedirectStdStreams(object):
     '''redirect stderr to remove error message during test
     '''
-    def __init__(self, stderr=open(os.devnull, 'w')):
+    def __init__(self, stderr=open(os.devnull, 'w'), stdout=open(os.devnull, 'w')):
         self._stderr = stderr or sys.stderr
+        self._stdout = stdout or sys.stdout
 
     def __enter__(self):
         self.old_stderr = sys.stderr
         self.old_stderr.flush()
         sys.stderr = self._stderr
+        
+        self.old_stdout = sys.stdout
+        self.old_stdout.flush()
+        sys.stdout = self._stdout
 
     def __exit__(self, exc_type, exc_value, traceback):
         self._stderr.flush()
         sys.stderr = self.old_stderr
+        
+        self._stdout.flush()
+        sys.stdout = self.old_stdout
         
 def redirect_stderr(func):
     '''redirect stderr function decorator
@@ -58,7 +68,7 @@ def assert_stdout (expected_str):
     return outer_wrap
 
 def abnormal_exit(func):
-    '''assert abnormal sys.exit is called
+    '''decorator function that assert abnormal sys.exit is called
     '''
     def test_wrap(*arg, **kw):
         try:
@@ -73,4 +83,17 @@ def abnormal_exit(func):
             raise AssertionError(message)
     return test_wrap
         
-        
+def assert_file_content(expected, file):
+    '''assert file content equals to expected string
+    '''
+    with open(file, 'r') as fp:
+        file_str = fp.read()
+    
+    assert(expected == file_str)
+
+def assert_file_equal(file1, file2):
+    '''assert file1 content equals file2 content line by line
+    '''
+    with nested(open(file1, 'r'), open(file2, 'r')) as (fp1, fp2):
+        for (str1, str2) in zip(fp1, fp2):
+            eq_(str1, str2)

@@ -1,6 +1,7 @@
 '''test_find_reference.py -- unittest for semantic.py
 '''
 
+import os
 from clang.cindex import CursorKind
 from reshaper.ast import TUCache, CursorCache
 from nose.tools import eq_
@@ -11,6 +12,8 @@ from .util import get_tu_from_text
 
 import os
 from shutil import rmtree
+
+INPUT_DIR = os.path.join(os.path.dirname(__file__), 'test_data')
 
 parent_calling_func_test_input = """\
 void TargetFunc()
@@ -410,9 +413,32 @@ def test_get_source_path_candidates():
          '/home/XXX/YYY/src/ZZZ.c'],
          result)
  
+def test_get_lib_name():
+    normal_path = r'/home/xxx/zzz/lib/libname_one/xxx.cpp'
+    special_path = r'/home/xxx/zzz/special_lib/xxx.cpp'
+    special_path_under_GUI = r'/home/xxx/zzz/lib/special_lib2/xxxx.cpp'
+    no_name_path = r'/home/xxx/zzz/xxx/ddd/xxxx.cpp'
+    GUI_libname_path = r'/home/xxx/lib/xxx.cpp'
+
+    config_file = os.path.join(INPUT_DIR, 'libname_config.cfg')
+    normal_libname = sem.get_lib_name(normal_path, config_file)
+    eq_('libname_one', normal_libname)
+
+    special_libname = sem.get_lib_name(special_path, config_file)
+    eq_('/special_lib/', special_libname)
+
+    special_libname_under_GUI = sem.get_lib_name(special_path_under_GUI, config_file)
+    eq_('/special_lib2/', special_libname_under_GUI)
+
+    no_libname = sem.get_lib_name(no_name_path, config_file)
+    assert(not no_libname)
+
+    GUI_libname = sem.get_lib_name(GUI_libname_path, config_file)
+    eq_('GUI', GUI_libname)
+
 
 def test_scan_dir_parse_files():
-    """Test function scan_dir_parse_files()
+    """Test function walkdir()
     """
     test_dir = os.path.join(os.path.dirname(__file__), 'test_data', 
                             'test_scan_dir_parse_files')
@@ -426,7 +452,7 @@ def test_scan_dir_parse_files():
         open(os.path.join(tmp_dir, file_name), 'w').close()
         
     result = []
-    sem.scan_dir_parse_files(test_dir, result.append)
+    sem.walkdir(test_dir, result.append)
     rmtree(test_dir)
     
     eq_([os.path.join(test_dir, 'tmp.c'),
@@ -434,8 +460,3 @@ def test_scan_dir_parse_files():
     
     
 
-
-    
-    
-    
-    

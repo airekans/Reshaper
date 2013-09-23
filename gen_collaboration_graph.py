@@ -22,6 +22,7 @@ def main(argv = sys.argv[1:]):
     option_parser.add_option("-s", "--show_functions", dest = "show_func", \
                              action="store_true", \
                              help = "show function names")
+    
     option_parser.add_option("-i", "--internal", dest = "internal", \
                              action="store_true", \
                              help = "generate internal relationship graph")
@@ -54,7 +55,7 @@ def main(argv = sys.argv[1:]):
         dot_str = dgu.gen_class_internal_relation_graph(tu_source, class_names[0])
     else:
         dot_str = dgu.gen_class_collaboration_graph(tu_source, class_names, 
-                                        options.dir, options.show_func)
+                                                    options.dir, options.show_func)
         
     if options.output:
         image_file = options.output    
