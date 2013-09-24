@@ -357,6 +357,7 @@ def test_compare_file_name():
     cxx_method_cursor.location.file.name = "base.h"
     assert(compare_file_name(cxx_method_cursor, 0, base_filename))
 
+@redirect_stderr
 def test_get_cursors_with_name():
     '''test function get_cursors_with_name
     '''
@@ -376,7 +377,7 @@ def test_get_cursors_with_name():
     res = get_cursors_with_name(file_name, name, ref)
     assert res is None
     eq_(ref, [])
-    
+
 def test_parse_find_refe_args_regular():
     '''test function get_cursors_with_name when command line arguments are 
     given properly

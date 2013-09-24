@@ -15,6 +15,7 @@ _INPUT_PATH = os.path.join(os.path.dirname(__file__), 'test_data', 'encapsulate'
 _HEADER_FILE = os.path.join(os.path.dirname(__file__), 'test_data', 'encapsulate', 'test_encap.h')
 _TU = get_tu(_INPUT_FILE)
 
+@redirect_stderr
 def test_find_public_fields():
     '''test find_public_fields() 
     '''
@@ -118,6 +119,7 @@ def test_filter_reference_in_cls_method():
     encap.filter_reference_in_cls_method(ref_cur, cls)
     assert len(ref_cur) == 3
 
+@redirect_stderr
 def test_filter_fields_has_get_set():
     '''test filter_fields_has_get_set()
     '''

@@ -6,6 +6,7 @@ from clang.cindex import CursorKind
 from nose.tools import eq_
 from remove_invalid_includes import IncludeHandler, get_used_include_file 
 from functools import partial
+from tests.util import redirect_stderr
 
 INPUT_DIR = os.path.join(os.path.dirname(__file__), 'test_data')
 
@@ -33,6 +34,7 @@ def test_class_IncludeHandler_failed():
     useless_includes = include_obj.get_invalid_includes()
     eq_(len(useless_includes), 2)
 
+@redirect_stderr
 def test_remove_invalid_includes_for_file():
     source_file = os.path.join(INPUT_DIR, "use_partial.cpp")
     include_obj = IncludeHandler(source_file)
