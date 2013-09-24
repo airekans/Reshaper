@@ -11,6 +11,8 @@ from reshaper import util
 from reshaper.util import is_cursor_in_file_func
 from functools import partial
 
+from reshaper.log import logger
+
 _file_types = ('.cpp', '.c', '.cc')
 
 def is_cursor(source):
@@ -322,7 +324,7 @@ def get_class_callees(cls_cursor,  \
                                             transform_func)
             cursor_dict.update(used_methods)
         else:
-            sys.stderr.write("Cannot find definition of %s::%s\n" % \
+            logger.debug("Cannot find definition of %s::%s\n" % \
                 (cls_cursor.spelling, method.spelling))
         
     
