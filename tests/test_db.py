@@ -64,7 +64,7 @@ int main()
 
     # Test file with include
     INPUT_FILE = os.path.join(_TEST_DATA_DIR, 'class.cpp')
-    _tu = get_tu(INPUT_FILE, is_from_cache_first = False)
+    _tu = get_tu(INPUT_FILE)
     proj_engine.build_db_file(_tu)
     expected_file_names = \
         set(['t.cpp', os.path.join(_TEST_DATA_DIR, 'class.h'),
@@ -97,7 +97,7 @@ FILE_TEST_DIR = os.path.join(_TEST_DATA_DIR, 'db', 'file')
 
 @nottest
 def setup_for_fs_file(_file):
-    _tu = get_tu(_file, is_from_cache_first=False)
+    _tu = get_tu(_file)
     assert _tu
     _proj_engine = db.ProjectEngine('test', is_in_memory = True)
     return _tu, _proj_engine
@@ -172,7 +172,7 @@ def test_file_get_pending_filenames_with_multiple_files(tu, proj_engine):
                  for included in _file.includes]))
     
     # get the new tu for c.h
-    c_tu = get_tu(os.path.join(FILE_TEST_DIR, 'c.h'), is_from_cache_first=False)
+    c_tu = get_tu(os.path.join(FILE_TEST_DIR, 'c.h'))
     pending_files = db.File.get_pending_filenames(c_tu, proj_engine)
     assert not pending_files
 
@@ -187,10 +187,8 @@ def test_file_get_pending_filenames_with_multiple_files_2():
     TEST1_PATH = os.path.join(TEST1_DIR, 'test1.cpp')
     TEST2_PATH = os.path.join(TEST2_DIR, 'test2.cpp')
     
-    test1_tu = get_tu(TEST1_PATH, is_from_cache_first=False,
-                      args=['-I', os.path.join(TEST1_DIR, '..')])
-    test2_tu = get_tu(TEST2_PATH, is_from_cache_first=False,
-                      args=['-I', os.path.join(TEST2_DIR, '..')])
+    test1_tu = get_tu(TEST1_PATH, args=['-I', os.path.join(TEST1_DIR, '..')])
+    test2_tu = get_tu(TEST2_PATH, args=['-I', os.path.join(TEST2_DIR, '..')])
     proj_engine = db.ProjectEngine('test', is_in_memory = True)
     
     pending_files = db.File.get_pending_filenames(test1_tu, proj_engine)
@@ -1085,8 +1083,8 @@ def test_proj_engine_build_db_tree_with_multiple_files_2():
     main2_path = os.path.join(PROJ_ENG_TEST_DIR, 'main2.cpp')
     
     proj_engine = db.ProjectEngine('test', is_in_memory = True)
-    main1_tu = get_tu(main1_path, is_from_cache_first = False)
-    main2_tu = get_tu(main2_path, is_from_cache_first = False)
+    main1_tu = get_tu(main1_path)
+    main2_tu = get_tu(main2_path)
     
     expecteds = [([os.path.join(PROJ_ENG_TEST_DIR, _f) 
                    for _f in ['A.h', 'B.h', 'main1.cpp']], 
