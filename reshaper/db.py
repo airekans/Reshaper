@@ -1,5 +1,5 @@
 from sqlalchemy import create_engine, Column, ForeignKey
-from sqlalchemy import Integer, String, Boolean
+from sqlalchemy import Integer, String, Boolean, Enum
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.orm import relationship, backref
 from sqlalchemy.orm import composite
@@ -11,6 +11,7 @@ from clang.cindex import CursorKind as ckind
 import clang.cindex
 import os
 from collections import deque
+from pychart.arrow import default
 
 
 _Base = declarative_base()
@@ -70,16 +71,15 @@ class ProjectEngine(object):
                 File.from_clang_tu(tu, include.source.name, self))
 
         self._session.add(File.from_clang_tu(tu, tu.spelling, self))
-        
         self._session.commit()
     
     def build_cursor_tree(self, cursor, parent, left):
         if cursor.kind in [ckind.USING_DIRECTIVE, ckind.USING_DECLARATION]:
             print "skip using directive"
-            return left, None
+            return left
         elif cursor.location.file is None:
             print "skip builtin element"
-            return left, None
+            return left
         
         db_cursor = Cursor(cursor, self)
         db_cursor.parent = parent
@@ -89,7 +89,7 @@ class ProjectEngine(object):
         
         # lexical parent
         lex_parent = cursor.lexical_parent
-        if lex_parent:
+        if lex_parent and lex_parent.kind != ckind.TRANSLATION_UNIT:
             for lex_pa in self._lex_parents:
                 if lex_pa == lex_parent:
                     db_cursor.lexical_parent = lex_pa.db_cursor
@@ -98,13 +98,23 @@ class ProjectEngine(object):
         
         # semantic parent
         sem_parent = cursor.semantic_parent
-        if sem_parent:
+        if sem_parent and sem_parent.kind != ckind.TRANSLATION_UNIT:
             if lex_parent and lex_parent == sem_parent:
                 db_cursor.semantic_parent = db_cursor.lexical_parent
             else:
                 pass # TODO: add cache here
         
-        # definition and declarations
+        if Type.is_valid_clang_type(cursor.type): # this can be improved
+            db_cursor.type = Type.from_clang_type(cursor.type, self)
+            decl_cursor = cursor.type.get_declaration()
+            if (db_cursor.type.declaration is None or \
+                not db_cursor.type.declaration.is_definition) and \
+                decl_cursor.kind != ckind.NO_DECL_FOUND:
+                db_cursor.type.declaration = \
+                    Cursor.from_clang_cursor(decl_cursor, self)
+                self._session.add(db_cursor.type)
+        
+        # definition and declarations 
         def_cursor = cursor.get_definition()
         if def_cursor is not None:
             if cursor.is_definition():
@@ -115,7 +125,8 @@ class ProjectEngine(object):
         
         is_add_lex_parents = False
         child_left = left + 1
-        if cursor.kind != ckind.TEMPLATE_TEMPLATE_PARAMETER:
+        if cursor.kind not in [ckind.TEMPLATE_TEMPLATE_PARAMETER,
+                               ckind.TYPEDEF_DECL]:
             for child in cursor.get_children():
                 if not is_add_lex_parents:
                     cursor.db_cursor = db_cursor
@@ -132,6 +143,31 @@ class ProjectEngine(object):
             self._lex_parents.popleft()
 
         return right
+
+    def build_db_tree2(self, cursor):
+        if isinstance(cursor, clang.cindex.TranslationUnit):
+            cursor = cursor.cursor
+            _tu = cursor
+        else: # cursor
+            _tu = cursor.translation_unit
+        
+        pending_files = File.get_pending_filenames(_tu, self)
+        self.build_db_file(_tu) # TODO: This can be improved.
+
+        self._lex_parents = deque()
+
+        left = Cursor.get_max_nested_set_index(self)
+        if left > 0:
+            left += 20
+        if cursor.kind == clang.cindex.CursorKind.TRANSLATION_UNIT:
+            for child in cursor.get_children():
+                if child.location.file and \
+                        child.location.file.name in pending_files:
+                    left = self.build_cursor_tree(child, None, left) + 1
+                    self._session.commit()
+        else:
+            self.build_cursor_tree(cursor, None, left)
+            self._session.commit()
     
     def build_db_cursor(self, cursor, parent, left):
         if cursor.kind in [ckind.USING_DIRECTIVE,
@@ -421,6 +457,8 @@ class Cursor(_Base):
                               foreign_keys=[referenced_id],
                               remote_side=[id], post_update=True)
     
+    # TODO: add underlying_typedef here
+    
     # nested set attributes
     left = Column("left", Integer, nullable=True)
     right = Column("right", Integer, nullable=True)
@@ -444,26 +482,27 @@ class Cursor(_Base):
                                            location_end.column,
                                            location_end.offset)
 
-        self.kind = \
-            CursorKind.from_clang_cursor_kind(cursor.kind, proj_engine)
-
-        if cursor.location.file:
-            self.file = File.from_clang_cursor(cursor, proj_engine)
+        with proj_engine.get_session().no_autoflush:
+            self.kind = \
+                CursorKind.from_clang_cursor_kind(cursor.kind, proj_engine)
+    
+            if cursor.location.file:
+                self.file = File.from_clang_cursor(cursor, proj_engine)
         
-        lexical_parent = cursor.lexical_parent
-        if lexical_parent is not None and \
-           lexical_parent.kind != ckind.TRANSLATION_UNIT:
-            self.lexical_parent = \
-                Cursor.from_clang_cursor(lexical_parent, proj_engine)
-        
-        semantic_parent = cursor.semantic_parent
-        if semantic_parent is not None and \
-           semantic_parent.kind != ckind.TRANSLATION_UNIT:
-            if lexical_parent and semantic_parent == lexical_parent:
-                self.semantic_parent = self.lexical_parent
-            else:
-                self.semantic_parent = \
-                    Cursor.from_clang_cursor(semantic_parent, proj_engine)
+#        lexical_parent = cursor.lexical_parent
+#        if lexical_parent is not None and \
+#           lexical_parent.kind != ckind.TRANSLATION_UNIT:
+#            self.lexical_parent = \
+#                Cursor.from_clang_cursor(lexical_parent, proj_engine)
+#        
+#        semantic_parent = cursor.semantic_parent
+#        if semantic_parent is not None and \
+#           semantic_parent.kind != ckind.TRANSLATION_UNIT:
+#            if lexical_parent and semantic_parent == lexical_parent:
+#                self.semantic_parent = self.lexical_parent
+#            else:
+#                self.semantic_parent = \
+#                    Cursor.from_clang_cursor(semantic_parent, proj_engine)
 
 
     @staticmethod
@@ -576,14 +615,12 @@ class Cursor(_Base):
         return max_right if max_right is not None else 0
 
 
-class TmpRefCursor(_Base):
-    """ Temporary table for Cursor.referenced relationship.
+class TmpCursor(_Base):
+    """ Temporary table for Cursor relationship.
     """
     
-    __tablename__ = 'tmp_ref_cursor'
+    __tablename__ = 'tmp_cursor'
     id = Column(Integer, primary_key = True)
-    cursor_id = Column(Integer, ForeignKey('cursor.id'))
-    cursor = relationship(Cursor, foreign_keys=[cursor_id])
     
     # following attributes are used to retrieve the cursors in the DB
     # You can think it as serialized cindex.Cursor.
@@ -592,11 +629,23 @@ class TmpRefCursor(_Base):
     usr = Column(String, nullable = True)
     is_definition = Column(Boolean, nullable = False)
 
+    tmp_type = Column(Enum('REF_CURSOR', 'SEM_CURSOR', 'TYPE',
+                           name='tmp_type'),
+                      nullable = False)
+
     kind_id = Column(Integer, ForeignKey('cursor_kind.id'))
     kind = relationship('CursorKind')
     
     file_id = Column(Integer, ForeignKey('file.id'))
     file = relationship("File")
+    
+    # only valid for TYPE
+    type_id = Column(Integer, ForeignKey('type.id'))
+    type = relationship('Type', foreign_keys=[type_id])
+
+    # only valid for REF_CURSOR and SEM_CURSOR
+    cursor_id = Column(Integer, ForeignKey('cursor.id'))
+    cursor = relationship(Cursor, foreign_keys=[cursor_id])
     
     # location
     line_start = Column(Integer, nullable = False)
@@ -612,12 +661,12 @@ class TmpRefCursor(_Base):
     location_end = composite(SourceLocation, line_end, column_end,
                              offset_end)
     
-    def __init__(self, cursor, proj_engine):
+    def __init__(self, cursor, tmp_type, proj_engine, **kws):
         self.spelling = cursor.spelling
         self.displayname = cursor.displayname
         self.usr = cursor.get_usr()
         self.is_definition = cursor.is_definition()
-    
+
         location_start = cursor.location
         location_end = cursor.extent.end
 
@@ -636,6 +685,10 @@ class TmpRefCursor(_Base):
             if cursor.location.file:
                 self.file = File.from_clang_cursor(cursor, proj_engine)
         
+        if tmp_type == 'TYPE':
+            self.type = kws['type']
+        else:
+            self.cursor = kws['db_cursor']
         
         
 class CursorKind(_Base):
