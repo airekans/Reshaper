@@ -1,6 +1,7 @@
 '''test_find_reference.py -- unittest for semantic.py
 '''
 
+import os
 from clang.cindex import CursorKind
 from reshaper.ast import TUCache, CursorCache
 from nose.tools import eq_
@@ -9,6 +10,10 @@ from reshaper.util import get_cursor_with_location, \
                           get_cursor_if, get_cursor
 from .util import get_tu_from_text
 
+import os
+from shutil import rmtree
+
+INPUT_DIR = os.path.join(os.path.dirname(__file__), 'test_data')
 
 parent_calling_func_test_input = """\
 void TargetFunc()
@@ -326,20 +331,20 @@ void fun4();
         fun_cursor = get_cursor_if(_tu,
                                    (lambda c: c.spelling == fun_name and
                                      c.is_definition()))
-        methods = sem.get_func_callees(fun_cursor, class_name)
+        methods = sem.get_func_callee_names(fun_cursor, class_name)
         eq_(expected_methods, methods)
 
-    check("fun1", "A", ['foo'])
+    check("fun1", "A", ['A', 'foo'])
     check("fun2", "A", ['foo', 'bar'])
     check("fun3", "A", [])
 
     # check error conditions
-    eq_(set(), sem.get_func_callees(None, "A"))
+    eq_(set(), sem.get_func_callee_names(None, "A"))
 
     fun4_cursor = get_cursor(_tu, "fun4")
     assert(fun4_cursor is not None)
     assert(not fun4_cursor.is_definition())
-    eq_(set(), sem.get_func_callees(fun4_cursor, "A"))
+    eq_(set(), sem.get_func_callee_names(fun4_cursor, "A"))
     
 
 def test_get_class_usage_from_cls():
@@ -376,6 +381,8 @@ class C
     void fun1()
     {
         int data = m_a.m_data;
+        B b;
+        b.fun2();
     }
 
     A m_a;
@@ -388,10 +395,10 @@ class C
         cls_cursor = get_cursor_if(_tu,
                                    (lambda c: c.spelling == cls_name and
                                      c.is_definition()))
-        methods = sem.get_class_callees(cls_cursor, class_name)
+        methods = sem.get_class_callee_names(cls_cursor, class_name)
         eq_(expected_methods, methods)
 
-    check('B', 'A', ['foo', 'bar'])
+    check('B', 'A', ['A', 'foo', 'bar'])
     check('C', 'A', [])
 
 
@@ -406,8 +413,50 @@ def test_get_source_path_candidates():
          '/home/XXX/YYY/src/ZZZ.c'],
          result)
  
+def test_get_lib_name():
+    normal_path = r'/home/xxx/zzz/lib/libname_one/xxx.cpp'
+    special_path = r'/home/xxx/zzz/special_lib/xxx.cpp'
+    special_path_under_GUI = r'/home/xxx/zzz/lib/special_lib2/xxxx.cpp'
+    no_name_path = r'/home/xxx/zzz/xxx/ddd/xxxx.cpp'
+    GUI_libname_path = r'/home/xxx/lib/xxx.cpp'
+
+    config_file = os.path.join(INPUT_DIR, 'libname_config.cfg')
+    normal_libname = sem.get_lib_name(normal_path, config_file)
+    eq_('libname_one', normal_libname)
+
+    special_libname = sem.get_lib_name(special_path, config_file)
+    eq_('/special_lib/', special_libname)
+
+    special_libname_under_GUI = sem.get_lib_name(special_path_under_GUI, config_file)
+    eq_('/special_lib2/', special_libname_under_GUI)
+
+    no_libname = sem.get_lib_name(no_name_path, config_file)
+    assert(not no_libname)
+
+    GUI_libname = sem.get_lib_name(GUI_libname_path, config_file)
+    eq_('GUI', GUI_libname)
 
 
+def test_scan_dir_parse_files():
+    """Test function walkdir()
+    """
+    test_dir = os.path.join(os.path.dirname(__file__), 'test_data', 
+                            'test_scan_dir_parse_files')
+    tmp_dir = os.path.join(test_dir, 'tmp_dir')
+    if os.path.exists(test_dir):
+        rmtree(test_dir)
+        
+    os.makedirs(tmp_dir)
+    for file_name in ('tmp', 'tmp.h', 'tmp.c'):
+        open(os.path.join(test_dir, file_name), 'w').close()
+        open(os.path.join(tmp_dir, file_name), 'w').close()
+        
+    result = []
+    sem.walkdir(test_dir, result.append)
+    rmtree(test_dir)
+    
+    eq_([os.path.join(test_dir, 'tmp.c'),
+         os.path.join(tmp_dir, 'tmp.c')], result)
     
     
-    
+

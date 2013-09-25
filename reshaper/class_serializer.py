@@ -29,10 +29,11 @@ friend bool operator == (const {{ class_name }}& a, const {{ class_name }}& b)
 }\
 '''
 
-import reshaper.header_util as hu
+import reshaper.semantic as sem
 from jinja2 import Template
 from reshaper import util
-import logging
+
+from reshaper.log import logger
 
 
 class ClassSerializer(object):
@@ -50,7 +51,7 @@ class ClassSerializer(object):
                 all_val_empty = False
                 break
         if all_val_empty:
-            logging.info('no member found for %s' % self._class_name)
+            logger.info('no member found for %s' % self._class_name)
             return "" 
         
         kwargs['class_name'] = self._class_name
@@ -66,8 +67,8 @@ def gen_code_with_member_var_separated(code_template,
     '''
     cs = ClassSerializer(class_cursor) 
       
-    nonpt_member_vars = hu.get_non_static_nonpt_var_names(cs.cursor)
-    pt_member_vars = hu.get_non_static_pt_var_names(cs.cursor)
+    nonpt_member_vars = sem.get_non_static_nonpt_var_names(cs.cursor)
+    pt_member_vars = sem.get_non_static_pt_var_names(cs.cursor)
         
     return cs.render(code_template,
                      nonpt_member_vars = nonpt_member_vars,
@@ -81,7 +82,7 @@ def gen_code_with_member_var(code_template,
    
     cs = ClassSerializer(class_cursor) 
       
-    member_vars = hu.get_non_static_var_names(cs.cursor)
+    member_vars = sem.get_non_static_var_names(cs.cursor)
     return cs.render(code_template, member_vars = member_vars)    
     
 

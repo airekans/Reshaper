@@ -1,5 +1,5 @@
 # This file provides common utility functions for the test suite.
-import os
+import os, sys
 from functools import partial
 from clang.cindex import CursorKind
 from clang.cindex import Config
@@ -25,17 +25,32 @@ def is_cursor_in_file_func(file_path):
 
 
 def is_name_matched(cursor, name):
+    
+    match_name_list = [name, 'struct ' + name, 'class ' + name]
+    
     if cursor.spelling:
-        return cursor.spelling == name
+        return cursor.spelling in match_name_list
     else:
-        return cursor.displayname == name
+        return cursor.displayname in match_name_list
 
 def get_declaration(cursor):
-    if hasattr(cursor, "get_declaration"):
+    if cursor.kind.is_declaration():
+        return cursor
+    elif hasattr(cursor, "get_declaration"):
         return cursor.get_declaration()
     else:
         return _CONF.lib.clang_getCursorReferenced(cursor)
-                
+
+
+def get_diagnostics_str(diagnostics):   
+    output = ''
+    for diag in diagnostics:
+        loc = diag.location
+        file_info = ''
+        if loc.file:
+            file_info = '%s:%s:%s:' % (loc.file.name, loc.line, loc.column)
+        output += file_info + diag.spelling + '\n' 
+    return output            
 
 def check_diagnostics(diagnostics):
     '''check diagnostics,
@@ -43,13 +58,8 @@ def check_diagnostics(diagnostics):
     '''
     error_num = len(diagnostics)
     if error_num > 0:
-        print "Source file has the following errors(%d):" % error_num
-        for diag in diagnostics:
-            loc = diag.location
-            file_info = ''
-            if loc.file:
-                file_info = '%s:%s:%s:' % (loc.file.name, loc.line, loc.column)
-            print file_info + diag.spelling
+        sys.stderr.write("Source file has the following errors(%d):\n" % error_num)
+        sys.stderr.write(get_diagnostics_str(diagnostics))
 
     return error_num > 0
 
@@ -92,7 +102,7 @@ def get_cursor_if(source, is_satisfied_fun, is_visit_subtree_fun = lambda _x, _y
 
     return cursors[0] if len(cursors) > 0 else None
     
-    
+   
 def get_cursors(source, spelling):
     """Obtain all cursors from a source object with a specific spelling.
 
@@ -103,7 +113,8 @@ def get_cursors(source, spelling):
     If no cursors are found, an empty list is returned.
     """
 
-    return get_cursors_if(source, lambda c: c.spelling == spelling)
+    return get_cursors_if(source, partial(is_name_matched, name=spelling))
+    
     
 def get_cursors_if(source, is_satisfied_fun,
                    is_visit_subtree_fun = lambda _x, _y: True,
@@ -123,15 +134,7 @@ def get_cursors_if(source, is_satisfied_fun,
     def visit(cursor, _):
         if is_satisfied_fun(cursor):
             cursors.append(transform_fun(cursor))
-          
-        semantic_parent = cursor.semantic_parent
-        if(semantic_parent and is_satisfied_fun(semantic_parent)):
-            cursors.append(transform_fun(semantic_parent))
-        
-        declaration = get_declaration(cursor)
-        if(declaration and is_satisfied_fun(declaration)):
-            cursors.append(transform_fun(declaration))
-
+    
     walk_ast(source, visit, is_visit_subtree_fun)
 
     def unique(l):
@@ -215,7 +218,8 @@ def get_function_signature(fun_cursor):
     """
     tokens = list(fun_cursor.get_tokens())
     if len(tokens) < 1:
-        return ""
+        return fun_cursor.type.get_result().spelling + " " + \
+            fun_cursor.displayname
 
     valid_tokens = []
     for t in tokens:

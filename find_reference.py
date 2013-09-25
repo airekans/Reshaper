@@ -67,11 +67,11 @@ def output_to_file(target_cursor, curs, file_path):
     file_handle.write(output_string)
     file_handle.close()
 
-def main():
+def main(argv = sys.argv[1:]):
     '''main function of find reference
     '''
     output_file = "referenceResult.txt"
-    options = parse_find_reference_args(output_file)
+    options = parse_find_reference_args(output_file, args = argv)
     #get target reference info
     tu_source = get_tu(os.path.abspath(options.filename),
                        config_path = options.config,
@@ -79,24 +79,24 @@ def main():
     assert(semantic_util.is_tu(tu_source))
 
     if check_diagnostics(tu_source.diagnostics):
-        print "Warning : file %s, diagnostics occurs" % options.filename,
-        print " parse result may be incorrect!"
+        sys.stderr.write("Warning : file %s, diagnostics occurs parse result may be incorrect!\n"\
+                         % options.filename)
 
     target_cursor = get_cursor_with_location(tu_source, \
             options.spelling, \
             options.line, options.column)
     if not target_cursor:
-        print "Error : Can't get source cursor" 
-        print "please check file:%s, name:%s, line:%s, column:%s "\
+        sys.stderr.write("Error : Can't get source cursor\n")
+        sys.stderr.write("please check file:%s, name:%s, line:%s, column:%s\n"\
                 % (options.filename, options.spelling,\
-                options.line, options.column)
+                options.line, options.column))
         sys.exit(-1)
 
     reference_usr = get_usr_of_declaration_cursor(target_cursor)
     
     #parse input directory
     refer_curs = []
-    semantic_util.scan_dir_parse_files(options.directory, \
+    semantic_util.walkdir(options.directory, \
             partial(get_cursors_with_name, \
                     name = options.spelling, \
                     ref_curs = refer_curs))

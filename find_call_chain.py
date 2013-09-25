@@ -32,7 +32,7 @@ def find_reference_update_output_contents(target_cursor, \
         spelling_value = (target_cursor.displayname.split('('))[0]
 
     refer_curs = []
-    semantic_util.scan_dir_parse_files(search_directory, \
+    semantic_util.walkdir(search_directory, \
             partial(get_cursors_with_name, \
             name = spelling_value, \
             ref_curs = refer_curs))
@@ -81,19 +81,18 @@ def conver_list_to_output_string(output_contents):
     output_string += "}\n"
     return output_string
 
-def main():
+def main(argv = sys.argv[1:]):
     '''main function : get the user args;
     find reference for the specific word;
     begin to handle its output recursively
     '''
     output_file = "findCallChainResult.txt"
-    options = parse_find_reference_args(output_file)
+    options = parse_find_reference_args(output_file, args = argv)
     tu_source = get_tu(options.filename)
     assert(semantic_util.is_tu(tu_source))
 
     if check_diagnostics(tu_source.diagnostics):
-        print "Error"
-        print
+        sys.stderr.write("Error\n")
         sys.exit(-1)
     target_cursor = get_cursor_with_location(tu_source, \
             options.spelling, \
