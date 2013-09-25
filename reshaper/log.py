@@ -13,7 +13,7 @@ try:
 except Exception:
     FMT = '%(asctime)s %(filename)s: L%(lineno)d : %(levelname)s: %(message)s'
     DATE_FMT = '%Y-%m-%d %H:%M:%S'
-    logging.basicConfig(level = logging.NOTSET, 
+    logging.basicConfig(level = logging.WARNING, 
                         format = FMT, 
                         datefmt = DATE_FMT)
     

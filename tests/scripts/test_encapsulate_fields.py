@@ -6,8 +6,9 @@ Created on Sep 11, 2013
 
 import encapsulate_fields
 import os, shutil
-from tests.util import assert_file_equal
+from tests.util import assert_file_equal, redirect_stderr
 
+@redirect_stderr
 def test_encapsulate_fields_wo_field_arg():
     '''test encapsualte_fields.py without field argument
     '''
@@ -20,7 +21,7 @@ def test_encapsulate_fields_wo_field_arg():
                       os.path.join(input_path, 'test_encap.cpp.bak'))
     assert_file_equal(os.path.join(input_path, 'test_encap.h.ref'),
                       os.path.join(input_path, 'test_encap.h.bak'))
-    
+
 def test_encapsulate_fields_with_field_arg():
     '''test encapsualte_fields.py with field argument
     '''
@@ -33,7 +34,8 @@ def test_encapsulate_fields_with_field_arg():
                       os.path.join(input_path, 'test_encap.cpp.bak'))
     assert_file_equal(os.path.join(input_path, 'test_encap.h.ref2'),
                       os.path.join(input_path, 'test_encap.h.bak'))
-    
+
+@redirect_stderr
 def test_encapsulate_fields_inplace():
     '''test encapsualte_fields.py using inplace argument
     '''
