@@ -81,7 +81,7 @@ def redirect_stderr(func):
     return test_wrapped_func
 
 
-def assert_stdout (expected_str):
+def assert_stdout(expected_str):
     '''assert stdout string is expected string
     '''
     def outer_wrap(func):
