@@ -11,7 +11,6 @@ from clang.cindex import CursorKind as ckind
 import clang.cindex
 import os
 from collections import deque
-from pychart.arrow import default
 
 
 _Base = declarative_base()
@@ -102,8 +101,12 @@ class ProjectEngine(object):
             if lex_parent and lex_parent == sem_parent:
                 db_cursor.semantic_parent = db_cursor.lexical_parent
             else:
-                pass # TODO: add cache here
+                # TODO: add cache here
+                tmp_cursor = TmpCursor(sem_parent, 'SEM_CURSOR',
+                                       self, db_cursor=db_cursor)
+                self._session.add(tmp_cursor)
         
+        # declaration can be updated in the final stage
         if Type.is_valid_clang_type(cursor.type): # this can be improved
             db_cursor.type = Type.from_clang_type(cursor.type, self)
             decl_cursor = cursor.type.get_declaration()
@@ -115,6 +118,8 @@ class ProjectEngine(object):
                 self._session.add(db_cursor.type)
         
         # definition and declarations 
+        # This can be done in the final stage, instead of update in travasing 
+        # tree
         def_cursor = cursor.get_definition()
         if def_cursor is not None:
             if cursor.is_definition():
@@ -685,6 +690,7 @@ class TmpCursor(_Base):
             if cursor.location.file:
                 self.file = File.from_clang_cursor(cursor, proj_engine)
         
+        self.tmp_type = tmp_type
         if tmp_type == 'TYPE':
             self.type = kws['type']
         else:
