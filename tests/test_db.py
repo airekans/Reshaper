@@ -44,14 +44,14 @@ def test_project_engine_initialize():
     eq_(expected_tkind_names, actual_tkind_names)
 
 def test_project_engine_build_file():
-    TEST_INPUT = \
+    test_input = \
 """
 int main()
 {
     return 0;
 }
 """
-    _tu = get_tu_from_text(TEST_INPUT, 't.cpp')
+    _tu = get_tu_from_text(test_input, 't.cpp')
     proj_engine = db.ProjectEngine('test', is_in_memory = True)
     assert proj_engine.get_session() is not None
 
@@ -63,8 +63,8 @@ int main()
     eq_(expected_file_names, actual_file_names)
 
     # Test file with include
-    INPUT_FILE = os.path.join(_TEST_DATA_DIR, 'class.cpp')
-    _tu = get_tu(INPUT_FILE)
+    input_file = os.path.join(_TEST_DATA_DIR, 'class.cpp')
+    _tu = get_tu(input_file)
     proj_engine.build_db_file(_tu)
     expected_file_names = \
         set(['t.cpp', os.path.join(_TEST_DATA_DIR, 'class.h'),
@@ -82,7 +82,7 @@ def setup_for_memory_file(source):
 
 @nottest
 def setup_for_test_file():
-    TEST_INPUT = \
+    test_input = \
 """
 int main()
 {
@@ -90,7 +90,7 @@ int main()
 }
 """
 
-    return setup_for_memory_file(TEST_INPUT)
+    return setup_for_memory_file(test_input)
 
 
 FILE_TEST_DIR = os.path.join(_TEST_DATA_DIR, 'db', 'file')
@@ -104,18 +104,18 @@ def setup_for_fs_file(_file):
 
 @nottest
 def setup_for_test_file_with_multiple_files():
-    SOURCE_PATH = os.path.join(FILE_TEST_DIR, 'main.cpp')
-    return setup_for_fs_file(SOURCE_PATH)
+    source_path = os.path.join(FILE_TEST_DIR, 'main.cpp')
+    return setup_for_fs_file(source_path)
 
 
 
 @with_param_setup(setup_for_test_file)
-def test_file_get_pending_filenames(tu, proj_engine):
-    pending_files = db.File.get_pending_filenames(tu, proj_engine)
+def test_file_get_pending_filenames(_tu, proj_engine):
+    pending_files = db.File.get_pending_filenames(_tu, proj_engine)
     eq_(set(['t.cpp']), pending_files)
 
-    proj_engine.build_db_file(tu)
-    pending_files = db.File.get_pending_filenames(tu, proj_engine)
+    proj_engine.build_db_file(_tu)
+    pending_files = db.File.get_pending_filenames(_tu, proj_engine)
     assert not pending_files
 
 @with_param_setup(setup_for_test_file)
@@ -130,29 +130,30 @@ def is_db_file(_file):
     return _file.id is not None
 
 @with_param_setup(setup_for_test_file_with_multiple_files)
-def test_file_from_clang_tu_with_includes(tu, proj_engine):
-    _file = db.File.from_clang_tu(tu, tu.spelling, proj_engine)
+def test_file_from_clang_tu_with_includes(_tu, proj_engine):
+    _file = db.File.from_clang_tu(_tu, _tu.spelling, proj_engine)
     proj_engine.get_session().commit()
     
     assert is_db_file(_file)
     
-    expected_files = set([inc.source.name for inc in tu.get_includes()])
+    expected_files = set([inc.source.name for inc in _tu.get_includes()])
     expected_files = \
-        expected_files.union(set([inc.include.name for inc in tu.get_includes()]))
+        expected_files.union(set([inc.include.name
+                                  for inc in _tu.get_includes()]))
     
     actual_files = proj_engine.get_session().query(db.File).all()
     eq_(expected_files, set([_f.name for _f in actual_files]))
 
 
 @with_param_setup(setup_for_test_file_with_multiple_files)
-def test_file_get_pending_filenames_with_multiple_files(tu, proj_engine):
-    pending_files = db.File.get_pending_filenames(tu, proj_engine)
+def test_file_get_pending_filenames_with_multiple_files(_tu, proj_engine):
+    pending_files = db.File.get_pending_filenames(_tu, proj_engine)
     expected_files = set(os.path.join(FILE_TEST_DIR, _file) 
                          for _file in ['main.cpp', 'c.h', 'b.h', 'a.h'])
     eq_(expected_files, pending_files)
     
-    proj_engine.build_db_file(tu)
-    pending_files = db.File.get_pending_filenames(tu, proj_engine)
+    proj_engine.build_db_file(_tu)
+    pending_files = db.File.get_pending_filenames(_tu, proj_engine)
     assert not pending_files
     db_files = proj_engine.get_session().query(db.File).all()
     actual_file_names = set(_file.name for _file in db_files)
@@ -171,7 +172,7 @@ def test_file_get_pending_filenames_with_multiple_files(tu, proj_engine):
             set([os.path.basename(included.name)
                  for included in _file.includes]))
     
-    # get the new tu for c.h
+    # get the new _tu for c.h
     c_tu = get_tu(os.path.join(FILE_TEST_DIR, 'c.h'))
     pending_files = db.File.get_pending_filenames(c_tu, proj_engine)
     assert not pending_files
@@ -182,17 +183,17 @@ def test_file_get_pending_filenames_with_multiple_files_2():
     This will cause clang returns the "test1/../a.h" and "test2/../a.h".
     But they are actually the same file.
     '''
-    TEST1_DIR = os.path.join(FILE_TEST_DIR, 'test1')
-    TEST2_DIR = os.path.join(FILE_TEST_DIR, 'test2')
-    TEST1_PATH = os.path.join(TEST1_DIR, 'test1.cpp')
-    TEST2_PATH = os.path.join(TEST2_DIR, 'test2.cpp')
+    test1_dir = os.path.join(FILE_TEST_DIR, 'test1')
+    test2_dir = os.path.join(FILE_TEST_DIR, 'test2')
+    test1_path = os.path.join(test1_dir, 'test1.cpp')
+    test2_path = os.path.join(test2_dir, 'test2.cpp')
     
-    test1_tu = get_tu(TEST1_PATH, args=['-I', os.path.join(TEST1_DIR, '..')])
-    test2_tu = get_tu(TEST2_PATH, args=['-I', os.path.join(TEST2_DIR, '..')])
+    test1_tu = get_tu(test1_path, args=['-I', os.path.join(test1_dir, '..')])
+    test2_tu = get_tu(test2_path, args=['-I', os.path.join(test2_dir, '..')])
     proj_engine = db.ProjectEngine('test', is_in_memory = True)
     
     pending_files = db.File.get_pending_filenames(test1_tu, proj_engine)
-    expected_files = set([os.path.join(FILE_TEST_DIR, 'a.h'), TEST1_PATH])
+    expected_files = set([os.path.join(FILE_TEST_DIR, 'a.h'), test1_path])
     eq_(expected_files, pending_files)
     
     proj_engine.build_db_file(test1_tu)
@@ -201,7 +202,7 @@ def test_file_get_pending_filenames_with_multiple_files_2():
     set_eq(expected_files, [_f.name for _f in all_db_files])
     
     pending_files = db.File.get_pending_filenames(test2_tu, proj_engine)
-    expected_files = set([TEST2_PATH])
+    expected_files = set([test2_path])
     eq_(expected_files, pending_files)
 
 
@@ -217,7 +218,7 @@ def assert_ckind_equal(_ckind, db_ckind):
     eq_(_ckind.is_unexposed(), db_ckind.is_unexposed)
 
 @with_param_setup(setup_for_test_file)
-def test_cursor_kind(tu, proj_engine):
+def test_cursor_kind(_, proj_engine):
     for kind in ckind.get_all_kinds():
         db_ckind = db.CursorKind.from_clang_cursor_kind(kind, proj_engine)
         assert_ckind_equal(kind, db_ckind)
@@ -263,23 +264,23 @@ def assert_cursor_equal(cursor, db_cursor):
         assert_cursor_equal(cursor.semantic_parent, db_cursor.semantic_parent)
 
 @with_param_setup(setup_for_memory_file, TEST_CURSOR_INPUT)
-def test_cursor_ctor(tu, proj_engine):
-    A_cursor = get_cursor(tu, 'A')
+def test_cursor_ctor(_tu, proj_engine):
+    A_cursor = get_cursor(_tu, 'A')
     db_A_cursor = db.Cursor(A_cursor, proj_engine)
     
     assert_cursor_equal(A_cursor, db_A_cursor)
     
     # test lexical_parent
-    data_cursor = get_cursor(tu, 'data')
+    data_cursor = get_cursor(_tu, 'data')
     db_data_cursor = db.Cursor(data_cursor, proj_engine)
     assert_cursor_equal(data_cursor, db_data_cursor)
     
     # test semantic_parent
-    foo_cursor = get_cursor(tu, 'foo')
+    foo_cursor = get_cursor(_tu, 'foo')
     db_foo_cursor = db.Cursor(foo_cursor, proj_engine)
     assert_cursor_equal(foo_cursor, db_foo_cursor)
     
-    foo_cursor = get_cursor_if(tu, lambda c: c.spelling == 'foo' and
+    foo_cursor = get_cursor_if(_tu, lambda c: c.spelling == 'foo' and
                                         c.is_definition())
     db_foo_cursor = db.Cursor(foo_cursor, proj_engine)
     assert_cursor_equal(foo_cursor, db_foo_cursor)
@@ -292,10 +293,10 @@ def is_db_cursor(db_cursor):
     return db_cursor.id is not None
 
 @with_param_setup(setup_for_memory_file, TEST_CURSOR_INPUT)
-def test_cursor_from_clang_cursor_with_new_cursor(tu, proj_engine):
+def test_cursor_from_clang_cursor_with_new_cursor(_tu, proj_engine):
     # ensure that this cursor is not in DB
     for spelling in ['A', 'data', 'foo']:
-        _cursor = get_cursor(tu, spelling)
+        _cursor = get_cursor(_tu, spelling)
         assert not is_in_db(_cursor, proj_engine)
         
         db_cursor = db.Cursor.from_clang_cursor(_cursor, proj_engine)
@@ -347,10 +348,10 @@ def fake_build_db_cursor(cursor, proj_engine):
         build_db_cursor(cursor, None, left)
 
 @with_param_setup(setup_for_memory_file, TEST_CURSOR_INPUT)
-def test_cursor_from_clang_cursor_with_db_cursor(tu, proj_engine):
-    fake_build_db_cursor(tu.cursor, proj_engine)
+def test_cursor_from_clang_cursor_with_db_cursor(_tu, proj_engine):
+    fake_build_db_cursor(_tu.cursor, proj_engine)
     for spelling in ['A', 'data', 'foo']:
-        _cursor = get_cursor(tu, spelling)
+        _cursor = get_cursor(_tu, spelling)
 
         # ensure that the cursor is in db
         assert is_in_db(_cursor, proj_engine)
@@ -381,10 +382,10 @@ int main()
 """
 
 @with_param_setup(setup_for_memory_file, TEST_CURSOR_MACRO_INPUT)
-def test_cursor_from_clang_cursor_with_decl_cursor(tu, proj_engine):
-    Test_decl_cursor = get_cursor_if(tu, lambda c: c.spelling == 'Test' and \
+def test_cursor_from_clang_cursor_with_decl_cursor(_tu, proj_engine):
+    Test_decl_cursor = get_cursor_if(_tu, lambda c: c.spelling == 'Test' and \
                                             not c.is_definition())
-    Test_def_cursor = get_cursor_if(tu, lambda c: c.spelling == 'Test' and \
+    Test_def_cursor = get_cursor_if(_tu, lambda c: c.spelling == 'Test' and \
                                             c.is_definition())
     assert not is_in_db(Test_decl_cursor, proj_engine)
     assert not is_in_db(Test_def_cursor, proj_engine)
@@ -394,7 +395,7 @@ def test_cursor_from_clang_cursor_with_decl_cursor(tu, proj_engine):
     assert not is_db_cursor(db_Test_decl_cursor)
     assert_cursor_equal(Test_decl_cursor, db_Test_decl_cursor)
     
-    fake_build_db_cursor(tu.cursor, proj_engine)
+    fake_build_db_cursor(_tu.cursor, proj_engine)
     # get from db
     db_Test_decl_cursor = db.Cursor.from_clang_cursor(Test_decl_cursor,
                                                       proj_engine)
@@ -407,8 +408,8 @@ def test_cursor_from_clang_cursor_with_decl_cursor(tu, proj_engine):
     assert_cursor_equal(Test_def_cursor, db_Test_def_cursor)
 
 @with_param_setup(setup_for_memory_file, TEST_CURSOR_MACRO_INPUT)
-def test_cursor_from_clang_cursor_with_non_def_cursor(tu, proj_engine):
-    t_cursor = get_cursor_if(tu, lambda c: not c.spelling and
+def test_cursor_from_clang_cursor_with_non_def_cursor(_tu, proj_engine):
+    t_cursor = get_cursor_if(_tu, lambda c: not c.spelling and
                                     c.displayname == 't')
     assert t_cursor
     assert not is_in_db(t_cursor, proj_engine)
@@ -418,7 +419,7 @@ def test_cursor_from_clang_cursor_with_non_def_cursor(tu, proj_engine):
     assert_cursor_equal(t_cursor, db_t_cursor)
     
     # build the whole AST into db
-    fake_build_db_cursor(tu.cursor, proj_engine)
+    fake_build_db_cursor(_tu.cursor, proj_engine)
 
     db_t_cursor = db.Cursor.from_clang_cursor(t_cursor, proj_engine)
     assert not is_db_cursor(db_t_cursor)
@@ -444,8 +445,8 @@ class A
 '''
 
 @with_param_setup(setup_for_memory_file, TEST_NAMESPACE_INPUT)
-def test_cursor_from_clang_cursor_with_same_lex_sem_parent(tu, proj_engine):
-    fake_build_db_cursor(tu.cursor, proj_engine)
+def test_cursor_from_clang_cursor_with_same_lex_sem_parent(_tu, proj_engine):
+    fake_build_db_cursor(_tu.cursor, proj_engine)
     
     db_ns_cursors = proj_engine.get_session().query(db.Cursor).\
         filter(db.Cursor.spelling == 'ns').all()
@@ -455,12 +456,12 @@ def test_cursor_from_clang_cursor_with_same_lex_sem_parent(tu, proj_engine):
 CURSOR_TEST_DIR = os.path.join(_TEST_DATA_DIR, 'db', 'cursor')
 
 @with_param_setup(setup_for_fs_file, os.path.join(CURSOR_TEST_DIR, 'a.cpp'))
-def test_cursor_from_clang_cursor_with_same_spelling(tu, proj_engine):
-    cursors = get_cursors_if(tu, lambda c: c.spelling == 'A' and
+def test_cursor_from_clang_cursor_with_same_spelling(_tu, proj_engine):
+    cursors = get_cursors_if(_tu, lambda c: c.spelling == 'A' and
                                     c.is_definition())
     eq_(2, len(cursors))
     
-    fake_build_db_cursor(tu.cursor, proj_engine)
+    fake_build_db_cursor(_tu.cursor, proj_engine)
 
     for cursor in cursors:
         db_cursor = db.Cursor.from_clang_cursor(cursor, proj_engine)
@@ -489,8 +490,8 @@ void foo()
 {}
 '''
 
-def verify_db_def_cursor(spelling, expected_decl_len, tu, proj_engine):
-    def_cursor = get_cursor_if(tu, lambda c: c.spelling == spelling and
+def verify_db_def_cursor(spelling, expected_decl_len, _tu, proj_engine):
+    def_cursor = get_cursor_if(_tu, lambda c: c.spelling == spelling and
                                     c.is_definition())
     assert is_in_db(def_cursor, proj_engine)
     
@@ -520,37 +521,37 @@ def verify_db_def_cursor(spelling, expected_decl_len, tu, proj_engine):
         eq_(db_def_cursor, db_cur.definition)
 
 @with_param_setup(setup_for_memory_file, TEST_CURSOR_DEF_INPUT)
-def test_cursor_update_declarations(tu, proj_engine):
-    fake_build_db_cursor(tu.cursor, proj_engine)
+def test_cursor_update_declarations(_tu, proj_engine):
+    fake_build_db_cursor(_tu.cursor, proj_engine)
     
-    verify_db_def_cursor('A', 2, tu, proj_engine)
-    verify_db_def_cursor('B', 1, tu, proj_engine)
-    verify_db_def_cursor('foo', 1, tu, proj_engine)
+    verify_db_def_cursor('A', 2, _tu, proj_engine)
+    verify_db_def_cursor('B', 1, _tu, proj_engine)
+    verify_db_def_cursor('foo', 1, _tu, proj_engine)
 
 @with_param_setup(setup_for_memory_file, TEST_CURSOR_DEF_INPUT)
-def test_cursor_get_definition_without_def(tu, proj_engine):
-    A_def_cursor = get_cursor_if(tu, lambda c: c.spelling == 'A' and
+def test_cursor_get_definition_without_def(_tu, proj_engine):
+    A_def_cursor = get_cursor_if(_tu, lambda c: c.spelling == 'A' and
                                         c.is_definition())
     assert not is_in_db(A_def_cursor, proj_engine)
     
     assert db.Cursor.get_definition(A_def_cursor, proj_engine) is None
     
     # build only declaration into db
-    A_decl_cursor = get_cursor_if(tu, lambda c: c.spelling == 'A' and
+    A_decl_cursor = get_cursor_if(_tu, lambda c: c.spelling == 'A' and
                                         not c.is_definition())
     fake_build_db_cursor(A_decl_cursor, proj_engine)
     assert db.Cursor.get_definition(A_def_cursor, proj_engine) is None
 
 @with_param_setup(setup_for_memory_file, TEST_CURSOR_DEF_INPUT)
-def test_cursor_get_definition_with_def(tu, proj_engine):
-    A_def_cursor = get_cursor_if(tu, lambda c: c.spelling == 'A' and
+def test_cursor_get_definition_with_def(_tu, proj_engine):
+    A_def_cursor = get_cursor_if(_tu, lambda c: c.spelling == 'A' and
                                         c.is_definition())
     assert not is_in_db(A_def_cursor, proj_engine)
     
     assert db.Cursor.get_definition(A_def_cursor, proj_engine) is None
     
     # build decl and def into db
-    fake_build_db_cursor(tu.cursor, proj_engine)
+    fake_build_db_cursor(_tu.cursor, proj_engine)
     expected_cursor = proj_engine.get_session().query(db.Cursor).\
         filter(db.Cursor.usr == A_def_cursor.get_usr()).\
         filter(db.Cursor.is_definition == True).one()
@@ -569,8 +570,8 @@ int main()
 '''
 
 @with_param_setup(setup_for_memory_file, TEST_CURSOR_REF_INPUT)
-def test_cursor_from_referenced(tu, proj_engine):
-    a_cursor = get_cursor_if(tu, lambda c: c.displayname == 'a' and
+def test_cursor_from_referenced(_tu, proj_engine):
+    a_cursor = get_cursor_if(_tu, lambda c: c.displayname == 'a' and
                                     c.kind == cindex.CursorKind.DECL_REF_EXPR)
     a_ref_cursor = a_cursor.referenced
     assert a_ref_cursor
@@ -579,7 +580,7 @@ def test_cursor_from_referenced(tu, proj_engine):
     db_a_cursor = db.Cursor.from_clang_referenced(a_ref_cursor, proj_engine)
     assert not is_db_cursor(db_a_cursor)
     
-    fake_build_db_cursor(tu.cursor, proj_engine)
+    fake_build_db_cursor(_tu.cursor, proj_engine)
     db_a_cursor = db.Cursor.from_clang_referenced(a_ref_cursor, proj_engine)
     assert is_db_cursor(db_a_cursor)
 
@@ -601,9 +602,9 @@ void bar(T t)
 '''
 
 @with_param_setup(setup_for_memory_file, TEST_CURSOR_REF_INPUT2)
-def test_cursor_from_referenced_without_spelling(tu, proj_engine):
+def test_cursor_from_referenced_without_spelling(_tu, proj_engine):
     foo_call_cursor = \
-        get_cursor_if(tu, lambda c: c.location.line == 12 and
+        get_cursor_if(_tu, lambda c: c.location.line == 12 and
                              c.kind == cindex.CursorKind.DECL_REF_EXPR)
     foo_ref_cursor = foo_call_cursor.referenced
     assert foo_ref_cursor
@@ -613,28 +614,28 @@ def test_cursor_from_referenced_without_spelling(tu, proj_engine):
     db_a_cursor = db.Cursor.from_clang_referenced(foo_ref_cursor, proj_engine)
     assert not is_db_cursor(db_a_cursor)
     
-    fake_build_db_cursor(tu.cursor, proj_engine)
+    fake_build_db_cursor(_tu.cursor, proj_engine)
     db_a_cursor = db.Cursor.from_clang_referenced(foo_ref_cursor, proj_engine)
     assert is_db_cursor(db_a_cursor)
 
 @with_param_setup(setup_for_memory_file, TEST_CURSOR_REF_INPUT)
-def test_cursor_get_max_nested_set_index(tu, proj_engine):
+def test_cursor_get_max_nested_set_index(_tu, proj_engine):
     eq_(0, db.Cursor.get_max_nested_set_index(proj_engine))
 
-    fake_build_db_cursor(tu.cursor, proj_engine)
+    fake_build_db_cursor(_tu.cursor, proj_engine)
     expected_max = proj_engine.get_session().\
             query(func.max(db.Cursor.right)).scalar()
     assert expected_max
     eq_(expected_max, db.Cursor.get_max_nested_set_index(proj_engine))
 
 @with_param_setup(setup_for_memory_file, TEST_CURSOR_REF_INPUT)
-def test_type_is_valid_type(tu, _):
+def test_type_is_valid_type(_tu, _):
     assert not db.Type.is_valid_clang_type(None)
     fake_type = lambda: True
     fake_type.kind = cindex.TypeKind.INVALID
     assert not db.Type.is_valid_clang_type(fake_type)
     
-    A_cursor = get_cursor(tu, 'A')
+    A_cursor = get_cursor(_tu, 'A')
     A_type = A_cursor.type
     assert A_type
     assert db.Type.is_valid_clang_type(A_type)
@@ -653,8 +654,8 @@ A*** app;
 '''
 
 
-def verify_type(tu, proj_engine, spelling, is_db):
-    _cursor = get_cursor(tu, spelling)
+def verify_type(_tu, proj_engine, spelling, is_db):
+    _cursor = get_cursor(_tu, spelling)
     _type = _cursor.type
     assert _type
     db_type = db.Type.from_clang_type(_type, proj_engine)
@@ -670,25 +671,25 @@ def verify_type(tu, proj_engine, spelling, is_db):
             assert not is_db_type(db_type)
 
 @with_param_setup(setup_for_memory_file, TEST_TYPE_INPUT)
-def test_type_from_clang_type(tu, proj_engine):
-    verify_type(tu, proj_engine, 'a', False)
-    verify_type(tu, proj_engine, 'ap', False)
-    verify_type(tu, proj_engine, 'ap2', False)
-    verify_type(tu, proj_engine, 'app', False)
+def test_type_from_clang_type(_tu, proj_engine):
+    verify_type(_tu, proj_engine, 'a', False)
+    verify_type(_tu, proj_engine, 'ap', False)
+    verify_type(_tu, proj_engine, 'ap2', False)
+    verify_type(_tu, proj_engine, 'app', False)
     
     # build the types into DB
     # we ignore ap2 here because its type is the same as ap
     for spelling in ['a', 'ap', 'app']:
-        _cursor = get_cursor(tu, spelling)
+        _cursor = get_cursor(_tu, spelling)
         _type = _cursor.type
         assert _type
         db_type = db.Type.from_clang_type(_type, proj_engine)
         proj_engine.get_session().add(db_type)
     
-    verify_type(tu, proj_engine, 'a', True)
-    verify_type(tu, proj_engine, 'ap', True)
-    verify_type(tu, proj_engine, 'ap2', True)
-    verify_type(tu, proj_engine, 'app', True)
+    verify_type(_tu, proj_engine, 'a', True)
+    verify_type(_tu, proj_engine, 'ap', True)
+    verify_type(_tu, proj_engine, 'ap2', True)
+    verify_type(_tu, proj_engine, 'app', True)
 
 def simple_build_db_cursor(cursor, proj_engine):
     left = 0
@@ -1040,16 +1041,16 @@ def assert_build_db_cursor(proj_engine, tus, expecteds):
     eq_(len(tus), len(expecteds))
     
     right = 0
-    for tu, expected in zip(tus, expecteds):
-        pending_files = db.File.get_pending_filenames(tu, proj_engine)
-        proj_engine.build_db_tree(tu.cursor)
+    for _tu, expected in zip(tus, expecteds):
+        pending_files = db.File.get_pending_filenames(_tu, proj_engine)
+        proj_engine.build_db_tree(_tu.cursor)
     
         actual_file_names = set(_file.name for _file in
                                 proj_engine.get_session().query(db.File).all())
         set_eq(expected[0], actual_file_names)
         
         assert_db_states(proj_engine, expected[1], expected[2])
-        for _c in tu.cursor.get_children():
+        for _c in _tu.cursor.get_children():
             _file = _c.location.file
             if (_file or _c.location.line > 0) and _file.name in pending_files:
                 right = assert_left_right(_c, proj_engine, right) + 1
@@ -1059,18 +1060,18 @@ def assert_build_db_cursor(proj_engine, tus, expecteds):
         right += 19
 
 def test_proj_engine_build_db_tree_with_multiple_files():
-    SOURCE_1 = '''
+    source_1 = '''
 char a = 'a';
 char foo() { return a; }
 '''
-    SOURCE_2 = '''
+    source_2 = '''
 int b = 1;
 int bar() { return b; }
 '''
     
     proj_engine = db.ProjectEngine('test', is_in_memory = True)
-    t1_tu = get_tu_from_text(SOURCE_1, 't1.cpp')
-    t2_tu = get_tu_from_text(SOURCE_2, 't2.cpp')
+    t1_tu = get_tu_from_text(source_1, 't1.cpp')
+    t2_tu = get_tu_from_text(source_2, 't2.cpp')
     
     assert_build_db_cursor(proj_engine, [t1_tu, t2_tu],
                            [(['t1.cpp'], 7, 2),
