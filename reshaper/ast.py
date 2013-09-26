@@ -6,7 +6,7 @@ from clang.cindex import Config
 from clang.cindex import CompilationDatabase as CDB
 from reshaper.util import get_cursor_if, is_cursor_in_file_func, check_diagnostics
 import ConfigParser
-import os, sys
+import os
 from reshaper.semantic import get_source_path_candidates, is_header
 from reshaper import util
 
@@ -304,7 +304,7 @@ def _get_cdb_cmd_for_header(cdb, cdb_path, header_path, ref_source):
 
 
 def get_tu(source, all_warnings=False, config_path = '~/.reshaper.cfg', 
-           cdb_path = None, ref_source = None, options=0):
+           cdb_path = None, ref_source = None, options = 0, args = []):
     """Obtain a translation unit from source and language.
 
     By default, the translation unit is created from source file "t.<ext>"
@@ -322,7 +322,7 @@ def get_tu(source, all_warnings=False, config_path = '~/.reshaper.cfg',
     if full_path in _source2tu:
         return _source2tu[full_path]
     
-    args = ['-x', 'c++', '-std=c++11']
+    args += ['-x', 'c++', '-std=c++11']
  
     if all_warnings:
         args += ['-Wall', '-Wextra']

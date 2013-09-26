@@ -1,23 +1,54 @@
 ''' utility functions for unit tests. '''
 
 from clang.cindex import  TranslationUnit
-from reshaper.ast import TUCache
 from nose.tools import eq_
 from contextlib import nested
-
 import sys, os, StringIO
+from itertools import izip
 
-def get_tu_from_text(source):
+
+def get_tu_from_text(source, filename = "t.cpp"):
     '''just for unit test
     '''
-    name = 't.cpp'
+    name = filename or 't.cpp'
     args = []
     args.append('-std=c++11')
 
-    return TUCache(TranslationUnit.from_source(name, args, 
-                                               unsaved_files=[(name,
-                                                              source)]), name)
+    return TranslationUnit.from_source(name, args, 
+                                       unsaved_files=[(name, source)])
         
+def set_eq(expected, actual, msg = None):
+    ''' asserts that set expected is equal to set actual.
+    '''
+    if not isinstance(expected, set):
+        expected = set(expected)
+    if not isinstance(actual, set):
+        actual = set(actual)
+        
+    eq_(expected, actual, msg)
+
+
+
+def with_param_setup(setup, *args, **kw_args):
+    """ util decorator to pass parameters to test functions
+    """
+    
+    def decorate(func):
+        
+        def wrap_func():
+            params = setup(*args, **kw_args)
+            if isinstance(params, dict):
+                func(**params) # test function returns nothing
+            elif isinstance(params, (list, tuple)):
+                func(*params)
+            else:
+                func(params) # fall back
+        
+        wrap_func.func_name = func.func_name
+        return wrap_func
+    
+    return decorate
+
 class RedirectStdStreams(object):
     '''redirect stderr to remove error message during test
     '''
@@ -50,7 +81,7 @@ def redirect_stderr(func):
     return test_wrapped_func
 
 
-def assert_stdout (expected_str):
+def assert_stdout(expected_str):
     '''assert stdout string is expected string
     '''
     def outer_wrap(func):
@@ -94,6 +125,8 @@ def assert_file_content(expected, file):
 def assert_file_equal(file1, file2):
     '''assert file1 content equals file2 content line by line
     '''
+
     with nested(open(file1, 'r'), open(file2, 'r')) as (fp1, fp2):
-        for (str1, str2) in zip(fp1, fp2):
+        eq_(os.path.getsize(file1), os.path.getsize(file2))
+        for (str1, str2) in izip(fp1, fp2):
             eq_(str1, str2)

@@ -20,8 +20,9 @@ struct ClassA {
 ClassA var_a;
 '''
 
-    tu = get_tu_from_text(TEST_INPUT)
+    tu = get_tu_from_text(TEST_INPUT, 't.cpp')
     assert(tu)
+    tu = TUCache(tu, 't.cpp')
 
         
     def check_ast(cursor, parent):
