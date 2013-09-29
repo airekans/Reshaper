@@ -5,12 +5,14 @@ from sqlalchemy.orm import relationship, backref
 from sqlalchemy.orm import composite
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm.exc import MultipleResultsFound, NoResultFound
+from sqlalchemy.orm.util import object_state
 from sqlalchemy.schema import Table
 from sqlalchemy.sql import func
 from clang.cindex import CursorKind as ckind
 import clang.cindex
 import os
 from collections import deque
+from sqlalchemy.sql.expression import except_
 
 
 _Base = declarative_base()
@@ -105,41 +107,34 @@ class ProjectEngine(object):
                 tmp_cursor = TmpCursor(sem_parent, 'SEM_CURSOR',
                                        self, db_cursor=db_cursor)
                 self._session.add(tmp_cursor)
-        
-        # declaration can be updated in the final stage
-        if Type.is_valid_clang_type(cursor.type): # this can be improved
-            db_cursor.type = Type.from_clang_type(cursor.type, self)
-            decl_cursor = cursor.type.get_declaration()
-            if (db_cursor.type.declaration is None or \
-                not db_cursor.type.declaration.is_definition) and \
-                decl_cursor.kind != ckind.NO_DECL_FOUND:
-                db_cursor.type.declaration = \
-                    Cursor.from_clang_cursor(decl_cursor, self)
-                self._session.add(db_cursor.type)
-        
-        # definition and declarations 
-        # This can be done in the final stage, instead of update in travasing 
-        # tree
-        def_cursor = cursor.get_definition()
-        if def_cursor is not None:
-            if cursor.is_definition():
-                Cursor.update_declarations(db_cursor, self)
-            else:
-                db_cursor.definition = \
-                    Cursor.get_definition(def_cursor, self)
+#        
+#        # declaration can be updated in the final stage
+#        if Type.is_valid_clang_type(cursor.type): # this can be improved
+#            db_type = Type.from_clang_type(cursor.type, self)
+#            db_cursor.type = db_type
+#            decl_cursor = cursor.type.get_declaration()
+#            if decl_cursor.kind != ckind.NO_DECL_FOUND:
+#                type_state = object_state(db_type)
+#                if type_state.transient:
+#                    tmp_cursor = TmpCursor(decl_cursor, 'TYPE',
+#                                           self, type=db_type)
+#                    self._session.add(tmp_cursor)
+#            db_cursor.type = db_type
+#            self._session.add(db_type)
+#        
         
         is_add_lex_parents = False
         child_left = left + 1
-        if cursor.kind not in [ckind.TEMPLATE_TEMPLATE_PARAMETER,
-                               ckind.TYPEDEF_DECL]:
+        if cursor.kind != ckind.TEMPLATE_TEMPLATE_PARAMETER:
             for child in cursor.get_children():
                 if not is_add_lex_parents:
                     cursor.db_cursor = db_cursor
                     self._lex_parents.appendleft(cursor)
                     is_add_lex_parents = True
                 
-                child_left = \
-                    self.build_cursor_tree(child, db_cursor, child_left) + 1
+                if child.location.offset >= cursor.location.offset:
+                    child_left = \
+                        self.build_cursor_tree(child, db_cursor, child_left) + 1
         
         right = child_left
         db_cursor.right = right
@@ -173,6 +168,22 @@ class ProjectEngine(object):
         else:
             self.build_cursor_tree(cursor, None, left)
             self._session.commit()
+        
+        # post processing
+        tmp_cursors = self._session.query(TmpCursor).all()
+        for tmp_cursor in tmp_cursors:
+            if tmp_cursor.tmp_type == 'SEM_CURSOR':
+                db_cursor = tmp_cursor.cursor
+                try:
+                    sem_parent = Cursor.get_db_cursor(tmp_cursor, self)
+                except NoResultFound:
+                    sem_parent = Cursor(tmp_cursor, self)
+                assert sem_parent
+                db_cursor.semantic_parent = sem_parent
+                self._session.add(db_cursor)
+            
+        self._session.commit()
+                
     
     def build_db_cursor(self, cursor, parent, left):
         if cursor.kind in [ckind.USING_DIRECTIVE,
@@ -576,10 +587,6 @@ class Cursor(_Base):
 
         try:
             _cursor = Cursor.get_db_cursor(cursor, proj_engine)
-        except MultipleResultsFound, e:
-            print e
-            _print_error_cursor(cursor)
-            raise
         except NoResultFound: # The cursor has not been stored in DB.
             print "No result found"
             _cursor = Cursor(cursor, proj_engine)
@@ -589,13 +596,17 @@ class Cursor(_Base):
     @staticmethod
     def get_db_cursor(cursor, proj_engine):
         # builtin definitions
-        if cursor.location.file is None:
-            _cursor = proj_engine.get_session().query(Cursor).\
-                filter(Cursor.spelling == cursor.spelling).one()
-        else:
-            _cursor = Cursor._query_one_cursor(cursor, proj_engine)
-        
-        return _cursor
+        try:
+            if cursor.location.file is None:
+                _cursor = proj_engine.get_session().query(Cursor).\
+                    filter(Cursor.spelling == cursor.spelling).one()
+            else:
+                _cursor = Cursor._query_one_cursor(cursor, proj_engine)
+            return _cursor
+        except MultipleResultsFound, e:
+            print e
+            _print_error_cursor(cursor)
+            raise
 
     @staticmethod
     def from_clang_referenced(cursor, proj_engine):
@@ -632,7 +643,7 @@ class TmpCursor(_Base):
     spelling = Column(String, nullable = True)
     displayname = Column(String, nullable = False)
     usr = Column(String, nullable = True)
-    is_definition = Column(Boolean, nullable = False)
+    _is_definition = Column(Boolean, nullable = False)
 
     tmp_type = Column(Enum('REF_CURSOR', 'SEM_CURSOR', 'TYPE',
                            name='tmp_type'),
@@ -670,7 +681,7 @@ class TmpCursor(_Base):
         self.spelling = cursor.spelling
         self.displayname = cursor.displayname
         self.usr = cursor.get_usr()
-        self.is_definition = cursor.is_definition()
+        self._is_definition = cursor.is_definition()
 
         location_start = cursor.location
         location_end = cursor.extent.end
@@ -696,6 +707,31 @@ class TmpCursor(_Base):
         else:
             self.cursor = kws['db_cursor']
         
+    # The following methods are adapters for cindex.Cursor
+    def is_definition(self):
+        return self._is_definition
+    
+    def get_usr(self):
+        return self.usr
+    
+    @property
+    def location(self):
+        if not hasattr(self, '_location'):
+            self._location = lambda : True # empty object
+            self._location.file = self.file
+            self._location.line = self.location_start.line
+            self._location.column = self.location_start.column
+            self._location.offset = self.location_start.offset
+        
+        return self._location
+    
+    @property
+    def extent(self):
+        if not hasattr(self, '_extent'):
+            self._extent = lambda : True
+            self._extent.end = self.location_end
+            
+        return self._extent
         
 class CursorKind(_Base):
     """ The DB representation for CursorKind
