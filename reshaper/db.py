@@ -107,22 +107,7 @@ class ProjectEngine(object):
                 tmp_cursor = TmpCursor(sem_parent, 'SEM_CURSOR',
                                        self, db_cursor=db_cursor)
                 self._session.add(tmp_cursor)
-#        
-#        # declaration can be updated in the final stage
-#        if Type.is_valid_clang_type(cursor.type): # this can be improved
-#            db_type = Type.from_clang_type(cursor.type, self)
-#            db_cursor.type = db_type
-#            decl_cursor = cursor.type.get_declaration()
-#            if decl_cursor.kind != ckind.NO_DECL_FOUND:
-#                type_state = object_state(db_type)
-#                if type_state.transient:
-#                    tmp_cursor = TmpCursor(decl_cursor, 'TYPE',
-#                                           self, type=db_type)
-#                    self._session.add(tmp_cursor)
-#            db_cursor.type = db_type
-#            self._session.add(db_type)
-#        
-        
+
         is_add_lex_parents = False
         child_left = left + 1
         if cursor.kind != ckind.TEMPLATE_TEMPLATE_PARAMETER:
@@ -141,6 +126,20 @@ class ProjectEngine(object):
         
         if is_add_lex_parents:
             self._lex_parents.popleft()
+        
+        # declaration can be updated in the final stage
+        if Type.is_valid_clang_type(cursor.type): # this can be improved
+            db_type = Type.from_clang_type(cursor.type, self)
+            db_cursor.type = db_type
+            decl_cursor = cursor.type.get_declaration()
+            if decl_cursor.kind != ckind.NO_DECL_FOUND:
+                type_state = object_state(db_type)
+                if type_state.transient:
+                    tmp_cursor = TmpCursor(decl_cursor, 'TYPE',
+                                           self, type=db_type)
+                    self._session.add(tmp_cursor)
+            db_cursor.type = db_type
+            self._session.add(db_type)
 
         return right
 
@@ -181,6 +180,20 @@ class ProjectEngine(object):
                 assert sem_parent
                 db_cursor.semantic_parent = sem_parent
                 self._session.add(db_cursor)
+            elif tmp_cursor.tmp_type == 'TYPE':
+                db_type = tmp_cursor.type
+                decl_cursor = Cursor.get_db_cursor(tmp_cursor, self)
+                assert decl_cursor
+                db_type.declaration = decl_cursor
+                self._session.add(db_type)
+            elif tmp_cursor.tmp_type == 'REF_CURSOR':
+                db_cursor = tmp_cursor.cursor
+                ref_cursor = Cursor.get_db_cursor(tmp_cursor, self)
+                assert ref_cursor
+                db_cursor.referenced = ref_cursor
+                self._session.add(db_cursor)
+            else:
+                assert False
             
         self._session.commit()
                 
