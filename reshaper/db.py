@@ -140,6 +140,17 @@ class ProjectEngine(object):
                     self._session.add(tmp_cursor)
             db_cursor.type = db_type
             self._session.add(db_type)
+        
+        # this needs to be cached.
+        ref_cursor = cursor.referenced
+        if ref_cursor is not None and \
+           ref_cursor.location.file is not None and \
+           (ref_cursor.location.file.name != cursor.location.file.name or \
+            ref_cursor.location.offset != cursor.location.offset) and \
+           ref_cursor.kind != ckind.TRANSLATION_UNIT:
+            tmp_cursor = TmpCursor(ref_cursor, 'REF_CURSOR',
+                                   self, db_cursor=db_cursor)
+            self._session.add(tmp_cursor)
 
         return right
 
@@ -188,8 +199,7 @@ class ProjectEngine(object):
                 self._session.add(db_type)
             elif tmp_cursor.tmp_type == 'REF_CURSOR':
                 db_cursor = tmp_cursor.cursor
-                ref_cursor = Cursor.get_db_cursor(tmp_cursor, self)
-                assert ref_cursor
+                ref_cursor = Cursor.from_clang_referenced(tmp_cursor, self)
                 db_cursor.referenced = ref_cursor
                 self._session.add(db_cursor)
             else:
@@ -516,7 +526,10 @@ class Cursor(_Base):
                 CursorKind.from_clang_cursor_kind(cursor.kind, proj_engine)
     
             if cursor.location.file:
-                self.file = File.from_clang_cursor(cursor, proj_engine)
+                if isinstance(cursor, TmpCursor):
+                    self.file = cursor.file
+                else:
+                    self.file = File.from_clang_cursor(cursor, proj_engine)
         
 #        lexical_parent = cursor.lexical_parent
 #        if lexical_parent is not None and \
@@ -657,6 +670,7 @@ class TmpCursor(_Base):
     displayname = Column(String, nullable = False)
     usr = Column(String, nullable = True)
     _is_definition = Column(Boolean, nullable = False)
+    _is_static_method = Column(Boolean, nullable = False)
 
     tmp_type = Column(Enum('REF_CURSOR', 'SEM_CURSOR', 'TYPE',
                            name='tmp_type'),
@@ -695,6 +709,7 @@ class TmpCursor(_Base):
         self.displayname = cursor.displayname
         self.usr = cursor.get_usr()
         self._is_definition = cursor.is_definition()
+        self._is_static_method = cursor.is_static_method()
 
         location_start = cursor.location
         location_end = cursor.extent.end
@@ -723,6 +738,9 @@ class TmpCursor(_Base):
     # The following methods are adapters for cindex.Cursor
     def is_definition(self):
         return self._is_definition
+    
+    def is_static_method(self):
+        return self._is_static_method
     
     def get_usr(self):
         return self.usr
