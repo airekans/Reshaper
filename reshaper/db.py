@@ -13,6 +13,7 @@ import clang.cindex
 import os
 from collections import deque
 from sqlalchemy.sql.expression import except_
+from babel.util import distinct
 
 
 _Base = declarative_base()
@@ -141,7 +142,7 @@ class ProjectEngine(object):
             db_cursor.type = db_type
             self._session.add(db_type)
         
-        # this needs to be cached.
+        # referenced cursor handling
         ref_cursor = cursor.referenced
         if ref_cursor is not None and \
            ref_cursor.location.file is not None and \
@@ -192,10 +193,11 @@ class ProjectEngine(object):
                 db_cursor.semantic_parent = sem_parent
                 self._session.add(db_cursor)
             elif tmp_cursor.tmp_type == 'TYPE':
-                db_type = tmp_cursor.type
-                decl_cursor = Cursor.get_db_cursor(tmp_cursor, self)
-                assert decl_cursor
-                db_type.declaration = decl_cursor
+                with self._session.no_autoflush:
+                    db_type = tmp_cursor.type
+                    decl_cursor = Cursor.get_db_cursor(tmp_cursor, self)
+                    assert decl_cursor
+                    db_type.declaration = decl_cursor
                 self._session.add(db_type)
             elif tmp_cursor.tmp_type == 'REF_CURSOR':
                 db_cursor = tmp_cursor.cursor
@@ -204,6 +206,27 @@ class ProjectEngine(object):
                 self._session.add(db_cursor)
             else:
                 assert False
+        
+        # update definition/declaration
+        cursor_usrs = self._session.query(Cursor.usr).filter(Cursor.usr != '').\
+                        filter(Cursor.is_definition == False).\
+                        filter(Cursor.definition_id is None).distinct().all()
+        with self._session.no_autoflush:
+            for (usr,) in cursor_usrs:
+                decls = \
+                    self._session.query(Cursor).filter(Cursor.usr == usr).all()
+                def_cursor = None
+                for decl in decls:
+                    if decls.is_definition:
+                        def_cursor = decl
+                        break
+                
+                if def_cursor:
+                    for decl in decls:
+                        if decl is not def_cursor:
+                            decl.definition = def_cursor
+                
+                self._session.add_all(decls)
             
         self._session.commit()
                 
@@ -637,11 +660,7 @@ class Cursor(_Base):
     @staticmethod
     def from_clang_referenced(cursor, proj_engine):
         try:
-            _cursor = Cursor._query_one_cursor(cursor, proj_engine)
-        except MultipleResultsFound, e:
-            print e
-            _print_error_cursor(cursor)
-            raise
+            _cursor = Cursor.get_db_cursor(cursor, proj_engine)
         except NoResultFound: # The cursor has not been stored in DB.
             _cursor = Cursor(cursor, proj_engine)
 
