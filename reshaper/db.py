@@ -207,7 +207,11 @@ class ProjectEngine(object):
             else:
                 assert False
         
-        # update definition/declaration
+        self.update_declarations()
+            
+        self._session.commit()
+    
+    def update_declarations(self):
         cursor_usrs = self._session.query(Cursor.usr).filter(Cursor.usr != '').\
                         filter(Cursor.is_definition == False).\
                         filter(Cursor.definition_id is None).distinct().all()
@@ -227,9 +231,6 @@ class ProjectEngine(object):
                             decl.definition = def_cursor
                 
                 self._session.add_all(decls)
-            
-        self._session.commit()
-                
     
     def build_db_cursor(self, cursor, parent, left):
         if cursor.kind in [ckind.USING_DIRECTIVE,
