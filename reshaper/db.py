@@ -12,8 +12,6 @@ from clang.cindex import CursorKind as ckind
 import clang.cindex
 import os
 from collections import deque
-from sqlalchemy.sql.expression import except_
-from babel.util import distinct
 
 
 _Base = declarative_base()
@@ -554,22 +552,6 @@ class Cursor(_Base):
                     self.file = cursor.file
                 else:
                     self.file = File.from_clang_cursor(cursor, proj_engine)
-        
-#        lexical_parent = cursor.lexical_parent
-#        if lexical_parent is not None and \
-#           lexical_parent.kind != ckind.TRANSLATION_UNIT:
-#            self.lexical_parent = \
-#                Cursor.from_clang_cursor(lexical_parent, proj_engine)
-#        
-#        semantic_parent = cursor.semantic_parent
-#        if semantic_parent is not None and \
-#           semantic_parent.kind != ckind.TRANSLATION_UNIT:
-#            if lexical_parent and semantic_parent == lexical_parent:
-#                self.semantic_parent = self.lexical_parent
-#            else:
-#                self.semantic_parent = \
-#                    Cursor.from_clang_cursor(semantic_parent, proj_engine)
-
 
     @staticmethod
     def get_definition(cursor, proj_engine):
