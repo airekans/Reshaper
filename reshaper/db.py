@@ -335,7 +335,7 @@ class File(_Base):
 
     id = Column(Integer, primary_key = True)
     
-    name = Column(String, nullable = True)
+    name = Column(String, nullable = False)
     time = Column(Integer, nullable = False)
 
     include_table = Table('file_inclusion', _Base.metadata,
@@ -358,6 +358,9 @@ class File(_Base):
         """
         self.name = os.path.normpath(clang_file.name)
         self.time = clang_file.time
+    
+    def __str__(self):
+        return self.name
 
     @staticmethod
     def from_clang_cursor(cursor, proj_engine):
@@ -437,6 +440,9 @@ class SourceLocation(object):
 
     def __ne__(self, other):
         return not self.__eq__(other)
+    
+    def __str__(self):
+        return 'line %d col %d' % (self.line, self.column)
 
 
 class Cursor(_Base):
