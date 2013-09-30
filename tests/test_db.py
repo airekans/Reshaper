@@ -270,15 +270,15 @@ def test_cursor_ctor(_tu, proj_engine):
     
     assert_cursor_equal(A_cursor, db_A_cursor)
     
-    # test lexical_parent
-    data_cursor = get_cursor(_tu, 'data')
-    db_data_cursor = db.Cursor(data_cursor, proj_engine)
-    assert_cursor_equal(data_cursor, db_data_cursor)
-    
-    # test semantic_parent
-    foo_cursor = get_cursor(_tu, 'foo')
-    db_foo_cursor = db.Cursor(foo_cursor, proj_engine)
-    assert_cursor_equal(foo_cursor, db_foo_cursor)
+#    # test lexical_parent
+#    data_cursor = get_cursor(_tu, 'data')
+#    db_data_cursor = db.Cursor(data_cursor, proj_engine)
+#    assert_cursor_equal(data_cursor, db_data_cursor)
+#    
+#    # test semantic_parent
+#    foo_cursor = get_cursor(_tu, 'foo')
+#    db_foo_cursor = db.Cursor(foo_cursor, proj_engine)
+#    assert_cursor_equal(foo_cursor, db_foo_cursor)
     
     foo_cursor = get_cursor_if(_tu, lambda c: c.spelling == 'foo' and
                                         c.is_definition())
