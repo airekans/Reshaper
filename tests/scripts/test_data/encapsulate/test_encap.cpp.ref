@@ -1,0 +1,30 @@
+#include "test_encap.h"
+
+int A::foo(){
+	return m_i;
+}
+
+int foo(int a, int b)
+{
+	return a + b;
+}
+
+int main()
+{
+	int i;
+	A a;
+	A* aa = new A();
+	foo(a.GetI3(), a.GetI());
+	a.SetI3(10);
+	a.SetPint(&i);
+	a.SetI(a.GetC() + *a.GetPint());
+	a.m_b = false;
+	a.SetF(float(a.GetI3()));
+
+	B b;
+	C* pc;
+	b.SetA(a);
+	b.SetC(pc);
+	b.SetSp1(b.GetSp2());
+	return 0;
+}

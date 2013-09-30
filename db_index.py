@@ -1,7 +1,5 @@
 from reshaper import db
 from reshaper.ast import get_tu
-from clang.cindex import TranslationUnit
-import sys
 from optparse import OptionParser
 from reshaper.option import setup_options
 
@@ -28,7 +26,7 @@ def main():
     proj_engine = db.ProjectEngine(args[0])
     for filename in args[1:]:
         _tu = get_tu(filename, config_path = options.config,
-                     cdb_path = options.cdb_path, is_from_cache_first = False)
+                     cdb_path = options.cdb_path)
         if options.new:
             proj_engine.build_db_tree2(_tu.cursor)
         else:

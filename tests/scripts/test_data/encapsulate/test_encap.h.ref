@@ -1,0 +1,139 @@
+typedef int* PINT;
+
+template <class numtype>
+class shareptr
+{
+public:
+	shareptr operator=(const shareptr ptr){
+		return *this;
+	}
+};
+
+class A
+{
+public:
+	int GetI() const
+	{
+		return this.m_i;
+	};
+	void SetI(const int& val)
+	{
+		this.m_i = val;
+	};
+	PINT GetPint() const
+	{
+		return this.m_pint;
+	};
+	void SetPint(const PINT& val)
+	{
+		this.m_pint = val;
+	};
+	int * GetPi() const
+	{
+		return this.m_pi;
+	};
+	float GetF() const
+	{
+		return this.m_f;
+	};
+	void SetF(const float& val)
+	{
+		this.m_f = val;
+	};
+	char GetC() const
+	{
+		return this.m_c;
+	};
+	bool m_b;
+	bool GetB();
+	int foo();
+private:
+	int m_i;
+	PINT m_pint;
+	int * m_pi;
+	float m_f;
+	char m_c;
+	int m_i3;
+	int m_pri;
+	int bar();
+public:
+	int GetI3() const
+	{
+		return this.m_i3;
+	};
+	void SetI3(const int& val)
+	{
+		this.m_i3 = val;
+	};
+};
+
+struct C
+{
+};
+
+class B
+{
+public:
+	int GetI() const
+	{
+		return this.m_i;
+	};
+	const A& GetA() const
+	{
+		return this.m_a;
+	};
+	A& GetA()
+	{
+		return this.m_a;
+	};
+	void SetA(const A& val)
+	{
+		this.m_a = val;
+	};
+	struct C * GetC() const
+	{
+		return this.m_c;
+	};
+	void SetC(const struct C *& val)
+	{
+		this.m_c = val;
+	};
+	const shareptr<int>& GetSp1() const
+	{
+		return this.m_sp1;
+	};
+	shareptr<int>& GetSp1()
+	{
+		return this.m_sp1;
+	};
+	void SetSp1(const shareptr<int>& val)
+	{
+		this.m_sp1 = val;
+	};
+	const shareptr<int>& GetSp2() const
+	{
+		return this.m_sp2;
+	};
+	shareptr<int>& GetSp2()
+	{
+		return this.m_sp2;
+	};
+private:
+	int m_i;
+	A m_a;
+	struct C * m_c;
+	shareptr<int> m_sp1;
+	shareptr<int> m_sp2;
+};
+
+class D
+{
+	int foo();
+};
+
+int D::foo()
+{
+	int i = 1;
+	i+=1;
+	return 1;
+}

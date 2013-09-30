@@ -1,0 +1,457 @@
+tu:
+****spelling: None
+****kind: TRANSLATION_UNIT
+****usr:
+****hash:
+****type_kind: INVALID
+****is_definition: False
+****cursor: displayname=__int128_t
+********spelling: __int128_t
+********kind: TYPEDEF_DECL
+********usr:
+********hash:
+********type_kind: TYPEDEF
+********is_definition: True
+****cursor: displayname=__uint128_t
+********spelling: __uint128_t
+********kind: TYPEDEF_DECL
+********usr:
+********hash:
+********type_kind: TYPEDEF
+********is_definition: True
+****cursor: displayname=__builtin_va_list
+********spelling: __builtin_va_list
+********kind: TYPEDEF_DECL
+********usr:
+********hash:
+********type_kind: TYPEDEF
+********is_definition: True
+********cursor: displayname=__va_list_tag
+************spelling: None
+************kind: TYPE_REF
+************usr:
+************hash:
+************type_kind: TYPEDEF
+************is_definition: False
+****cursor: displayname=main()
+********spelling: main
+********kind: FUNCTION_DECL
+********usr:
+********hash:
+********file:
+********type_kind: FUNCTIONPROTO
+********is_definition: True
+********cursor: displayname=
+************spelling: None
+************kind: COMPOUND_STMT
+************usr:
+************hash:
+************file:
+************type_kind: INVALID
+************is_definition: False
+************cursor: displayname=
+****************spelling: None
+****************kind: DECL_STMT
+****************usr:
+****************hash:
+****************file:
+****************type_kind: INVALID
+****************is_definition: False
+****************cursor: displayname=a
+********************spelling: a
+********************kind: VAR_DECL
+********************usr:
+********************hash:
+********************file:
+********************type_kind: RECORD
+********************is_definition: True
+********************cursor: displayname=class A
+************************spelling: None
+************************kind: TYPE_REF
+************************usr:
+************************hash:
+************************file:
+************************type_kind: RECORD
+************************is_definition: False
+********************cursor: displayname=A
+************************spelling: None
+************************kind: CALL_EXPR
+************************usr:
+************************hash:
+************************file:
+************************type_kind: RECORD
+************************is_definition: False
+************cursor: displayname=foo
+****************spelling: None
+****************kind: CALL_EXPR
+****************usr:
+****************hash:
+****************file:
+****************type_kind: INT
+****************is_definition: False
+****************cursor: displayname=foo
+********************spelling: None
+********************kind: MEMBER_REF_EXPR
+********************usr:
+********************hash:
+********************file:
+********************type_kind: UNEXPOSED
+********************is_definition: False
+********************cursor: displayname=a
+************************spelling: None
+************************kind: DECL_REF_EXPR
+************************usr:
+************************hash:
+************************file:
+************************type_kind: RECORD
+************************is_definition: False
+************cursor: displayname=
+****************spelling: None
+****************kind: RETURN_STMT
+****************usr:
+****************hash:
+****************file:
+****************type_kind: INVALID
+****************is_definition: False
+****************cursor: displayname=
+********************spelling: None
+********************kind: INTEGER_LITERAL
+********************usr:
+********************hash:
+********************file:
+********************type_kind: INT
+********************is_definition: False
+tu:
+****spelling: None
+****kind: TRANSLATION_UNIT
+****usr:
+****hash:
+****type_kind: INVALID
+****is_definition: False
+****cursor: displayname=__int128_t
+********spelling: __int128_t
+********kind: TYPEDEF_DECL
+********usr:
+********hash:
+********type_kind: TYPEDEF
+********is_definition: True
+********semantic_parent
+************cursor:
+****************spelling: None
+****************kind: TRANSLATION_UNIT
+****************usr:
+****************hash:
+****************type_kind: INVALID
+****************is_definition: False
+********lexical_parent
+************cursor:
+****************spelling: None
+****************kind: TRANSLATION_UNIT
+****************usr:
+****************hash:
+****************type_kind: INVALID
+****************is_definition: False
+********definition
+************cursor: displayname=__int128_t
+****************spelling: __int128_t
+****************kind: TYPEDEF_DECL
+****************usr:
+****************hash:
+****************type_kind: TYPEDEF
+****************is_definition: True
+********declaration
+************cursor: displayname=__int128_t
+****************spelling: __int128_t
+****************kind: TYPEDEF_DECL
+****************usr:
+****************hash:
+****************type_kind: TYPEDEF
+****************is_definition: True
+****cursor: displayname=__uint128_t
+********spelling: __uint128_t
+********kind: TYPEDEF_DECL
+********usr:
+********hash:
+********type_kind: TYPEDEF
+********is_definition: True
+********semantic_parent
+************cursor:
+****************spelling: None
+****************kind: TRANSLATION_UNIT
+****************usr:
+****************hash:
+****************type_kind: INVALID
+****************is_definition: False
+********lexical_parent
+************cursor:
+****************spelling: None
+****************kind: TRANSLATION_UNIT
+****************usr:
+****************hash:
+****************type_kind: INVALID
+****************is_definition: False
+********definition
+************cursor: displayname=__uint128_t
+****************spelling: __uint128_t
+****************kind: TYPEDEF_DECL
+****************usr:
+****************hash:
+****************type_kind: TYPEDEF
+****************is_definition: True
+********declaration
+************cursor: displayname=__uint128_t
+****************spelling: __uint128_t
+****************kind: TYPEDEF_DECL
+****************usr:
+****************hash:
+****************type_kind: TYPEDEF
+****************is_definition: True
+****cursor: displayname=__builtin_va_list
+********spelling: __builtin_va_list
+********kind: TYPEDEF_DECL
+********usr:
+********hash:
+********type_kind: TYPEDEF
+********is_definition: True
+********semantic_parent
+************cursor:
+****************spelling: None
+****************kind: TRANSLATION_UNIT
+****************usr:
+****************hash:
+****************type_kind: INVALID
+****************is_definition: False
+********lexical_parent
+************cursor:
+****************spelling: None
+****************kind: TRANSLATION_UNIT
+****************usr:
+****************hash:
+****************type_kind: INVALID
+****************is_definition: False
+********definition
+************cursor: displayname=__builtin_va_list
+****************spelling: __builtin_va_list
+****************kind: TYPEDEF_DECL
+****************usr:
+****************hash:
+****************type_kind: TYPEDEF
+****************is_definition: True
+********declaration
+************cursor: displayname=__builtin_va_list
+****************spelling: __builtin_va_list
+****************kind: TYPEDEF_DECL
+****************usr:
+****************hash:
+****************type_kind: TYPEDEF
+****************is_definition: True
+****cursor: displayname=main()
+********spelling: main
+********kind: FUNCTION_DECL
+********usr:
+********hash:
+********file:
+********type_kind: FUNCTIONPROTO
+********is_definition: True
+********semantic_parent
+************cursor:
+****************spelling: None
+****************kind: TRANSLATION_UNIT
+****************usr:
+****************hash:
+****************type_kind: INVALID
+****************is_definition: False
+********lexical_parent
+************cursor:
+****************spelling: None
+****************kind: TRANSLATION_UNIT
+****************usr:
+****************hash:
+****************type_kind: INVALID
+****************is_definition: False
+********definition
+************cursor: displayname=main()
+****************spelling: main
+****************kind: FUNCTION_DECL
+****************usr:
+****************hash:
+****************file:
+****************type_kind: FUNCTIONPROTO
+****************is_definition: True
+********declaration
+************cursor: displayname=main()
+****************spelling: main
+****************kind: FUNCTION_DECL
+****************usr:
+****************hash:
+****************file:
+****************type_kind: FUNCTIONPROTO
+****************is_definition: True
+<root>
+<tu
+<spelling>None</spelling>
+<kind>TRANSLATION_UNIT</kind>
+<usr>
+<hash>
+<type_kind>INVALID</type_kind>
+<is_definition>False</is_definition>
+<cursor displayname="__int128_t">
+<spelling>__int128_t</spelling>
+<kind>TYPEDEF_DECL</kind>
+<usr>
+<hash>
+<type_kind>TYPEDEF</type_kind>
+<is_definition>True</is_definition>
+</cursor>
+<cursor displayname="__uint128_t">
+<spelling>__uint128_t</spelling>
+<kind>TYPEDEF_DECL</kind>
+<usr>
+<hash>
+<type_kind>TYPEDEF</type_kind>
+<is_definition>True</is_definition>
+</cursor>
+<cursor displayname="__builtin_va_list">
+<spelling>__builtin_va_list</spelling>
+<kind>TYPEDEF_DECL</kind>
+<usr>
+<hash>
+<type_kind>TYPEDEF</type_kind>
+<is_definition>True</is_definition>
+<cursor displayname="__va_list_tag">
+<spelling>None</spelling>
+<kind>TYPE_REF</kind>
+<usr>
+<hash>
+<type_kind>TYPEDEF</type_kind>
+<is_definition>False</is_definition>
+</cursor>
+</cursor>
+<cursor displayname="A">
+<spelling>A</spelling>
+<kind>CLASS_DECL</kind>
+<usr>
+<hash>
+<file>
+<type_kind>RECORD</type_kind>
+<is_definition>True</is_definition>
+<cursor displayname="">
+<spelling></spelling>
+<kind>CXX_ACCESS_SPEC_DECL</kind>
+<usr>
+<hash>
+<file>
+<type_kind>INVALID</type_kind>
+<is_definition>True</is_definition>
+</cursor>
+<cursor displayname="foo()">
+<spelling>foo</spelling>
+<kind>CXX_METHOD</kind>
+<usr>
+<hash>
+<file>
+<type_kind>FUNCTIONPROTO</type_kind>
+<is_definition>False</is_definition>
+</cursor>
+</cursor>
+<cursor displayname="main()">
+<spelling>main</spelling>
+<kind>FUNCTION_DECL</kind>
+<usr>
+<hash>
+<file>
+<type_kind>FUNCTIONPROTO</type_kind>
+<is_definition>True</is_definition>
+<cursor displayname="">
+<spelling>None</spelling>
+<kind>COMPOUND_STMT</kind>
+<usr>
+<hash>
+<file>
+<type_kind>INVALID</type_kind>
+<is_definition>False</is_definition>
+<cursor displayname="">
+<spelling>None</spelling>
+<kind>DECL_STMT</kind>
+<usr>
+<hash>
+<file>
+<type_kind>INVALID</type_kind>
+<is_definition>False</is_definition>
+<cursor displayname="a">
+<spelling>a</spelling>
+<kind>VAR_DECL</kind>
+<usr>
+<hash>
+<file>
+<type_kind>RECORD</type_kind>
+<is_definition>True</is_definition>
+<cursor displayname="class A">
+<spelling>None</spelling>
+<kind>TYPE_REF</kind>
+<usr>
+<hash>
+<file>
+<type_kind>RECORD</type_kind>
+<is_definition>False</is_definition>
+</cursor>
+<cursor displayname="A">
+<spelling>None</spelling>
+<kind>CALL_EXPR</kind>
+<usr>
+<hash>
+<file>
+<type_kind>RECORD</type_kind>
+<is_definition>False</is_definition>
+</cursor>
+</cursor>
+</cursor>
+<cursor displayname="foo">
+<spelling>None</spelling>
+<kind>CALL_EXPR</kind>
+<usr>
+<hash>
+<file>
+<type_kind>INT</type_kind>
+<is_definition>False</is_definition>
+<cursor displayname="foo">
+<spelling>None</spelling>
+<kind>MEMBER_REF_EXPR</kind>
+<usr>
+<hash>
+<file>
+<type_kind>UNEXPOSED</type_kind>
+<is_definition>False</is_definition>
+<cursor displayname="a">
+<spelling>None</spelling>
+<kind>DECL_REF_EXPR</kind>
+<usr>
+<hash>
+<file>
+<type_kind>RECORD</type_kind>
+<is_definition>False</is_definition>
+</cursor>
+</cursor>
+</cursor>
+<cursor displayname="">
+<spelling>None</spelling>
+<kind>RETURN_STMT</kind>
+<usr>
+<hash>
+<file>
+<type_kind>INVALID</type_kind>
+<is_definition>False</is_definition>
+<cursor displayname="">
+<spelling>None</spelling>
+<kind>INTEGER_LITERAL</kind>
+<usr>
+<hash>
+<file>
+<type_kind>INT</type_kind>
+<is_definition>False</is_definition>
+</cursor>
+</cursor>
+</cursor>
+</cursor>
+</tu>
+</root>
