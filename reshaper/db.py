@@ -16,6 +16,33 @@ from collections import deque
 
 _Base = declarative_base()
 
+class HanldedCursors(object):
+    def __init__(self):
+        self.__file_to_cursors = {}
+    
+    def add_cursor(self, cursor):
+        if cursor is None:
+            return
+        elif cursor.location.file is None:
+            if None not in self.__file_to_cursors:
+                self.__file_to_cursors[None] = []
+            self.__file_to_cursors[None].append(cursor)
+        else:
+            file_name = cursor.location.file.name
+            if file_name not in self.__file_to_cursors:
+                self.__file_to_cursors[file_name] = []
+            self.__file_to_cursors[file_name].append(cursor)
+        
+    def __contains__(self, cursor):
+        if cursor is None:
+            return False
+        elif cursor.location.file is None:
+            return None in self.__file_to_cursors and \
+                cursor in self.__file_to_cursors[None]
+        else:
+            file_name = cursor.location.file.name
+            return file_name in self.__file_to_cursors and \
+                cursor in self.__file_to_cursors[file_name]
 
 class ProjectEngine(object):
     """ Project Engine is a DB engine specific to one project
@@ -169,10 +196,13 @@ class ProjectEngine(object):
         if left > 0:
             left += 20
         if cursor.kind == clang.cindex.CursorKind.TRANSLATION_UNIT:
+            handled_cursors = HanldedCursors()
             for child in cursor.get_children():
                 if child.location.file and \
-                        child.location.file.name in pending_files:
+                        child.location.file.name in pending_files and \
+                        child not in handled_cursors:
                     left = self.build_cursor_tree(child, None, left) + 1
+                    handled_cursors.add_cursor(child)
                     self._session.commit()
         else:
             self.build_cursor_tree(cursor, None, left)
@@ -414,6 +444,16 @@ class File(_Base):
         return pending_files
         
 
+class HashableSourceLocation(object):
+    def __init__(self, loc):
+        self.__loc = loc
+    
+    def __getattr__(self, name):
+        return getattr(self.__loc, name)
+
+    def __hash__(self):
+        return self.__loc.offset
+
 class SourceLocation(object):
     """ DB representation of clang SourceLocation
     """
@@ -536,6 +576,10 @@ class Cursor(_Base):
         self.usr = cursor.get_usr()
         self.is_definition = cursor.is_definition()
         self.is_static_method = cursor.is_static_method()
+
+        if cursor.get_usr() == 'c:@N@std@F@__throw_out_of_range#*1C#':
+            import ipdb
+            ipdb.set_trace()
 
         location_start = cursor.location
         location_end = cursor.extent.end
