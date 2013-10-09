@@ -17,32 +17,58 @@ from collections import deque
 _Base = declarative_base()
 
 class HanldedCursors(object):
+    
+    class EqCursor(object):
+        def __init__(self, cursor):
+            self.cursor = cursor
+            self.__eq_func = self.normal_eq if cursor.location.file \
+                                else self.builtin_eq
+        
+        def builtin_eq(self, other):
+            return self.cursor.spelling == other.cursor.spelling
+        
+        def normal_eq(self, other):
+            return self.cursor.get_usr() == other.cursor.get_usr() and \
+                self.cursor.spelling == other.cursor.spelling and \
+                self.cursor.displayname == other.cursor.displayname and \
+                self.cursor.kind == other.cursor.kind and \
+                self.cursor.is_definition() == other.cursor.is_definition() and\
+                self.cursor.location.file.name == \
+                    other.cursor.location.file.name and \
+                self.cursor.location.offset == other.cursor.location.offset and\
+                self.cursor.extent.end.offset == other.cursor.extent.end.offset
+        
+        def __eq__(self, other):
+            return self.__eq_func(other)
+    
     def __init__(self):
         self.__file_to_cursors = {}
     
     def add_cursor(self, cursor):
         if cursor is None:
             return
-        elif cursor.location.file is None:
+        eq_cursor = HanldedCursors.EqCursor(cursor)
+        if cursor.location.file is None:
             if None not in self.__file_to_cursors:
                 self.__file_to_cursors[None] = []
-            self.__file_to_cursors[None].append(cursor)
+            self.__file_to_cursors[None].append(eq_cursor)
         else:
             file_name = cursor.location.file.name
             if file_name not in self.__file_to_cursors:
                 self.__file_to_cursors[file_name] = []
-            self.__file_to_cursors[file_name].append(cursor)
+            self.__file_to_cursors[file_name].append(eq_cursor)
         
     def __contains__(self, cursor):
         if cursor is None:
             return False
-        elif cursor.location.file is None:
+        eq_cursor = HanldedCursors.EqCursor(cursor)
+        if cursor.location.file is None:
             return None in self.__file_to_cursors and \
-                cursor in self.__file_to_cursors[None]
+                eq_cursor in self.__file_to_cursors[None]
         else:
             file_name = cursor.location.file.name
             return file_name in self.__file_to_cursors and \
-                cursor in self.__file_to_cursors[file_name]
+                eq_cursor in self.__file_to_cursors[file_name]
 
 class ProjectEngine(object):
     """ Project Engine is a DB engine specific to one project
@@ -442,17 +468,7 @@ class File(_Base):
             pending_files.add(os.path.normpath(tu.spelling))
 
         return pending_files
-        
 
-class HashableSourceLocation(object):
-    def __init__(self, loc):
-        self.__loc = loc
-    
-    def __getattr__(self, name):
-        return getattr(self.__loc, name)
-
-    def __hash__(self):
-        return self.__loc.offset
 
 class SourceLocation(object):
     """ DB representation of clang SourceLocation
