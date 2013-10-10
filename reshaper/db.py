@@ -711,13 +711,12 @@ class Cursor(_Base):
     
     @staticmethod
     def get_db_cursors(cursor, proj_engine):
-        try:
-            if cursor.location.file is None:
-                _cursors = proj_engine.get_session().query(Cursor).\
-                    filter(Cursor.spelling == cursor.spelling).all()
-            else:
-                _cursors = Cursor._query_cursors(cursor, proj_engine)
-            return _cursors
+        if cursor.location.file is None:
+            _cursors = proj_engine.get_session().query(Cursor).\
+                filter(Cursor.spelling == cursor.spelling).all()
+        else:
+            _cursors = Cursor._query_cursors(cursor, proj_engine)
+        return _cursors
     
     @staticmethod
     def get_db_cursor(cursor, proj_engine):
