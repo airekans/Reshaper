@@ -263,9 +263,9 @@ class ProjectEngine(object):
                 self._session.add(db_type)
             elif tmp_cursor.tmp_type == 'REF_CURSOR':
                 db_cursor = tmp_cursor.cursor
-                try:
-                ref_cursor = Cursor.from_clang_referenced(tmp_cursor, self)
-                db_cursor.referenced = ref_cursor
+                ref_cursors = Cursor.get_db_cursors(tmp_cursor, self)
+                assert ref_cursors
+                db_cursor.referenced = ref_cursors[0]
                 self._session.add(db_cursor)
             else:
                 assert False
