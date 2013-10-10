@@ -236,9 +236,6 @@ class ProjectEngine(object):
         
         # post processing
         self.post_db_update()
-        self.update_declarations()
-            
-        self._session.commit()
         
     def post_db_update(self):
         tmp_cursors = self._session.query(TmpCursor).all()
@@ -266,18 +263,19 @@ class ProjectEngine(object):
                 self._session.add(db_type)
             elif tmp_cursor.tmp_type == 'REF_CURSOR':
                 db_cursor = tmp_cursor.cursor
+                try:
                 ref_cursor = Cursor.from_clang_referenced(tmp_cursor, self)
                 db_cursor.referenced = ref_cursor
                 self._session.add(db_cursor)
             else:
                 assert False
         
-        self.update_declarations()
-            
+        self._update_declarations()
+        
         self._session.commit()
         
     
-    def update_declarations(self):
+    def _update_declarations(self):
         cursor_usrs = self._session.query(Cursor.usr).filter(Cursor.usr != '').\
                         filter(Cursor.is_definition == False).\
                         filter(Cursor.definition_id is None).distinct().all()
@@ -329,7 +327,7 @@ class ProjectEngine(object):
         def_cursor = cursor.get_definition()
         if def_cursor is not None:
             if cursor.is_definition():
-                Cursor.update_declarations(db_cursor, self)
+                Cursor._update_declarations(db_cursor, self)
             else:
                 db_cursor.definition = \
                     Cursor.get_definition(def_cursor, self)
@@ -653,7 +651,7 @@ class Cursor(_Base):
         return _cursor
 
     @staticmethod
-    def update_declarations(cursor, proj_engine):
+    def _update_declarations(cursor, proj_engine):
         ''' Update the declarations in the DB with the definition.
         
         `cursor`: the definition cursor
@@ -710,6 +708,16 @@ class Cursor(_Base):
             _cursor = Cursor(cursor, proj_engine)
 
         return _cursor
+    
+    @staticmethod
+    def get_db_cursors(cursor, proj_engine):
+        try:
+            if cursor.location.file is None:
+                _cursors = proj_engine.get_session().query(Cursor).\
+                    filter(Cursor.spelling == cursor.spelling).all()
+            else:
+                _cursors = Cursor._query_cursors(cursor, proj_engine)
+            return _cursors
     
     @staticmethod
     def get_db_cursor(cursor, proj_engine):
