@@ -235,12 +235,23 @@ class ProjectEngine(object):
             self._session.commit()
         
         # post processing
+        self.post_db_update()
+        self.update_declarations()
+            
+        self._session.commit()
+        
+    def post_db_update(self):
         tmp_cursors = self._session.query(TmpCursor).all()
         for tmp_cursor in tmp_cursors:
             if tmp_cursor.tmp_type == 'SEM_CURSOR':
                 db_cursor = tmp_cursor.cursor
                 try:
                     sem_parent = Cursor.get_db_cursor(tmp_cursor, self)
+                except MultipleResultsFound:
+                    if tmp_cursor.spelling:
+                        raise
+                    else:
+                        continue
                 except NoResultFound:
                     sem_parent = Cursor(tmp_cursor, self)
                 assert sem_parent
@@ -264,6 +275,7 @@ class ProjectEngine(object):
         self.update_declarations()
             
         self._session.commit()
+        
     
     def update_declarations(self):
         cursor_usrs = self._session.query(Cursor.usr).filter(Cursor.usr != '').\
@@ -660,7 +672,7 @@ class Cursor(_Base):
         proj_engine.get_session().add_all(_cursors)
     
     @staticmethod
-    def _query_one_cursor(cursor, proj_engine):
+    def _get_cursor_query(cursor, proj_engine):
         return proj_engine.get_session().query(Cursor).\
                     join(File).join(CursorKind).\
                     filter(Cursor.usr == cursor.get_usr()).\
@@ -670,7 +682,15 @@ class Cursor(_Base):
                     filter(Cursor.is_definition == cursor.is_definition()).\
                     filter(File.name == cursor.location.file.name).\
                     filter(Cursor.offset_start == cursor.location.offset).\
-                    filter(Cursor.offset_end == cursor.extent.end.offset).one()
+                    filter(Cursor.offset_end == cursor.extent.end.offset)
+
+    @staticmethod
+    def _query_cursors(cursor, proj_engine):
+        return Cursor._get_cursor_query(cursor, proj_engine).all()
+    
+    @staticmethod
+    def _query_one_cursor(cursor, proj_engine):
+        return Cursor._get_cursor_query(cursor, proj_engine).one()
     
     @staticmethod
     def from_clang_cursor(cursor, proj_engine):
