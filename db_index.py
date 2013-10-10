@@ -13,6 +13,8 @@ def parse_options():
     
     option_parser.add_option("-n", "--new", dest = "new",
                              action="store_true")
+    option_parser.add_option("-p", "--post-update", dest = "post_update",
+                             action="store_true")
     
     # handle option or argument error.
     options, args = option_parser.parse_args()
@@ -29,6 +31,8 @@ def main():
                      cdb_path = options.cdb_path)
         if options.new:
             proj_engine.build_db_tree2(_tu.cursor)
+            if options.post_update:
+                proj_engine.post_db_update()
         else:
             proj_engine.build_db_tree(_tu.cursor)
 
