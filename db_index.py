@@ -14,7 +14,7 @@ def parse_options():
     option_parser.add_option("-n", "--new", dest = "new",
                              action="store_true")
     option_parser.add_option("-p", "--post-update", dest = "post_update",
-                             action="store_true")
+                             action="store_true", default=False)
     
     # handle option or argument error.
     options, args = option_parser.parse_args()

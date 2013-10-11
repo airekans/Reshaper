@@ -233,9 +233,7 @@ class ProjectEngine(object):
         else:
             self.build_cursor_tree(cursor, None, left)
             self._session.commit()
-        
-        # post processing
-        self.post_db_update()
+
         
     def post_db_update(self):
         tmp_cursors = self._session.query(TmpCursor).all()
@@ -264,8 +262,11 @@ class ProjectEngine(object):
             elif tmp_cursor.tmp_type == 'REF_CURSOR':
                 db_cursor = tmp_cursor.cursor
                 ref_cursors = Cursor.get_db_cursors(tmp_cursor, self)
-                assert ref_cursors
-                db_cursor.referenced = ref_cursors[0]
+                if not ref_cursors:
+                    db_cursor.referenced = Cursor(tmp_cursor, self)
+                else:
+                    db_cursor.referenced = ref_cursors[0]
+                
                 self._session.add(db_cursor)
             else:
                 assert False
@@ -602,10 +603,6 @@ class Cursor(_Base):
         self.usr = cursor.get_usr()
         self.is_definition = cursor.is_definition()
         self.is_static_method = cursor.is_static_method()
-
-        if cursor.get_usr() == 'c:@N@std@F@__throw_out_of_range#*1C#':
-            import ipdb
-            ipdb.set_trace()
 
         location_start = cursor.location
         location_end = cursor.extent.end
